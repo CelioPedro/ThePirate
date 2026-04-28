@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:thepiratemax;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      repositories:
+        enabled: false
+app:
+  integrations:
+    mercado-pago:
+      access-token: test-token
+      webhook-secret: test-secret
+      base-url: https://api.mercadopago.com
+  redis:
+    credentials-delivery-queue: credentials.delivery

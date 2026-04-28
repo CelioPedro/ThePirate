@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Pirate Max</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <div class="brand-lockup">
+        <div class="brand-mark">P</div>
+        <div class="brand-copy">
+          <span class="brand-name">The Pirate Max</span>
+          <small>contas, gold, gift cards e itens digitais</small>
+        </div>
+      </div>
+
+      <div class="header-search">
+        <span class="search-icon">&#8981;</span>
+        <input id="searchInput" type="text" placeholder="Anuncio, usuario ou categoria">
+        <button id="connectButton" class="search-chip">Conectar backend</button>
+      </div>
+
+      <div class="header-actions">
+        <a href="#categories">Categorias</a>
+        <a href="#operations">Painel</a>
+        <button class="primary header-cta">Anunciar</button>
+        <button class="round-button" aria-label="Alertas">&#9675;</button>
+        <button class="round-button" aria-label="Carrinho">&#9711;</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-section">
+        <div class="hero-backdrop"></div>
+        <div class="hero-content">
+          <p class="hero-kicker">marketplace digital</p>
+          <h1>comprar e vender</h1>
+          <p class="hero-subtitle">contas, jogos, gift cards, gold, itens digitais e mais</p>
+          <div class="hero-actions">
+            <button class="primary hero-button" id="heroExploreButton">Como funciona?</button>
+            <button class="ghost hero-button" id="heroBackendButton">Usar backend local</button>
+          </div>
+          <div class="mode-banner">
+            <span class="status-dot" id="statusDot"></span>
+            <div>
+              <strong id="modeLabel">Demo local</strong>
+              <p id="modeHelp">Abrindo do arquivo local, a interface roda em demo e tenta conectar no backend quando ele estiver no ar.</p>
+            </div>
+          </div>
+          <input id="apiBaseInput" class="api-input" type="text" value="http://localhost:8080" aria-label="API base">
+        </div>
+      </section>
+
+      <section id="categories" class="section-block">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">descoberta</p>
+            <h2>Categorias populares</h2>
+          </div>
+          <button class="ghost line-button">Ver todas categorias</button>
+        </div>
+        <div id="categoryRail" class="category-rail"></div>
+      </section>
+
+      <section class="section-block">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">ofertas</p>
+            <h2>Produtos em destaque</h2>
+          </div>
+          <div class="stats-inline">
+            <div>
+              <span>Produtos</span>
+              <strong id="productCount">0</strong>
+            </div>
+            <div>
+              <span>Pedidos</span>
+              <strong id="customerOrderCount">0</strong>
+            </div>
+          </div>
+        </div>
+        <div id="productGrid" class="product-grid"></div>
+      </section>
+
+      <section id="operations" class="section-block operations-section">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">operacao</p>
+            <h2>Ambiente de cliente e vendedor</h2>
+          </div>
+          <nav class="tabs">
+            <button class="tab active" data-view="customer">Cliente</button>
+            <button class="tab" data-view="seller">Vendedor</button>
+          </nav>
+        </div>
+
+        <section id="customerView" class="view active">
+          <div class="operations-grid">
+            <aside class="panel cart-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">checkout</p>
+                  <h3>Carrinho</h3>
+                </div>
+              </div>
+              <div id="cartItems" class="cart-items empty-state">Nenhum item selecionado.</div>
+              <div class="cart-footer">
+                <div class="total-row">
+                  <span>Total</span>
+                  <strong id="cartTotal">R$ 0,00</strong>
+                </div>
+                <button id="checkoutButton" class="primary wide">Gerar PIX</button>
+              </div>
+            </aside>
+
+            <div class="customer-columns">
+              <section class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="section-kicker">pedidos</p>
+                    <h3>Visao do cliente</h3>
+                  </div>
+                </div>
+                <div id="customerOrders" class="stack empty-state">Nenhum pedido ainda.</div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="section-kicker">pagamento</p>
+                    <h3>PIX atual</h3>
+                  </div>
+                </div>
+                <div id="pixState" class="stack empty-state">Gere um pedido para visualizar QR Code e copia-e-cola.</div>
+                <div id="credentialsPanel" class="stack empty-state">Credenciais entregues aparecerao aqui.</div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section id="sellerView" class="view">
+          <div class="seller-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">resumo</p>
+                  <h3>Saude da operacao</h3>
+                </div>
+              </div>
+              <div class="metric-grid" id="sellerMetrics"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">estoque</p>
+                  <h3>Produtos e disponibilidade</h3>
+                </div>
+              </div>
+              <div id="sellerProducts" class="stack"></div>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="section-kicker">fila comercial</p>
+                  <h3>Pedidos recentes</h3>
+                </div>
+              </div>
+              <div id="sellerOrders" class="stack empty-state">Nenhum pedido processado ainda.</div>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <template id="productCardTemplate">
+    <article class="product-card">
+      <img class="product-image" alt="">
+      <div class="product-meta">
+        <span class="product-sku"></span>
+        <span class="pill">PIX</span>
+      </div>
+      <h3></h3>
+      <p></p>
+      <div class="product-footer">
+        <strong class="product-price"></strong>
+        <button class="ghost add-product">Adicionar</button>
+      </div>
+    </article>
+  </template>
+
+  <template id="categoryCardTemplate">
+    <article class="category-card">
+      <img class="category-image" alt="">
+      <div class="category-overlay">
+        <span class="category-count"></span>
+        <strong class="category-title"></strong>
+        <small class="category-subtitle"></small>
+      </div>
+    </article>
+  </template>
+
+  <template id="sellerActionTemplate">
+    <div class="seller-actions">
+      <button class="ghost seller-action" data-status="PENDING">Pendente</button>
+      <button class="ghost seller-action" data-status="DELIVERY_PENDING">Fila</button>
+      <button class="ghost seller-action" data-status="DELIVERED">Entregue</button>
+      <button class="ghost seller-action" data-status="DELIVERY_FAILED">Falhou</button>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
