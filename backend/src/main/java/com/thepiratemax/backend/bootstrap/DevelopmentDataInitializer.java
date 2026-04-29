@@ -9,6 +9,7 @@ import com.thepiratemax.backend.domain.product.ProductEntity;
 import com.thepiratemax.backend.domain.product.ProductProvider;
 import com.thepiratemax.backend.domain.product.ProductStatus;
 import com.thepiratemax.backend.domain.user.UserEntity;
+import com.thepiratemax.backend.domain.user.UserRole;
 import com.thepiratemax.backend.domain.user.UserStatus;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.ProductRepository;
@@ -20,6 +21,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Configuration
@@ -32,26 +34,22 @@ public class DevelopmentDataInitializer {
             ProductRepository productRepository,
             CredentialRepository credentialRepository,
             DevUserProperties devUserProperties,
+            PasswordEncoder passwordEncoder,
             TransactionTemplate transactionTemplate
     ) {
         return args -> transactionTemplate.executeWithoutResult(status ->
-                seedCatalogAndInventory(userRepository, productRepository, credentialRepository, devUserProperties));
+                seedCatalogAndInventory(userRepository, productRepository, credentialRepository, devUserProperties, passwordEncoder));
     }
 
     void seedCatalogAndInventory(
             UserRepository userRepository,
             ProductRepository productRepository,
             CredentialRepository credentialRepository,
-            DevUserProperties devUserProperties
+            DevUserProperties devUserProperties,
+            PasswordEncoder passwordEncoder
     ) {
-            userRepository.findByEmail(devUserProperties.defaultUserEmail())
-                    .orElseGet(() -> {
-                        UserEntity user = new UserEntity();
-                        user.setEmail(devUserProperties.defaultUserEmail());
-                        user.setName("Dev Customer");
-                        user.setStatus(UserStatus.ACTIVE);
-                        return userRepository.save(user);
-                    });
+            upsertUser(userRepository, devUserProperties.defaultUserEmail(), "Dev Customer", UserRole.CUSTOMER, "dev123456", passwordEncoder);
+            upsertUser(userRepository, "admin@thepiratemax.local", "Dev Admin", UserRole.ADMIN, "admin123456", passwordEncoder);
 
             List<CatalogProductSeed> seeds = List.of(
                     new CatalogProductSeed(
@@ -288,5 +286,22 @@ public class DevelopmentDataInitializer {
 
     private String encode(String value) {
         return Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void upsertUser(
+            UserRepository userRepository,
+            String email,
+            String name,
+            UserRole role,
+            String rawPassword,
+            PasswordEncoder passwordEncoder
+    ) {
+        UserEntity user = userRepository.findByEmail(email).orElseGet(UserEntity::new);
+        user.setEmail(email);
+        user.setName(name);
+        user.setRole(role);
+        user.setStatus(UserStatus.ACTIVE);
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        userRepository.save(user);
     }
 }

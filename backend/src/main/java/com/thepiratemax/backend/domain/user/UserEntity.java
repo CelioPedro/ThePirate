@@ -24,6 +24,10 @@ public class UserEntity extends BaseEntity {
     @Column(nullable = false)
     private UserStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.CUSTOMER;
+
     public String getEmail() {
         return email;
     }
@@ -55,5 +59,12 @@ public class UserEntity extends BaseEntity {
     public void setStatus(UserStatus status) {
         this.status = status;
     }
-}
 
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
+}

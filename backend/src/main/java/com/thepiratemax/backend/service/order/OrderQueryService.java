@@ -13,6 +13,7 @@ import com.thepiratemax.backend.domain.user.UserEntity;
 import com.thepiratemax.backend.repository.CredentialViewRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
 import com.thepiratemax.backend.repository.OrderRepository;
+import com.thepiratemax.backend.service.auth.CurrentUserProvider;
 import com.thepiratemax.backend.service.exception.ConflictException;
 import com.thepiratemax.backend.service.exception.NotFoundException;
 import java.nio.charset.StandardCharsets;
@@ -29,23 +30,23 @@ public class OrderQueryService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CredentialViewRepository credentialViewRepository;
-    private final DevUserProvider devUserProvider;
+    private final CurrentUserProvider currentUserProvider;
 
     public OrderQueryService(
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
             CredentialViewRepository credentialViewRepository,
-            DevUserProvider devUserProvider
+            CurrentUserProvider currentUserProvider
     ) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.credentialViewRepository = credentialViewRepository;
-        this.devUserProvider = devUserProvider;
+        this.currentUserProvider = currentUserProvider;
     }
 
     @Transactional(readOnly = true)
     public List<OrderSummaryResponse> listCurrentUserOrders() {
-        UserEntity user = devUserProvider.getCurrentUser();
+        UserEntity user = currentUserProvider.getCurrentUser();
         return orderRepository.findAllByUserIdOrderByCreatedAtDesc(user.getId()).stream()
                 .map(this::toSummary)
                 .toList();
@@ -53,7 +54,7 @@ public class OrderQueryService {
 
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrderDetail(UUID orderId) {
-        UserEntity user = devUserProvider.getCurrentUser();
+        UserEntity user = currentUserProvider.getCurrentUser();
         OrderEntity order = findOwnedOrder(orderId, user);
         List<OrderItemEntity> items = orderItemRepository.findAllByOrderIdAndOrderUserIdOrderByCreatedAtAsc(orderId, user.getId());
         return toDetail(order, items);
@@ -61,14 +62,20 @@ public class OrderQueryService {
 
     @Transactional(readOnly = true)
     public OrderStatusResponse getOrderStatus(UUID orderId) {
-        UserEntity user = devUserProvider.getCurrentUser();
+        UserEntity user = currentUserProvider.getCurrentUser();
         OrderEntity order = findOwnedOrder(orderId, user);
-        return new OrderStatusResponse(order.getId(), order.getStatus().name(), order.getPaidAt(), order.getDeliveredAt());
+        return new OrderStatusResponse(
+                order.getId(),
+                order.getStatus().name(),
+                order.getFailureReason(),
+                order.getPaidAt(),
+                order.getDeliveredAt()
+        );
     }
 
     @Transactional
     public OrderCredentialsResponse getOrderCredentials(UUID orderId) {
-        UserEntity user = devUserProvider.getCurrentUser();
+        UserEntity user = currentUserProvider.getCurrentUser();
         OrderEntity order = findOwnedOrder(orderId, user);
         if (order.getStatus() != OrderStatus.DELIVERED) {
             throw new ConflictException("CREDENTIALS_NOT_READY", "Credentials are not ready yet");
@@ -123,6 +130,7 @@ public class OrderQueryService {
         return new OrderDetailResponse(
                 order.getId(),
                 order.getStatus().name(),
+                order.getFailureReason(),
                 order.getPaymentMethod().name(),
                 order.getTotalCents(),
                 order.getCurrency(),

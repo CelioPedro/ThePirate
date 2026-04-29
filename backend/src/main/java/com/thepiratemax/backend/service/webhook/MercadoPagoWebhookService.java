@@ -2,13 +2,15 @@ package com.thepiratemax.backend.service.webhook;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thepiratemax.backend.domain.order.OrderEntity;
-import com.thepiratemax.backend.domain.order.OrderStatus;
 import com.thepiratemax.backend.domain.payment.PaymentEntity;
 import com.thepiratemax.backend.domain.webhook.WebhookEventEntity;
 import com.thepiratemax.backend.repository.PaymentRepository;
 import com.thepiratemax.backend.repository.WebhookEventRepository;
 import com.thepiratemax.backend.service.exception.InvalidRequestException;
+import com.thepiratemax.backend.service.order.OrderStateService;
 import java.time.OffsetDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,16 +18,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class MercadoPagoWebhookService {
 
     private static final String PROVIDER = "MERCADO_PAGO";
+    private static final Logger logger = LoggerFactory.getLogger(MercadoPagoWebhookService.class);
 
     private final PaymentRepository paymentRepository;
     private final WebhookEventRepository webhookEventRepository;
+    private final OrderStateService orderStateService;
 
     public MercadoPagoWebhookService(
             PaymentRepository paymentRepository,
-            WebhookEventRepository webhookEventRepository
+            WebhookEventRepository webhookEventRepository,
+            OrderStateService orderStateService
     ) {
         this.paymentRepository = paymentRepository;
         this.webhookEventRepository = webhookEventRepository;
+        this.orderStateService = orderStateService;
     }
 
     @Transactional
@@ -50,6 +56,7 @@ public class MercadoPagoWebhookService {
         webhookEvent.setPayload(rawPayload);
 
         if (webhookEvent.isProcessed()) {
+            logger.info("event=webhook_duplicate provider={} providerEventId={} externalReference={}", PROVIDER, providerEventId, externalReference);
             webhookEventRepository.save(webhookEvent);
             return;
         }
@@ -69,10 +76,9 @@ public class MercadoPagoWebhookService {
             payment.setPaidAt(now);
 
             OrderEntity order = payment.getOrder();
-            order.setPaidAt(now);
-            if (order.getStatus() == OrderStatus.PENDING) {
-                order.setStatus(OrderStatus.PAID);
-            }
+            orderStateService.markPaidFromWebhook(order, now);
+            logger.info("event=payment_approved provider={} providerEventId={} orderId={} externalReference={} orderStatus={} failureReason={}",
+                    PROVIDER, providerEventId, order.getId(), order.getExternalReference(), order.getStatus().name(), order.getFailureReason());
         }
 
         webhookEvent.setProcessed(true);

@@ -4,6 +4,7 @@ import com.thepiratemax.backend.service.exception.AccessDeniedException;
 import com.thepiratemax.backend.service.exception.ConflictException;
 import com.thepiratemax.backend.service.exception.InvalidRequestException;
 import com.thepiratemax.backend.service.exception.NotFoundException;
+import com.thepiratemax.backend.service.exception.UnauthorizedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -35,6 +36,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiError> handleConflict(ConflictException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiError.of(exception.code(), exception.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiError.of(exception.code(), exception.getMessage()));
     }
 

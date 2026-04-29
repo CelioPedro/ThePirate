@@ -37,7 +37,15 @@ management:
     health:
       probes:
         enabled: true
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level requestId=%X{requestId:-na} logger=%logger{36} - %msg%n"
 app:
+  auth:
+    enabled: ${AUTH_ENABLED:true}
+    jwt:
+      secret: ${AUTH_JWT_SECRET:the-pirate-max-local-jwt-secret-2026-very-strong-key}
+      expiration-hours: ${AUTH_JWT_EXPIRATION_HOURS:24}
   dev:
     default-user-email: ${DEV_DEFAULT_USER_EMAIL:dev@thepiratemax.local}
   integrations:

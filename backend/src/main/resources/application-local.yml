@@ -15,4 +15,6 @@ spring:
       port: 6379
       repositories:
         enabled: false
-
+app:
+  auth:
+    enabled: false

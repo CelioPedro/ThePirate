@@ -11,6 +11,8 @@ public interface PaymentRepository extends JpaRepository<PaymentEntity, UUID> {
 
     Optional<PaymentEntity> findByOrder_ExternalReference(String externalReference);
 
+    Optional<PaymentEntity> findByOrder_Id(UUID orderId);
+
     List<PaymentEntity> findAllByPaidAtIsNullAndPixExpiresAtBeforeAndOrder_Status(
             OffsetDateTime now,
             com.thepiratemax.backend.domain.order.OrderStatus orderStatus

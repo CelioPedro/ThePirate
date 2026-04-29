@@ -16,3 +16,6 @@ spring:
       password: ${REDIS_PASSWORD:}
       repositories:
         enabled: false
+app:
+  auth:
+    enabled: false

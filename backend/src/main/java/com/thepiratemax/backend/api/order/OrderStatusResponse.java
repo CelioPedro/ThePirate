@@ -6,6 +6,7 @@ import java.util.UUID;
 public record OrderStatusResponse(
         UUID orderId,
         String status,
+        String failureReason,
         OffsetDateTime paidAt,
         OffsetDateTime deliveredAt
 ) {

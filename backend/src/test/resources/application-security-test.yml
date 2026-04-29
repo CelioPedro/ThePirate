@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:thepiratemax;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    url: jdbc:h2:mem:thepiratemax-security;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -17,9 +17,9 @@ spring:
         enabled: false
 app:
   auth:
-    enabled: false
+    enabled: true
     jwt:
-      secret: test-test-test-test-test-test-test-test
+      secret: security-test-secret-key-2026-security
       expiration-hours: 24
   integrations:
     mercado-pago:

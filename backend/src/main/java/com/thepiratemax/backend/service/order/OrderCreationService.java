@@ -19,6 +19,7 @@ import com.thepiratemax.backend.repository.ProductRepository;
 import com.thepiratemax.backend.service.exception.ConflictException;
 import com.thepiratemax.backend.service.exception.InvalidRequestException;
 import com.thepiratemax.backend.service.exception.NotFoundException;
+import com.thepiratemax.backend.service.auth.CurrentUserProvider;
 import com.thepiratemax.backend.service.payment.PixPaymentDetails;
 import com.thepiratemax.backend.service.payment.PixPaymentGateway;
 import java.time.OffsetDateTime;
@@ -26,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,12 +36,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrderCreationService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderCreationService.class);
+
     private final ProductRepository productRepository;
     private final CredentialRepository credentialRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final PaymentRepository paymentRepository;
-    private final DevUserProvider devUserProvider;
+    private final CurrentUserProvider currentUserProvider;
     private final PixPaymentGateway pixPaymentGateway;
 
     public OrderCreationService(
@@ -47,7 +52,7 @@ public class OrderCreationService {
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
             PaymentRepository paymentRepository,
-            DevUserProvider devUserProvider,
+            CurrentUserProvider currentUserProvider,
             PixPaymentGateway pixPaymentGateway
     ) {
         this.productRepository = productRepository;
@@ -55,7 +60,7 @@ public class OrderCreationService {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.paymentRepository = paymentRepository;
-        this.devUserProvider = devUserProvider;
+        this.currentUserProvider = currentUserProvider;
         this.pixPaymentGateway = pixPaymentGateway;
     }
 
@@ -75,7 +80,7 @@ public class OrderCreationService {
         }
 
         OrderEntity order = new OrderEntity();
-        order.setUser(devUserProvider.getCurrentUser());
+        order.setUser(currentUserProvider.getCurrentUser());
         order.setStatus(OrderStatus.PENDING);
         order.setPaymentMethod(request.paymentMethod());
         order.setCurrency("BRL");
@@ -116,6 +121,9 @@ public class OrderCreationService {
         payment.setPixExpiresAt(pixPaymentDetails.expiresAt());
         payment.setProviderStatus(pixPaymentDetails.providerStatus());
         paymentRepository.save(payment);
+        logger.info("event=order_created orderId={} externalReference={} userId={} totalCents={} itemCount={} paymentMethod={}",
+                order.getId(), order.getExternalReference(), order.getUser().getId(), order.getTotalCents(),
+                request.items().size(), order.getPaymentMethod().name());
 
         return new CreateOrderResponse(
                 new CreateOrderResponse.OrderResponse(
@@ -158,6 +166,7 @@ public class OrderCreationService {
         CredentialEntity credential = availableCredentials.getFirst();
         credential.setStatus(CredentialStatus.RESERVED);
         credential.setReservedAt(OffsetDateTime.now());
+        logger.info("event=credential_reserved productId={} credentialId={} reservedAt={}", product.getId(), credential.getId(), credential.getReservedAt());
         return credentialRepository.save(credential);
     }
 }

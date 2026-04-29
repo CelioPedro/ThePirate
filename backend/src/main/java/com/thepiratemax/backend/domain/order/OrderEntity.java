@@ -40,6 +40,9 @@ public class OrderEntity extends BaseEntity {
     @Column(name = "external_reference", nullable = false, unique = true)
     private String externalReference;
 
+    @Column(name = "failure_reason")
+    private String failureReason;
+
     @Column(name = "paid_at")
     private OffsetDateTime paidAt;
 
@@ -109,6 +112,14 @@ public class OrderEntity extends BaseEntity {
         return paidAt;
     }
 
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
+    }
+
     public void setPaidAt(OffsetDateTime paidAt) {
         this.paidAt = paidAt;
     }
@@ -129,4 +140,3 @@ public class OrderEntity extends BaseEntity {
         this.canceledAt = canceledAt;
     }
 }
-

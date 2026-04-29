@@ -8,10 +8,13 @@ import com.thepiratemax.backend.domain.order.OrderStatus;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
 import com.thepiratemax.backend.repository.OrderRepository;
+import com.thepiratemax.backend.service.order.OrderStateService;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,18 +22,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrderDeliveryService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderDeliveryService.class);
+
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CredentialRepository credentialRepository;
+    private final OrderStateService orderStateService;
 
     public OrderDeliveryService(
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
-            CredentialRepository credentialRepository
+            CredentialRepository credentialRepository,
+            OrderStateService orderStateService
     ) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.credentialRepository = credentialRepository;
+        this.orderStateService = orderStateService;
     }
 
     @Scheduled(fixedDelayString = "${app.orders.delivery.scan-interval-ms:15000}")
@@ -61,14 +69,14 @@ public class OrderDeliveryService {
             return false;
         }
 
-        if (order.getStatus() == OrderStatus.PAID) {
-            order.setStatus(OrderStatus.DELIVERY_PENDING);
-        }
+        orderStateService.moveToDeliveryPending(order);
 
         boolean missingCredential = items.stream().anyMatch(item -> item.getCredential() == null);
         if (missingCredential) {
-            order.setStatus(OrderStatus.DELIVERY_FAILED);
+            orderStateService.markDeliveryFailed(order, "MISSING_CREDENTIAL");
             orderRepository.save(order);
+            logger.warn("event=delivery_failed orderId={} externalReference={} reason={}",
+                    order.getId(), order.getExternalReference(), order.getFailureReason());
             return false;
         }
 
@@ -76,8 +84,10 @@ public class OrderDeliveryService {
         for (OrderItemEntity item : items) {
             CredentialEntity credential = item.getCredential();
             if (credential.getStatus() == CredentialStatus.INVALID) {
-                order.setStatus(OrderStatus.DELIVERY_FAILED);
+                orderStateService.markDeliveryFailed(order, "INVALID_CREDENTIAL");
                 orderRepository.save(order);
+                logger.warn("event=delivery_failed orderId={} externalReference={} credentialId={} reason={}",
+                        order.getId(), order.getExternalReference(), credential.getId(), order.getFailureReason());
                 return false;
             }
 
@@ -88,9 +98,10 @@ public class OrderDeliveryService {
             }
         }
 
-        order.setStatus(OrderStatus.DELIVERED);
-        order.setDeliveredAt(deliveredAt);
+        orderStateService.markDelivered(order, deliveredAt);
         orderRepository.save(order);
+        logger.info("event=order_delivered orderId={} externalReference={} deliveredAt={} itemCount={}",
+                order.getId(), order.getExternalReference(), order.getDeliveredAt(), items.size());
         return true;
     }
 }

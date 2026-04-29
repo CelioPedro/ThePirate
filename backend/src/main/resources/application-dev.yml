@@ -11,4 +11,6 @@ logging:
   level:
     org.hibernate.SQL: info
     org.springframework.web: info
-
+app:
+  auth:
+    enabled: false

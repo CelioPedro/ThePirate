@@ -12,6 +12,8 @@ import com.thepiratemax.backend.repository.OrderRepository;
 import com.thepiratemax.backend.repository.PaymentRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,21 +21,26 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrderExpirationService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderExpirationService.class);
+
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CredentialRepository credentialRepository;
+    private final OrderStateService orderStateService;
 
     public OrderExpirationService(
             PaymentRepository paymentRepository,
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
-            CredentialRepository credentialRepository
+            CredentialRepository credentialRepository,
+            OrderStateService orderStateService
     ) {
         this.paymentRepository = paymentRepository;
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.credentialRepository = credentialRepository;
+        this.orderStateService = orderStateService;
     }
 
     @Scheduled(fixedDelayString = "${app.orders.expiration.scan-interval-ms:60000}")
@@ -67,10 +74,11 @@ public class OrderExpirationService {
             }
         }
 
-        order.setStatus(OrderStatus.CANCELED);
-        order.setCanceledAt(now);
+        orderStateService.markExpired(order, now);
         payment.setProviderStatus("expired");
         orderRepository.save(order);
         paymentRepository.save(payment);
+        logger.info("event=order_expired orderId={} externalReference={} canceledAt={} paymentId={}",
+                order.getId(), order.getExternalReference(), order.getCanceledAt(), payment.getId());
     }
 }

@@ -147,6 +147,7 @@ class OrderExpirationServiceTest {
 
         assertEquals(1, expired);
         assertEquals(OrderStatus.CANCELED, refreshedOrder.getStatus());
+        assertEquals("PIX_EXPIRED", refreshedOrder.getFailureReason());
         assertEquals(CredentialStatus.AVAILABLE, refreshedCredential.getStatus());
         assertNull(refreshedCredential.getReservedAt());
         assertEquals("expired", refreshedPayment.getProviderStatus());

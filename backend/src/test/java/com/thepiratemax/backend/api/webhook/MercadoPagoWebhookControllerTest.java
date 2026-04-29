@@ -177,6 +177,40 @@ class MercadoPagoWebhookControllerTest {
     }
 
     @Test
+    void keepsCanceledOrderCanceledWhenApprovalArrivesAfterExpiration() throws Exception {
+        order.setStatus(OrderStatus.CANCELED);
+        order.setCanceledAt(java.time.OffsetDateTime.now().minusMinutes(1));
+        order.setFailureReason("PIX_EXPIRED");
+        orderRepository.save(order);
+
+        String payload = """
+                {
+                  "action": "payment.updated",
+                  "data": {
+                    "id": "mp-payment-002",
+                    "status": "approved",
+                    "external_reference": "TPM-WEBHOOK-REF-001"
+                  }
+                }
+                """;
+
+        mockMvc.perform(post("/api/webhooks/mercadopago")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.received").value(true));
+
+        OrderEntity refreshedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        PaymentEntity payment = paymentRepository.findByOrder_ExternalReference(order.getExternalReference()).orElseThrow();
+
+        org.junit.jupiter.api.Assertions.assertEquals(OrderStatus.CANCELED, refreshedOrder.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("APPROVED_AFTER_EXPIRATION", refreshedOrder.getFailureReason());
+        org.junit.jupiter.api.Assertions.assertNotNull(refreshedOrder.getPaidAt());
+        org.junit.jupiter.api.Assertions.assertEquals("approved", payment.getProviderStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(payment.getPaidAt());
+    }
+
+    @Test
     void rejectsWebhookWithoutRequiredFields() throws Exception {
         String payload = """
                 {
