@@ -272,7 +272,12 @@ const state = {
   sellerOrders: [],
   currentPix: null,
   selectedCredentials: null,
-  livePollingHandle: null
+  livePollingHandle: null,
+  auth: {
+    token: localStorage.getItem("tpm-auth-token"),
+    user: safeParse(localStorage.getItem("tpm-auth-user")),
+    mode: "guest"
+  }
 };
 
 const elements = {
@@ -296,12 +301,14 @@ const elements = {
   modeHelp: document.getElementById("modeHelp"),
   statusDot: document.getElementById("statusDot"),
   connectButton: document.getElementById("connectButton"),
+  authToggleButton: document.getElementById("authToggleButton"),
   heroBackendButton: document.getElementById("heroBackendButton"),
   heroExploreButton: document.getElementById("heroExploreButton"),
   apiBaseInput: document.getElementById("apiBaseInput"),
   productCount: document.getElementById("productCount"),
   customerOrderCount: document.getElementById("customerOrderCount"),
-  searchInput: document.getElementById("searchInput")
+  searchInput: document.getElementById("searchInput"),
+  authPanel: document.getElementById("authPanel")
 };
 
 init();
@@ -319,6 +326,7 @@ function bindEvents() {
 
   elements.checkoutButton.addEventListener("click", checkout);
   elements.connectButton.addEventListener("click", connectBackend);
+  elements.authToggleButton.addEventListener("click", toggleAuthPanelFocus);
   elements.heroBackendButton.addEventListener("click", connectBackend);
   elements.heroExploreButton.addEventListener("click", () => {
     document.getElementById("operations").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -331,6 +339,7 @@ function bindEvents() {
 
 async function boot() {
   await loadProducts();
+  await hydrateAuthState();
   render();
 }
 
@@ -344,10 +353,13 @@ async function connectBackend() {
   try {
     state.mode = "live";
     await hydrateLiveState();
+    await hydrateAuthState();
     setModeBadge();
     render();
   } catch (error) {
     state.mode = "demo";
+    state.auth.mode = "guest";
+    state.auth.user = null;
     state.inventory = buildInventoryFromProducts(state.products);
     setModeBadge("Backend indisponivel. Continuando em demo.");
     render();
@@ -360,6 +372,7 @@ async function loadProducts() {
     await hydrateLiveState();
   } catch (error) {
     state.mode = "demo";
+    state.auth.mode = "guest";
     state.products = loadDemoProducts();
     state.inventory = buildInventoryFromProducts(state.products);
     stopLivePolling();
@@ -429,27 +442,58 @@ async function hydrateLiveState() {
   startLivePolling();
 }
 
+async function hydrateAuthState() {
+  if (state.mode !== "live") {
+    state.auth.mode = "guest";
+    state.auth.user = null;
+    return;
+  }
+
+  try {
+    const user = await fetchJson(`${state.apiBase}/api/auth/me`, { skipAuth: !state.auth.token });
+    state.auth.user = user;
+    state.auth.mode = state.auth.token ? "authenticated" : "dev-fallback";
+    persistAuthState();
+  } catch (error) {
+    state.auth.mode = "guest";
+    state.auth.user = null;
+    if (error.status === 401 || error.status === 403) {
+      clearAuthToken();
+    }
+  }
+}
+
 async function refreshLiveOrders() {
   if (state.mode !== "live") return;
 
-  const summaries = await fetchJson(`${state.apiBase}/api/orders`);
-  const details = await Promise.all(summaries.map((order) => fetchJson(`${state.apiBase}/api/orders/${order.id}`)));
+  try {
+    const summaries = await fetchJson(`${state.apiBase}/api/orders`);
+    const details = await Promise.all(summaries.map((order) => fetchJson(`${state.apiBase}/api/orders/${order.id}`)));
 
-  state.customerOrders = details.map(normalizeLiveOrder);
-  state.sellerOrders = [...state.customerOrders];
+    state.customerOrders = details.map(normalizeLiveOrder);
+    state.sellerOrders = [...state.customerOrders];
 
-  const activeOrder = [...state.customerOrders].reverse().find((order) =>
-    ["PENDING", "PAID", "DELIVERY_PENDING"].includes(order.status)
-  );
+    const activeOrder = [...state.customerOrders].reverse().find((order) =>
+      ["PENDING", "PAID", "DELIVERY_PENDING"].includes(order.status)
+    );
 
-  if (activeOrder) {
-    state.currentPix = {
-      ...(state.currentPix || {}),
-      orderId: activeOrder.id,
-      externalReference: state.currentPix?.externalReference || activeOrder.externalReference || null
-    };
-  } else if (state.currentPix && state.customerOrders.every((order) => order.id !== state.currentPix.orderId)) {
-    state.currentPix = null;
+    if (activeOrder) {
+      state.currentPix = {
+        ...(state.currentPix || {}),
+        orderId: activeOrder.id,
+        externalReference: state.currentPix?.externalReference || activeOrder.externalReference || null
+      };
+    } else if (state.currentPix && state.customerOrders.every((order) => order.id !== state.currentPix.orderId)) {
+      state.currentPix = null;
+    }
+  } catch (error) {
+    if (error.status === 401 || error.status === 403) {
+      state.customerOrders = [];
+      state.sellerOrders = [];
+      state.currentPix = null;
+      return;
+    }
+    throw error;
   }
 }
 
@@ -498,6 +542,7 @@ function stopLivePolling() {
 }
 
 function render() {
+  renderAuthPanel();
   renderCategories();
   renderProducts();
   renderCart();
@@ -509,6 +554,123 @@ function render() {
   renderSellerMetrics();
   elements.productCount.textContent = String(state.products.length);
   elements.customerOrderCount.textContent = String(state.customerOrders.length);
+}
+
+function renderAuthPanel() {
+  if (state.mode !== "live") {
+    elements.authToggleButton.textContent = "Entrar";
+    elements.authPanel.className = "stack empty-state";
+    elements.authPanel.textContent = "Conecte o backend para usar autenticacao e pedidos por conta.";
+    return;
+  }
+
+  if (state.auth.user && state.auth.mode === "authenticated") {
+    elements.authToggleButton.textContent = state.auth.user.name?.split(" ")[0] || "Conta";
+    elements.authPanel.className = "auth-stack";
+    elements.authPanel.innerHTML = `
+      <article class="auth-summary stack">
+        <span class="section-kicker">${state.auth.mode === "authenticated" ? "sessao ativa" : "sessao dev local"}</span>
+        <strong>${state.auth.user.name || state.auth.user.email}</strong>
+        <div class="auth-meta">${state.auth.user.email} | ${humanizeRole(state.auth.user.role)}</div>
+        <div class="auth-actions-row">
+          <button class="ghost" data-auth-action="refresh">Atualizar conta</button>
+          ${state.auth.token ? '<button class="ghost" data-auth-action="logout">Sair</button>' : ""}
+        </div>
+      </article>
+    `;
+
+    elements.authPanel.querySelector('[data-auth-action="refresh"]').addEventListener("click", async () => {
+      await hydrateAuthState();
+      await refreshLiveOrders();
+      render();
+    });
+
+    const logoutButton = elements.authPanel.querySelector('[data-auth-action="logout"]');
+    if (logoutButton) {
+      logoutButton.addEventListener("click", async () => {
+        clearAuthToken();
+        await hydrateAuthState();
+        await refreshLiveOrders();
+        render();
+      });
+    }
+    return;
+  }
+
+  if (state.auth.user && state.auth.mode === "dev-fallback") {
+    elements.authToggleButton.textContent = "Entrar";
+    elements.authPanel.className = "auth-stack";
+    elements.authPanel.innerHTML = `
+      <article class="auth-summary stack">
+        <span class="section-kicker">sessao dev local</span>
+        <strong>${state.auth.user.name || state.auth.user.email}</strong>
+        <div class="auth-meta">${state.auth.user.email} | ${humanizeRole(state.auth.user.role)}</div>
+        <div class="auth-meta">Voce pode testar com essa sessao local ou entrar/criar uma conta real abaixo.</div>
+      </article>
+      <div class="auth-actions-row">
+        <button class="ghost" data-auth-focus="login">Entrar com outra conta</button>
+        <button class="ghost" data-auth-focus="register">Criar conta</button>
+      </div>
+      <form class="auth-form stack" data-auth-form="login">
+        <div class="auth-inline">
+          <input class="auth-input" type="email" name="email" placeholder="Email" autocomplete="email" required />
+          <input class="auth-input" type="password" name="password" placeholder="Senha" autocomplete="current-password" required />
+        </div>
+        <button type="submit">Entrar</button>
+      </form>
+      <form class="auth-form stack" data-auth-form="register">
+        <input class="auth-input" type="text" name="name" placeholder="Nome" autocomplete="name" required />
+        <div class="auth-inline">
+          <input class="auth-input" type="email" name="email" placeholder="Email" autocomplete="email" required />
+          <input class="auth-input" type="password" name="password" placeholder="Senha (min. 6 caracteres)" autocomplete="new-password" minlength="6" required />
+        </div>
+        <button type="submit">Criar conta</button>
+      </form>
+    `;
+
+    elements.authPanel.querySelectorAll("[data-auth-focus]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const form = elements.authPanel.querySelector(`[data-auth-form="${button.dataset.authFocus}"] input`);
+        form?.focus();
+      });
+    });
+    elements.authPanel.querySelector('[data-auth-form="login"]').addEventListener("submit", submitLogin);
+    elements.authPanel.querySelector('[data-auth-form="register"]').addEventListener("submit", submitRegister);
+    return;
+  }
+
+  elements.authToggleButton.textContent = "Entrar";
+  elements.authPanel.className = "auth-stack";
+  elements.authPanel.innerHTML = `
+    <div class="auth-actions-row">
+      <button class="ghost" data-auth-focus="login">Entrar</button>
+      <button class="ghost" data-auth-focus="register">Criar conta</button>
+    </div>
+    <form class="auth-form stack" data-auth-form="login">
+      <div class="auth-inline">
+        <input class="auth-input" type="email" name="email" placeholder="Email" autocomplete="email" required />
+        <input class="auth-input" type="password" name="password" placeholder="Senha" autocomplete="current-password" required />
+      </div>
+      <button type="submit">Entrar</button>
+    </form>
+    <form class="auth-form stack" data-auth-form="register">
+      <input class="auth-input" type="text" name="name" placeholder="Nome" autocomplete="name" required />
+      <div class="auth-inline">
+        <input class="auth-input" type="email" name="email" placeholder="Email" autocomplete="email" required />
+        <input class="auth-input" type="password" name="password" placeholder="Senha (min. 6 caracteres)" autocomplete="new-password" minlength="6" required />
+      </div>
+      <button type="submit">Criar conta</button>
+    </form>
+  `;
+
+  elements.authPanel.querySelectorAll("[data-auth-focus]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const form = elements.authPanel.querySelector(`[data-auth-form="${button.dataset.authFocus}"] input`);
+      form?.focus();
+    });
+  });
+  elements.authPanel.querySelector('[data-auth-form="login"]').addEventListener("submit", submitLogin);
+  elements.authPanel.querySelector('[data-auth-form="register"]').addEventListener("submit", submitRegister);
 }
 
 function renderCategories() {
@@ -833,6 +995,12 @@ async function checkout() {
 }
 
 async function checkoutLive() {
+  if (!state.auth.user) {
+    alert("Entre com uma conta para criar pedidos no fluxo autenticado.");
+    toggleAuthPanelFocus();
+    return;
+  }
+
   const payload = {
     items: state.cart.map((item) => ({
       productId: item.id,
@@ -870,6 +1038,13 @@ async function checkoutLive() {
     await syncInventory();
     render();
   } catch (error) {
+    if (error.status === 401 || error.status === 403) {
+      alert("Sua sessao expirou. Entre novamente para continuar.");
+      clearAuthToken();
+      await hydrateAuthState();
+      render();
+      return;
+    }
     alert("Nao foi possivel falar com o backend. Voltando ao modo demo.");
     state.mode = "demo";
     setModeBadge();
@@ -943,6 +1118,11 @@ async function loadOrderCredentials(orderId) {
     state.selectedCredentials = await fetchJson(`${state.apiBase}/api/orders/${orderId}/credentials`);
     render();
   } catch (error) {
+    if (error.status === 401 || error.status === 403) {
+      alert("Entre com sua conta para visualizar as credenciais.");
+      toggleAuthPanelFocus();
+      return;
+    }
     alert("As credenciais ainda nao estao disponiveis.");
   }
 }
@@ -969,6 +1149,100 @@ async function simulatePaymentApproval(externalReference) {
   } catch (error) {
     alert("Nao foi possivel simular o pagamento no backend local.");
   }
+}
+
+async function submitLogin(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const formData = new FormData(form);
+  const payload = {
+    email: String(formData.get("email") || "").trim(),
+    password: String(formData.get("password") || "")
+  };
+
+  try {
+    const response = await fetchJson(`${state.apiBase}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      skipAuth: true
+    });
+    applyAuthResponse(response);
+    form.reset();
+    await refreshLiveOrders();
+    render();
+  } catch (error) {
+    alert("Nao foi possivel entrar agora. Confira email e senha.");
+  }
+}
+
+async function submitRegister(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const formData = new FormData(form);
+  const payload = {
+    name: String(formData.get("name") || "").trim(),
+    email: String(formData.get("email") || "").trim(),
+    password: String(formData.get("password") || "")
+  };
+
+  try {
+    const response = await fetchJson(`${state.apiBase}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      skipAuth: true
+    });
+    applyAuthResponse(response);
+    form.reset();
+    await refreshLiveOrders();
+    render();
+  } catch (error) {
+    alert("Nao foi possivel criar a conta agora. Tente outro email.");
+  }
+}
+
+function applyAuthResponse(response) {
+  state.auth.token = response.token;
+  state.auth.user = response.user;
+  state.auth.mode = "authenticated";
+  persistAuthState();
+}
+
+function persistAuthState() {
+  if (state.auth.token) {
+    localStorage.setItem("tpm-auth-token", state.auth.token);
+  } else {
+    localStorage.removeItem("tpm-auth-token");
+  }
+
+  if (state.auth.user) {
+    localStorage.setItem("tpm-auth-user", JSON.stringify(state.auth.user));
+  } else {
+    localStorage.removeItem("tpm-auth-user");
+  }
+}
+
+function clearAuthToken() {
+  state.auth.token = null;
+  state.auth.user = null;
+  state.auth.mode = "guest";
+  persistAuthState();
+}
+
+function toggleAuthPanelFocus() {
+  if (state.mode !== "live") {
+    connectBackend();
+    return;
+  }
+
+  const field = elements.authPanel.querySelector("input");
+  if (field) {
+    field.focus();
+    return;
+  }
+
+  document.getElementById("operations").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function getCartTotal() {
@@ -1043,6 +1317,14 @@ function humanizeCategory(category) {
   return map[category] || category;
 }
 
+function humanizeRole(role) {
+  const map = {
+    CUSTOMER: "Cliente",
+    ADMIN: "Admin"
+  };
+  return map[role] || role || "Conta";
+}
+
 function formatDuration(durationDays) {
   return durationDays > 0 ? `${durationDays} dias` : "sem vigencia fixa";
 }
@@ -1061,11 +1343,29 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
-async function fetchJson(url, options) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+async function fetchJson(url, options = {}) {
+  const headers = new Headers(options.headers || {});
+  headers.set("X-Request-Id", crypto.randomUUID());
+
+  if (state.auth.token && !options.skipAuth) {
+    headers.set("Authorization", `Bearer ${state.auth.token}`);
   }
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  });
+
+  if (!response.ok) {
+    const error = new Error(`HTTP ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
   return response.json();
 }
 

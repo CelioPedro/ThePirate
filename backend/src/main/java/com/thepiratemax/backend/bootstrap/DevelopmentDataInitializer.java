@@ -238,7 +238,6 @@ public class DevelopmentDataInitializer {
                     .map(seed -> upsertProduct(productRepository, seed))
                     .toList();
 
-            credentialRepository.deleteAllByProductIds(products.stream().map(ProductEntity::getId).toList());
             seeds.forEach(seed -> {
                 ProductEntity product = products.stream()
                         .filter(item -> item.getSku().equals(seed.sku()))
@@ -272,14 +271,24 @@ public class DevelopmentDataInitializer {
             ProductEntity product,
             CatalogProductSeed seed
     ) {
-        for (int index = 1; index <= seed.stockCount(); index++) {
+        long existingCredentials = credentialRepository.countByProduct_Id(product.getId());
+        if (existingCredentials >= seed.stockCount()) {
+            return;
+        }
+
+        long existingAvailableCredentials = credentialRepository.countByProduct_IdAndStatus(product.getId(), CredentialStatus.AVAILABLE);
+        long missingCredentials = seed.stockCount() - existingCredentials;
+        long startingIndex = existingCredentials + 1;
+
+        for (long offset = 0; offset < missingCredentials; offset++) {
+            long index = startingIndex + offset;
             CredentialEntity credential = new CredentialEntity();
             credential.setProduct(product);
             credential.setLoginEncrypted(encode("login+" + seed.slug() + index + "@thepiratemax.local"));
             credential.setPasswordEncrypted(encode(seed.slug() + "-pass-" + index));
             credential.setEncryptionKeyVersion("dev-v1");
             credential.setStatus(CredentialStatus.AVAILABLE);
-            credential.setSourceBatch(seed.slug() + "-batch-001");
+            credential.setSourceBatch(seed.slug() + "-batch-" + (existingAvailableCredentials > 0 ? "topup" : "001"));
             credentialRepository.save(credential);
         }
     }

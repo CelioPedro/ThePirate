@@ -1,0 +1,93 @@
+export type ProductCategory = "STREAMING" | "ASSINATURA" | "GAMES";
+
+export interface Product {
+  id: string;
+  sku: string;
+  slug: string;
+  name: string;
+  description: string;
+  category: ProductCategory;
+  provider: string;
+  priceCents: number;
+  currency: string;
+  regionCode: string;
+  durationDays: number;
+  fulfillmentNotes: string;
+  requiresStock: boolean;
+  availableStock?: number;
+}
+
+export interface InventoryItem {
+  sku: string;
+  slug: string;
+  name: string;
+  provider: string;
+  priceCents: number;
+  availableStock: number;
+}
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "CUSTOMER" | "ADMIN";
+}
+
+export interface AuthResponse {
+  token: string;
+  user: AuthUser;
+}
+
+export interface OrderItem {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPriceCents: number;
+  totalPriceCents: number;
+}
+
+export interface OrderSummary {
+  id: string;
+}
+
+export interface OrderDetail {
+  id: string;
+  status: string;
+  paymentMethod: string;
+  totalCents: number;
+  currency: string;
+  createdAt: string;
+  paidAt?: string | null;
+  deliveredAt?: string | null;
+  canceledAt?: string | null;
+  failureReason?: string | null;
+  externalReference?: string | null;
+  items: OrderItem[];
+}
+
+export interface DeliveredCredential {
+  orderItemId: string;
+  productName: string;
+  login: string;
+  password: string;
+}
+
+export interface DeliveredCredentialsResponse {
+  orderId: string;
+  credentials: DeliveredCredential[];
+}
+
+export interface CreateOrderResponse {
+  order: {
+    id: string;
+    status: string;
+    totalCents: number;
+    createdAt: string;
+    externalReference?: string | null;
+  };
+  payment: {
+    copyPaste: string;
+    expiresAt?: string | null;
+  };
+}

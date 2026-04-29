@@ -27,6 +27,7 @@
         <a href="#categories">Categorias</a>
         <a href="#operations">Painel</a>
         <button class="primary header-cta">Anunciar</button>
+        <button id="authToggleButton" class="ghost auth-toggle">Entrar</button>
         <button class="round-button" aria-label="Alertas">&#9675;</button>
         <button class="round-button" aria-label="Carrinho">&#9711;</button>
       </div>
@@ -117,6 +118,16 @@
             </aside>
 
             <div class="customer-columns">
+              <section class="panel auth-panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="section-kicker">conta</p>
+                    <h3>Acesso do cliente</h3>
+                  </div>
+                </div>
+                <div id="authPanel" class="stack empty-state">Conecte o backend para usar autenticacao e pedidos por conta.</div>
+              </section>
+
               <section class="panel">
                 <div class="panel-head">
                   <div>
