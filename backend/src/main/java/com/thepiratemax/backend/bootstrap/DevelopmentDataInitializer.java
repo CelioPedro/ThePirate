@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Configuration
-@Profile({"dev", "local"})
+@Profile({"dev", "local", "postgres-local"})
 public class DevelopmentDataInitializer {
 
     @Bean
