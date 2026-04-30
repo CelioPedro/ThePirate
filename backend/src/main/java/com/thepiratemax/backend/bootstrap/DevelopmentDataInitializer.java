@@ -14,8 +14,6 @@ import com.thepiratemax.backend.domain.user.UserStatus;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.ProductRepository;
 import com.thepiratemax.backend.repository.UserRepository;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
+import com.thepiratemax.backend.service.credential.CredentialCryptoService;
 
 @Configuration
 @Profile({"dev", "local", "postgres-local"})
@@ -35,10 +34,11 @@ public class DevelopmentDataInitializer {
             CredentialRepository credentialRepository,
             DevUserProperties devUserProperties,
             PasswordEncoder passwordEncoder,
+            CredentialCryptoService credentialCryptoService,
             TransactionTemplate transactionTemplate
     ) {
         return args -> transactionTemplate.executeWithoutResult(status ->
-                seedCatalogAndInventory(userRepository, productRepository, credentialRepository, devUserProperties, passwordEncoder));
+                seedCatalogAndInventory(userRepository, productRepository, credentialRepository, devUserProperties, passwordEncoder, credentialCryptoService));
     }
 
     void seedCatalogAndInventory(
@@ -46,7 +46,8 @@ public class DevelopmentDataInitializer {
             ProductRepository productRepository,
             CredentialRepository credentialRepository,
             DevUserProperties devUserProperties,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            CredentialCryptoService credentialCryptoService
     ) {
             upsertUser(userRepository, devUserProperties.defaultUserEmail(), "Dev Customer", UserRole.CUSTOMER, "dev123456", passwordEncoder);
             upsertUser(userRepository, "admin@thepiratemax.local", "Dev Admin", UserRole.ADMIN, "admin123456", passwordEncoder);
@@ -243,8 +244,10 @@ public class DevelopmentDataInitializer {
                         .filter(item -> item.getSku().equals(seed.sku()))
                         .findFirst()
                         .orElseThrow();
-                seedCredentialsForProduct(credentialRepository, product, seed);
+                seedCredentialsForProduct(credentialRepository, product, seed, credentialCryptoService);
             });
+
+            migrateLegacyCredentials(credentialRepository, credentialCryptoService);
     }
 
     private ProductEntity upsertProduct(ProductRepository productRepository, CatalogProductSeed seed) {
@@ -269,7 +272,8 @@ public class DevelopmentDataInitializer {
     private void seedCredentialsForProduct(
             CredentialRepository credentialRepository,
             ProductEntity product,
-            CatalogProductSeed seed
+            CatalogProductSeed seed,
+            CredentialCryptoService credentialCryptoService
     ) {
         long existingCredentials = credentialRepository.countByProduct_Id(product.getId());
         if (existingCredentials >= seed.stockCount()) {
@@ -284,17 +288,13 @@ public class DevelopmentDataInitializer {
             long index = startingIndex + offset;
             CredentialEntity credential = new CredentialEntity();
             credential.setProduct(product);
-            credential.setLoginEncrypted(encode("login+" + seed.slug() + index + "@thepiratemax.local"));
-            credential.setPasswordEncrypted(encode(seed.slug() + "-pass-" + index));
-            credential.setEncryptionKeyVersion("dev-v1");
+            credential.setLoginEncrypted(credentialCryptoService.encrypt("login+" + seed.slug() + index + "@thepiratemax.local"));
+            credential.setPasswordEncrypted(credentialCryptoService.encrypt(seed.slug() + "-pass-" + index));
+            credential.setEncryptionKeyVersion(credentialCryptoService.currentKeyVersion());
             credential.setStatus(CredentialStatus.AVAILABLE);
             credential.setSourceBatch(seed.slug() + "-batch-" + (existingAvailableCredentials > 0 ? "topup" : "001"));
             credentialRepository.save(credential);
         }
-    }
-
-    private String encode(String value) {
-        return Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8));
     }
 
     private void upsertUser(
@@ -312,5 +312,19 @@ public class DevelopmentDataInitializer {
         user.setStatus(UserStatus.ACTIVE);
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
         userRepository.save(user);
+    }
+
+    private void migrateLegacyCredentials(
+            CredentialRepository credentialRepository,
+            CredentialCryptoService credentialCryptoService
+    ) {
+        credentialRepository.findByEncryptionKeyVersion("dev-v1").forEach(credential -> {
+            String login = credentialCryptoService.decrypt(credential.getLoginEncrypted(), credential.getEncryptionKeyVersion());
+            String password = credentialCryptoService.decrypt(credential.getPasswordEncrypted(), credential.getEncryptionKeyVersion());
+            credential.setLoginEncrypted(credentialCryptoService.encrypt(login));
+            credential.setPasswordEncrypted(credentialCryptoService.encrypt(password));
+            credential.setEncryptionKeyVersion(credentialCryptoService.currentKeyVersion());
+            credentialRepository.save(credential);
+        });
     }
 }

@@ -21,10 +21,17 @@ app:
     jwt:
       secret: security-test-secret-key-2026-security
       expiration-hours: 24
+  credentials:
+    encryption:
+      secret: security-test-credential-secret-2026
+      key-version: test-aesgcm-v1
   integrations:
     mercado-pago:
+      gateway: fake
       access-token: test-token
       webhook-secret: test-secret
       base-url: https://api.mercadopago.com
+      notification-url: https://thepiratemax.test/api/webhooks/mercadopago
+      pix-expiration-minutes: 30
   redis:
     credentials-delivery-queue: credentials.delivery

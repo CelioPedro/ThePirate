@@ -18,6 +18,7 @@ export function AccountPage() {
             {isDevFallback ? <div className="inline-banner">Sessao local automatica do backend. Para validar login real, use a tela de acesso.</div> : null}
             <div className="button-row">
               <Link to="/pedidos" className="secondary-button compact">Ver pedidos</Link>
+              {user.role === "ADMIN" ? <Link to="/admin" className="primary-button compact">Painel admin</Link> : null}
               <button type="button" className="text-button" onClick={logout}>Sair</button>
             </div>
           </div>

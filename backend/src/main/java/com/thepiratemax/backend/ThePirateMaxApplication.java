@@ -1,6 +1,7 @@
 package com.thepiratemax.backend;
 
 import com.thepiratemax.backend.config.AuthProperties;
+import com.thepiratemax.backend.config.CredentialEncryptionProperties;
 import com.thepiratemax.backend.config.DevUserProperties;
 import com.thepiratemax.backend.config.JwtProperties;
 import com.thepiratemax.backend.config.MercadoPagoProperties;
@@ -18,7 +19,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         RedisQueueProperties.class,
         DevUserProperties.class,
         AuthProperties.class,
-        JwtProperties.class
+        JwtProperties.class,
+        CredentialEncryptionProperties.class
 })
 public class ThePirateMaxApplication {
 

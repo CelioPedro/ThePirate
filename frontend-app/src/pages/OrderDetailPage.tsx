@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
 import { useSession } from "../shared/session/SessionContext";
@@ -21,6 +22,7 @@ export function OrderDetailPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [error, setError] = useState("");
+  const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
   const [pixState, setPixState] = useState<PixState>({
     copyPaste: (location.state as { pixCopyPaste?: string } | null)?.pixCopyPaste,
     expiresAt: (location.state as { pixExpiresAt?: string } | null)?.pixExpiresAt,
@@ -183,11 +185,21 @@ export function OrderDetailPage() {
           <div className="credentials-grid">
             {credentials.credentials.map((credential) => (
               <article key={credential.orderItemId} className="credential-card-v2">
-                <strong>{credential.productName}</strong>
+                <div className="credential-card-head">
+                  <strong>{credential.productName}</strong>
+                  <button
+                    type="button"
+                    className="icon-only-button"
+                    aria-label={revealedCredentials.has(credential.orderItemId) ? "Ocultar credencial" : "Revelar credencial"}
+                    onClick={() => toggleCredentialReveal(credential.orderItemId, setRevealedCredentials)}
+                  >
+                    {revealedCredentials.has(credential.orderItemId) ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
                 <span>Login</span>
-                <code>{credential.login}</code>
+                <code>{revealedCredentials.has(credential.orderItemId) ? credential.login : maskCredential(credential.login)}</code>
                 <span>Senha</span>
-                <code>{credential.password}</code>
+                <code>{revealedCredentials.has(credential.orderItemId) ? credential.password : maskCredential(credential.password)}</code>
               </article>
             ))}
           </div>
@@ -215,4 +227,24 @@ function deliveryHint(status?: string) {
   if (status === "CANCELED") return "Pedido cancelado antes da entrega.";
   if (status === "DELIVERY_FAILED") return "A entrega falhou e precisa de reprocessamento operacional.";
   return "Quando o pedido chegar a ENTREGUE, as credenciais aparecerao aqui.";
+}
+
+function maskCredential(value: string) {
+  if (!value) return "********";
+  return "*".repeat(Math.min(Math.max(value.length, 8), 18));
+}
+
+function toggleCredentialReveal(
+  credentialId: string,
+  setRevealedCredentials: Dispatch<SetStateAction<Set<string>>>
+) {
+  setRevealedCredentials((current) => {
+    const next = new Set(current);
+    if (next.has(credentialId)) {
+      next.delete(credentialId);
+    } else {
+      next.add(credentialId);
+    }
+    return next;
+  });
 }

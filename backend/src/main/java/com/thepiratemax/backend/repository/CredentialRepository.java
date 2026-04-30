@@ -18,6 +18,8 @@ public interface CredentialRepository extends JpaRepository<CredentialEntity, UU
 
     long countByProduct_IdAndStatus(UUID productId, CredentialStatus status);
 
+    List<CredentialEntity> findByEncryptionKeyVersion(String encryptionKeyVersion);
+
     @Query("""
             select c.product.id, count(c)
             from CredentialEntity c

@@ -14,11 +14,10 @@ import com.thepiratemax.backend.repository.CredentialViewRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
 import com.thepiratemax.backend.repository.OrderRepository;
 import com.thepiratemax.backend.service.auth.CurrentUserProvider;
+import com.thepiratemax.backend.service.credential.CredentialCryptoService;
 import com.thepiratemax.backend.service.exception.ConflictException;
 import com.thepiratemax.backend.service.exception.NotFoundException;
-import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -31,17 +30,20 @@ public class OrderQueryService {
     private final OrderItemRepository orderItemRepository;
     private final CredentialViewRepository credentialViewRepository;
     private final CurrentUserProvider currentUserProvider;
+    private final CredentialCryptoService credentialCryptoService;
 
     public OrderQueryService(
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
             CredentialViewRepository credentialViewRepository,
-            CurrentUserProvider currentUserProvider
+            CurrentUserProvider currentUserProvider,
+            CredentialCryptoService credentialCryptoService
     ) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.credentialViewRepository = credentialViewRepository;
         this.currentUserProvider = currentUserProvider;
+        this.credentialCryptoService = credentialCryptoService;
     }
 
     @Transactional(readOnly = true)
@@ -90,8 +92,8 @@ public class OrderQueryService {
                             item.getId(),
                             item.getProduct().getId(),
                             item.getProduct().getName(),
-                            decode(credential.getLoginEncrypted()),
-                            decode(credential.getPasswordEncrypted())
+                            credentialCryptoService.decrypt(credential.getLoginEncrypted(), credential.getEncryptionKeyVersion()),
+                            credentialCryptoService.decrypt(credential.getPasswordEncrypted(), credential.getEncryptionKeyVersion())
                     );
                 })
                 .toList();
@@ -150,7 +152,4 @@ public class OrderQueryService {
         );
     }
 
-    private String decode(String value) {
-        return new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
-    }
 }

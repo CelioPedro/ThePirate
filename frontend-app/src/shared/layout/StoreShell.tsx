@@ -37,6 +37,7 @@ export function StoreShell() {
             <NavLink to="/catalogo" className={navClass}>Catalogo</NavLink>
             <NavLink to="/pedidos" className={navClass}>Pedidos</NavLink>
             <NavLink to="/conta" className={navClass}>Conta</NavLink>
+            {user?.role === "ADMIN" ? <NavLink to="/admin" className={navClass}>Admin</NavLink> : null}
           </nav>
 
           <div className="topbar-actions">

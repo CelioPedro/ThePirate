@@ -163,7 +163,9 @@ public class AdminOrderOperationsService {
                                     credential != null ? credential.getStatus().name() : null,
                                     credential != null ? credential.getSourceBatch() : null,
                                     credential != null ? credential.getReservedAt() : null,
-                                    credential != null ? credential.getDeliveredAt() : null
+                                    credential != null ? credential.getDeliveredAt() : null,
+                                    credential != null ? credential.getInvalidatedAt() : null,
+                                    credential != null ? credential.getInvalidationReason() : null
                             );
                         })
                         .toList()

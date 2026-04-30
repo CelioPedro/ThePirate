@@ -1,10 +1,12 @@
 import type {
   AuthResponse,
   AuthUser,
+  AdminOrderDiagnostics,
   CreateOrderResponse,
   DeliveredCredentialsResponse,
   InventoryItem,
   OrderDetail,
+  OrderStatusResponse,
   OrderSummary,
   Product
 } from "../types";
@@ -129,6 +131,23 @@ export const apiClient = {
           external_reference: externalReference
         }
       })
+    });
+  },
+  getAdminOrderDiagnostics(orderId: string, apiBase?: string, token?: string | null) {
+    return request<AdminOrderDiagnostics>(`/api/admin/orders/${orderId}/diagnostics`, { apiBase, token });
+  },
+  reprocessAdminOrderDelivery(orderId: string, apiBase?: string, token?: string | null) {
+    return request<OrderStatusResponse>(`/api/admin/orders/${orderId}/reprocess-delivery`, {
+      apiBase,
+      token,
+      method: "POST"
+    });
+  },
+  releaseAdminOrderReservation(orderId: string, apiBase?: string, token?: string | null) {
+    return request<OrderStatusResponse>(`/api/admin/orders/${orderId}/release-reservation`, {
+      apiBase,
+      token,
+      method: "POST"
     });
   }
 };

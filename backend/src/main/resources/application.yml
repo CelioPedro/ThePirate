@@ -48,11 +48,18 @@ app:
       expiration-hours: ${AUTH_JWT_EXPIRATION_HOURS:24}
   dev:
     default-user-email: ${DEV_DEFAULT_USER_EMAIL:dev@thepiratemax.local}
+  credentials:
+    encryption:
+      secret: ${CREDENTIAL_ENCRYPTION_SECRET:the-pirate-max-local-credential-secret-2026}
+      key-version: ${CREDENTIAL_ENCRYPTION_KEY_VERSION:local-aesgcm-v1}
   integrations:
     mercado-pago:
+      gateway: ${MERCADO_PAGO_GATEWAY:fake}
       access-token: ${MERCADO_PAGO_ACCESS_TOKEN:}
       webhook-secret: ${MERCADO_PAGO_WEBHOOK_SECRET:}
       base-url: ${MERCADO_PAGO_BASE_URL:https://api.mercadopago.com}
+      notification-url: ${MERCADO_PAGO_NOTIFICATION_URL:}
+      pix-expiration-minutes: ${MERCADO_PAGO_PIX_EXPIRATION_MINUTES:30}
   redis:
     credentials-delivery-queue: ${CREDENTIALS_DELIVERY_QUEUE:credentials.delivery}
   orders:

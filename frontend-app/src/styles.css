@@ -142,6 +142,14 @@ button, input {
   align-items: center;
 }
 
+.admin-section-head,
+.admin-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .topbar-nav,
 .topbar-actions,
 .api-connection-form,
@@ -236,6 +244,7 @@ button, input {
 }
 
 .icon-button,
+.icon-only-button,
 .secondary-button,
 .primary-button,
 .text-button,
@@ -253,6 +262,24 @@ button, input {
   gap: 8px;
   height: 44px;
   padding: 0 14px;
+}
+
+.icon-only-button {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.icon-only-button:hover {
+  color: var(--brand);
+  border-color: rgba(20, 99, 255, 0.36);
+  background: rgba(20, 99, 255, 0.06);
 }
 
 .icon-button.primary,
@@ -440,6 +467,13 @@ button, input {
   background: var(--surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(20, 99, 255, 0.24);
+  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.11);
 }
 
 .product-visual {
@@ -774,6 +808,25 @@ button, input {
   color: #38567d;
 }
 
+.credential-card-v2 {
+  display: grid;
+  gap: 8px;
+}
+
+.credential-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.credential-card-v2 span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .auth-page {
   min-height: calc(100vh - 180px);
   display: grid;
@@ -875,6 +928,93 @@ button, input {
   display: block;
   margin-top: 14px;
   font-size: 32px;
+}
+
+.admin-section-head {
+  margin-bottom: 16px;
+}
+
+.admin-section-head h2 {
+  margin: 0;
+}
+
+.admin-select {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.admin-order-row {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.admin-order-row:hover,
+.admin-order-row.selected {
+  border-color: rgba(20, 99, 255, 0.45);
+  background: rgba(20, 99, 255, 0.05);
+}
+
+.admin-order-row small {
+  color: var(--muted);
+}
+
+.admin-diagnostics {
+  display: grid;
+  gap: 16px;
+}
+
+.diagnostic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.diagnostic-grid div,
+.diagnostic-item {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+
+.diagnostic-grid span,
+.diagnostic-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.diagnostic-grid strong {
+  display: block;
+  margin-top: 6px;
+  word-break: break-word;
+}
+
+.admin-action-row {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.diagnostic-items {
+  display: grid;
+  gap: 10px;
+}
+
+.diagnostic-item {
+  display: grid;
+  gap: 6px;
 }
 
 .inventory-row {

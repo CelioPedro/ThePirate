@@ -42,6 +42,12 @@ public class CredentialEntity extends BaseEntity {
     @Column(name = "delivered_at")
     private OffsetDateTime deliveredAt;
 
+    @Column(name = "invalidated_at")
+    private OffsetDateTime invalidatedAt;
+
+    @Column(name = "invalidation_reason", length = 512)
+    private String invalidationReason;
+
     public ProductEntity getProduct() {
         return product;
     }
@@ -105,5 +111,20 @@ public class CredentialEntity extends BaseEntity {
     public void setDeliveredAt(OffsetDateTime deliveredAt) {
         this.deliveredAt = deliveredAt;
     }
-}
 
+    public OffsetDateTime getInvalidatedAt() {
+        return invalidatedAt;
+    }
+
+    public void setInvalidatedAt(OffsetDateTime invalidatedAt) {
+        this.invalidatedAt = invalidatedAt;
+    }
+
+    public String getInvalidationReason() {
+        return invalidationReason;
+    }
+
+    public void setInvalidationReason(String invalidationReason) {
+        this.invalidationReason = invalidationReason;
+    }
+}

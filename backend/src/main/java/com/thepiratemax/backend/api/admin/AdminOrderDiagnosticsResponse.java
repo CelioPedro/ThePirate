@@ -39,7 +39,9 @@ public record AdminOrderDiagnosticsResponse(
             String credentialStatus,
             String sourceBatch,
             OffsetDateTime reservedAt,
-            OffsetDateTime deliveredAt
+            OffsetDateTime deliveredAt,
+            OffsetDateTime invalidatedAt,
+            String invalidationReason
     ) {
     }
 }

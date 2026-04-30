@@ -91,3 +91,44 @@ export interface CreateOrderResponse {
     expiresAt?: string | null;
   };
 }
+
+export interface OrderStatusResponse {
+  orderId: string;
+  status: string;
+  failureReason?: string | null;
+  paidAt?: string | null;
+  deliveredAt?: string | null;
+}
+
+export interface AdminOrderDiagnostics {
+  orderId: string;
+  externalReference: string;
+  orderStatus: string;
+  failureReason?: string | null;
+  paymentMethod: string;
+  totalCents: number;
+  currency: string;
+  createdAt: string;
+  paidAt?: string | null;
+  deliveredAt?: string | null;
+  canceledAt?: string | null;
+  payment?: {
+    provider: string;
+    providerStatus?: string | null;
+    providerPaymentId?: string | null;
+    amountCents: number;
+    paidAt?: string | null;
+    pixExpiresAt?: string | null;
+  } | null;
+  items: {
+    orderItemId: string;
+    productId: string;
+    productSku: string;
+    productName: string;
+    credentialId?: string | null;
+    credentialStatus?: string | null;
+    sourceBatch?: string | null;
+    reservedAt?: string | null;
+    deliveredAt?: string | null;
+  }[];
+}

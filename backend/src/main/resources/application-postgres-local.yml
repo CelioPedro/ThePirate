@@ -18,4 +18,4 @@ spring:
         enabled: false
 app:
   auth:
-    enabled: false
+    enabled: true

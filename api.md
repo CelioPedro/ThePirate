@@ -1,3 +1,107 @@
+$env:JAVA_HOME="C:\Program Files\Java\jdk-24"
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+$env:DB_URL="jdbc:postgresql://localhost:5432/the_pirate_max"
+$env:DB_USERNAME="postgres"
+$env:DB_PASSWORD="****"
+mvn -f backend\pom.xml spring-boot:run "-Dspring-boot.run.profiles=postgres-local"
+
+
+
+-- 1. Tabelas existentes
+select table_name
+from information_schema.tables
+where table_schema = 'public'
+order by table_name;
+
+-- 2. Migrations aplicadas pelo Flyway
+select installed_rank, version, description, success, installed_on
+from flyway_schema_history
+order by installed_rank;
+
+-- 3. Usuarios
+select id, email, name, role, status, created_at
+from users
+order by created_at desc;
+
+-- 4. Produtos
+select sku, name, category, provider, price_cents, status, requires_stock
+from products
+order by category, sku;
+
+-- 5. Estoque por produto e status
+select
+    p.sku,
+    p.name,
+    c.status,
+    count(*) as total
+from credentials c
+join products p on p.id = c.product_id
+group by p.sku, p.name, c.status
+order by p.sku, c.status;
+
+-- 6. Pedidos
+select
+    id,
+    user_id,
+    status,
+    total_cents,
+    external_reference,
+    paid_at,
+    delivered_at,
+    canceled_at,
+    failure_reason,
+    created_at
+from orders
+order by created_at desc;
+
+-- 7. Itens dos pedidos com produto e credencial
+select
+    o.id as order_id,
+    o.status as order_status,
+    p.sku,
+    p.name as product_name,
+    oi.quantity,
+    oi.total_price_cents,
+    c.status as credential_status,
+    c.source_batch
+from order_items oi
+join orders o on o.id = oi.order_id
+join products p on p.id = oi.product_id
+left join credentials c on c.id = oi.credential_id
+order by o.created_at desc;
+
+-- 8. Pagamentos
+select
+    provider,
+    provider_status,
+    amount_cents,
+    paid_at,
+    pix_expires_at,
+    created_at
+from payments
+order by created_at desc;
+
+-- 9. Webhooks recebidos
+select
+    provider,
+    event_type,
+    provider_event_id,
+    processed,
+    processed_at,
+    created_at
+from webhook_events
+order by created_at desc;
+
+-- 10. Visualizacoes de credenciais
+select
+    user_id,
+    order_id,
+    order_item_id,
+    viewed_at
+from credential_views
+order by viewed_at desc;
+
+
 # The Pirate Max API
 
 ## 1. Objetivo

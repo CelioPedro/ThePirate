@@ -116,10 +116,12 @@ public class OrderCreationService {
         payment.setPaymentMethod(request.paymentMethod());
         payment.setAmountCents(order.getTotalCents());
         payment.setCurrency(order.getCurrency());
+        payment.setProviderPaymentId(pixPaymentDetails.providerPaymentId());
         payment.setPixQrCode(pixPaymentDetails.qrCode());
         payment.setPixCopyPaste(pixPaymentDetails.copyPaste());
         payment.setPixExpiresAt(pixPaymentDetails.expiresAt());
         payment.setProviderStatus(pixPaymentDetails.providerStatus());
+        payment.setProviderPayload(pixPaymentDetails.providerPayload());
         paymentRepository.save(payment);
         logger.info("event=order_created orderId={} externalReference={} userId={} totalCents={} itemCount={} paymentMethod={}",
                 order.getId(), order.getExternalReference(), order.getUser().getId(), order.getTotalCents(),
