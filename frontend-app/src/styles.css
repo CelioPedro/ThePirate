@@ -130,6 +130,7 @@ button, input {
 .hero-points,
 .catalog-toolbar,
 .panel-header-inline,
+.order-action-row,
 .drawer-row-actions,
 .drawer-total,
 .order-card-head,
@@ -149,6 +150,7 @@ button, input {
 .hero-points,
 .catalog-toolbar,
 .panel-header-inline,
+.order-action-row,
 .drawer-row-actions,
 .order-card-head,
 .order-card-meta,
@@ -568,6 +570,38 @@ button, input {
 .auth-form-card {
   display: grid;
   gap: 16px;
+}
+
+.order-action-row {
+  flex-wrap: wrap;
+  margin: 14px 0 18px;
+}
+
+.live-refresh-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1652b3;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.live-refresh-indicator::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--brand);
+  box-shadow: 0 0 0 5px rgba(20, 99, 255, 0.12);
+}
+
+.inline-error {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #ffd4d0;
+  border-radius: 12px;
+  color: var(--danger);
+  background: #fff4f2;
 }
 
 .steps-list {

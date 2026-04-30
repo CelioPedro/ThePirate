@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { apiClient } from "../shared/api/client";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
@@ -17,14 +17,24 @@ export function OrderDetailPage() {
   const { apiBase, token, user } = useSession();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [credentials, setCredentials] = useState<DeliveredCredentialsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [error, setError] = useState("");
   const [pixState, setPixState] = useState<PixState>({
     copyPaste: (location.state as { pixCopyPaste?: string } | null)?.pixCopyPaste,
     expiresAt: (location.state as { pixExpiresAt?: string } | null)?.pixExpiresAt,
     externalReference: (location.state as { externalReference?: string } | null)?.externalReference
   });
 
-  useEffect(() => {
-    async function load() {
+  const loadOrderState = useCallback(async (silent = false) => {
+    if (!user) return;
+    if (!silent) {
+      setIsLoading(true);
+    }
+    setError("");
+
+    try {
       const detail = await apiClient.getOrder(orderId, apiBase, token);
       setOrder(detail);
       setPixState((current) => ({
@@ -34,12 +44,23 @@ export function OrderDetailPage() {
       if (detail.status === "DELIVERED") {
         const delivered = await apiClient.getOrderCredentials(orderId, apiBase, token);
         setCredentials(delivered);
+      } else {
+        setCredentials(null);
+      }
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Nao foi possivel atualizar o pedido.");
+    } finally {
+      if (!silent) {
+        setIsLoading(false);
       }
     }
-    if (user) {
-      void load();
-    }
   }, [apiBase, orderId, token, user]);
+
+  useEffect(() => {
+    if (user) {
+      void loadOrderState();
+    }
+  }, [loadOrderState, user]);
 
   const steps = useMemo(() => {
     const status = order?.status;
@@ -56,15 +77,39 @@ export function OrderDetailPage() {
     return isLocalApi && Boolean(pixState.externalReference || order?.externalReference);
   }, [apiBase, order?.externalReference, pixState.externalReference]);
 
+  const shouldPoll = Boolean(order && ["PENDING", "PAID", "DELIVERY_PENDING"].includes(order.status));
+
+  useEffect(() => {
+    if (!shouldPoll) return;
+
+    const intervalId = window.setInterval(() => {
+      void loadOrderState(true);
+    }, 3500);
+
+    return () => window.clearInterval(intervalId);
+  }, [loadOrderState, shouldPoll]);
+
+  async function refreshNow() {
+    setIsRefreshing(true);
+    try {
+      await loadOrderState(true);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+
   async function simulatePayment() {
     const externalReference = pixState.externalReference || order?.externalReference;
     if (!externalReference) return;
-    await apiClient.simulatePayment(externalReference, apiBase);
-    const detail = await apiClient.getOrder(orderId, apiBase, token);
-    setOrder(detail);
-    if (detail.status === "DELIVERED") {
-      const delivered = await apiClient.getOrderCredentials(orderId, apiBase, token);
-      setCredentials(delivered);
+    setIsSimulating(true);
+    setError("");
+    try {
+      await apiClient.simulatePayment(externalReference, apiBase);
+      await loadOrderState(true);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Nao foi possivel simular o pagamento.");
+    } finally {
+      setIsSimulating(false);
     }
   }
 
@@ -87,6 +132,13 @@ export function OrderDetailPage() {
           <h1>{order?.id || orderId}</h1>
           {order ? <span className={`status-pill ${statusTone(order.status)}`}>{labelStatus(order.status)}</span> : null}
         </div>
+        <div className="order-action-row">
+          <button type="button" className="secondary-button compact" onClick={() => void refreshNow()} disabled={isRefreshing || isLoading}>
+            {isRefreshing ? "Atualizando..." : "Atualizar status"}
+          </button>
+          {shouldPoll ? <span className="live-refresh-indicator">Atualizacao automatica ativa</span> : null}
+        </div>
+        {error ? <div className="inline-error">{error}</div> : null}
         <div className="detail-meta-list">
           <span>Total {order ? formatCurrency(order.totalCents) : "-"}</span>
           <span>Criado em {formatDate(order?.createdAt)}</span>
@@ -110,10 +162,11 @@ export function OrderDetailPage() {
             <code>{pixState.copyPaste}</code>
             <span>Expira em {formatDate(pixState.expiresAt)}</span>
             {canSimulateLocalPayment ? (
-              <button type="button" className="secondary-button compact" onClick={() => void simulatePayment()}>
-                Simular pagamento local
+              <button type="button" className="secondary-button compact" onClick={() => void simulatePayment()} disabled={isSimulating || order?.status === "DELIVERED"}>
+                {isSimulating ? "Simulando..." : "Simular pagamento local"}
               </button>
             ) : null}
+            <p className="helper-text">{paymentHint(order?.status)}</p>
           </div>
         ) : (
           <div className="empty-state-panel">
@@ -140,11 +193,26 @@ export function OrderDetailPage() {
           </div>
         ) : (
           <div className="empty-state-panel">
-            <strong>Entrega ainda nao disponivel</strong>
-            <p>Quando o pedido chegar a `ENTREGUE`, as credenciais aparecerao aqui.</p>
+            <strong>{order?.status === "DELIVERED" ? "Buscando credenciais" : "Entrega ainda nao disponivel"}</strong>
+            <p>{deliveryHint(order?.status)}</p>
           </div>
         )}
       </section>
     </div>
   );
+}
+
+function paymentHint(status?: string) {
+  if (status === "DELIVERED") return "Pagamento confirmado e entrega concluida.";
+  if (status === "PAID" || status === "DELIVERY_PENDING") return "Pagamento confirmado. A entrega sera atualizada automaticamente.";
+  if (status === "CANCELED") return "Pedido cancelado. Este PIX nao deve mais ser pago.";
+  return "Aguardando pagamento PIX. Em ambiente local, use a simulacao para validar o fluxo.";
+}
+
+function deliveryHint(status?: string) {
+  if (status === "DELIVERED") return "O pedido foi entregue. Se as credenciais nao aparecerem em instantes, use Atualizar status.";
+  if (status === "PAID" || status === "DELIVERY_PENDING") return "Pagamento aprovado. Estamos acompanhando o processamento da entrega.";
+  if (status === "CANCELED") return "Pedido cancelado antes da entrega.";
+  if (status === "DELIVERY_FAILED") return "A entrega falhou e precisa de reprocessamento operacional.";
+  return "Quando o pedido chegar a ENTREGUE, as credenciais aparecerao aqui.";
 }
