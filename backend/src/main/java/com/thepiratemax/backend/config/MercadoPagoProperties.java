@@ -9,7 +9,9 @@ public record MercadoPagoProperties(
         String webhookSecret,
         String baseUrl,
         String notificationUrl,
-        int pixExpirationMinutes
+        int pixExpirationMinutes,
+        String payerEmail,
+        String payerFirstName
 ) {
 
     public boolean usesRealGateway() {

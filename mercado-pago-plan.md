@@ -29,7 +29,6 @@ Obrigatorias para uso real:
 ```powershell
 $env:MERCADO_PAGO_GATEWAY="real"
 $env:MERCADO_PAGO_ACCESS_TOKEN="APP_USR-..."
-$env:MERCADO_PAGO_NOTIFICATION_URL="https://seu-dominio.com/api/webhooks/mercadopago"
 ```
 
 Opcionais:
@@ -37,6 +36,7 @@ Opcionais:
 ```powershell
 $env:MERCADO_PAGO_BASE_URL="https://api.mercadopago.com"
 $env:MERCADO_PAGO_WEBHOOK_SECRET="..."
+$env:MERCADO_PAGO_NOTIFICATION_URL="https://seu-dominio.com/api/webhooks/mercadopago"
 $env:MERCADO_PAGO_PIX_EXPIRATION_MINUTES="30"
 ```
 
@@ -115,6 +115,8 @@ POST /api/webhooks/mercadopago
 
 Em producao, o Mercado Pago precisa chamar uma URL publica HTTPS. Localhost nao funciona diretamente. Para desenvolvimento, usar uma ponte publica como ngrok ou cloudflared.
 
+No Checkout Transparente via Orders, a URL de webhook deve ser cadastrada no painel da aplicacao Mercado Pago em Webhooks. A Orders API rejeita `notification_url` dentro do payload de criacao da order.
+
 O webhook deve:
 
 1. Registrar o evento bruto.
@@ -154,4 +156,3 @@ O gateway real cria uma ordem Pix usando o `external_reference` do pedido. A res
 6. Testar webhook real.
 7. Confirmar prazos, tarifas e regras da conta Mercado Pago.
 8. Trocar credenciais de teste por producao somente depois do fluxo completo validado.
-

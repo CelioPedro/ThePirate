@@ -9,8 +9,6 @@ import com.thepiratemax.backend.service.exception.InvalidRequestException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +54,7 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
         try {
             JsonNode response = restClient.post()
                     .uri("/v1/orders")
+                    .header("X-Idempotency-Key", order.getExternalReference())
                     .body(request)
                     .retrieve()
                     .body(JsonNode.class);
@@ -68,7 +67,11 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
             JsonNode payment = firstPayment(response);
             String paymentId = firstText(payment, "id", "payment_id");
             String providerStatus = firstText(payment, "status", "status_detail");
-            JsonNode transactionData = payment.path("payment_method").path("data");
+            JsonNode transactionData = payment.path("payment_method");
+            JsonNode paymentMethodData = transactionData.path("data");
+            if (!paymentMethodData.isMissingNode() && !paymentMethodData.isNull() && paymentMethodData.isObject()) {
+                transactionData = paymentMethodData;
+            }
             if (transactionData.isMissingNode() || transactionData.isNull()) {
                 transactionData = payment.path("transaction_data");
             }
@@ -112,7 +115,6 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
         Map<String, Object> payment = new LinkedHashMap<>();
         payment.put("amount", money(order.getTotalCents()));
         payment.put("payment_method", paymentMethod);
-        payment.put("expiration_time", expiresAt.withOffsetSameInstant(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
         Map<String, Object> transactions = new LinkedHashMap<>();
         transactions.put("payments", List.of(payment));
@@ -121,13 +123,34 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
         request.put("type", "online");
         request.put("external_reference", order.getExternalReference());
         request.put("total_amount", money(order.getTotalCents()));
+        request.put("payer", buildPayer(order));
         request.put("transactions", transactions);
 
-        if (properties.notificationUrl() != null && !properties.notificationUrl().isBlank()) {
-            request.put("notification_url", properties.notificationUrl());
-        }
-
         return request;
+    }
+
+    private Map<String, Object> buildPayer(OrderEntity order) {
+        String configuredEmail = properties.payerEmail();
+        String email = configuredEmail != null && !configuredEmail.isBlank()
+                ? configuredEmail
+                : order.getUser().getEmail();
+
+        String configuredFirstName = properties.payerFirstName();
+        String firstName = configuredFirstName != null && !configuredFirstName.isBlank()
+                ? configuredFirstName
+                : firstNameFrom(order.getUser().getName());
+
+        Map<String, Object> payer = new LinkedHashMap<>();
+        payer.put("email", email);
+        payer.put("first_name", firstName);
+        return payer;
+    }
+
+    private String firstNameFrom(String name) {
+        if (name == null || name.isBlank()) {
+            return "Cliente";
+        }
+        return name.trim().split("\\s+")[0];
     }
 
     private String money(long cents) {

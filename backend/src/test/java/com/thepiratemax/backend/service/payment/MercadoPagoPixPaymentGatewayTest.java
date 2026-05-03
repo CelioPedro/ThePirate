@@ -29,8 +29,9 @@ class MercadoPagoPixPaymentGatewayTest {
     @Test
     void createsPixPaymentUsingMercadoPagoOrdersApi() throws Exception {
         AtomicReference<String> authorization = new AtomicReference<>();
+        AtomicReference<String> idempotencyKey = new AtomicReference<>();
         AtomicReference<JsonNode> requestBody = new AtomicReference<>();
-        server = startServer(authorization, requestBody);
+        server = startServer(authorization, idempotencyKey, requestBody);
 
         MercadoPagoProperties properties = new MercadoPagoProperties(
                 "real",
@@ -38,7 +39,9 @@ class MercadoPagoPixPaymentGatewayTest {
                 "test-secret",
                 "http://127.0.0.1:" + server.getAddress().getPort(),
                 "https://thepiratemax.test/api/webhooks/mercadopago",
-                30
+                30,
+                "test@testuser.com",
+                "APRO"
         );
         MercadoPagoPixPaymentGateway gateway = new MercadoPagoPixPaymentGateway(properties, objectMapper);
 
@@ -50,11 +53,15 @@ class MercadoPagoPixPaymentGatewayTest {
         PixPaymentDetails details = gateway.createPixPayment(order);
 
         assertThat(authorization.get()).isEqualTo("Bearer test-access-token");
+        assertThat(idempotencyKey.get()).isEqualTo("TPM-REAL-PIX-001");
         assertThat(requestBody.get().path("type").asText()).isEqualTo("online");
         assertThat(requestBody.get().path("external_reference").asText()).isEqualTo("TPM-REAL-PIX-001");
         assertThat(requestBody.get().path("total_amount").asText()).isEqualTo("9.99");
-        assertThat(requestBody.get().path("notification_url").asText()).isEqualTo("https://thepiratemax.test/api/webhooks/mercadopago");
+        assertThat(requestBody.get().path("payer").path("email").asText()).isEqualTo("test@testuser.com");
+        assertThat(requestBody.get().path("payer").path("first_name").asText()).isEqualTo("APRO");
         assertThat(requestBody.get().path("transactions").path("payments").get(0).path("payment_method").path("id").asText()).isEqualTo("pix");
+        assertThat(requestBody.get().has("notification_url")).isFalse();
+        assertThat(requestBody.get().path("transactions").path("payments").get(0).has("expiration_time")).isFalse();
         assertThat(details.providerPaymentId()).isEqualTo("pay-123");
         assertThat(details.copyPaste()).isEqualTo("000201PIXREAL");
         assertThat(details.qrCode()).isEqualTo("base64-qr");
@@ -62,10 +69,15 @@ class MercadoPagoPixPaymentGatewayTest {
         assertThat(details.providerPayload()).contains("order-123");
     }
 
-    private HttpServer startServer(AtomicReference<String> authorization, AtomicReference<JsonNode> requestBody) throws IOException {
+    private HttpServer startServer(
+            AtomicReference<String> authorization,
+            AtomicReference<String> idempotencyKey,
+            AtomicReference<JsonNode> requestBody
+    ) throws IOException {
         HttpServer httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         httpServer.createContext("/v1/orders", exchange -> {
             authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            idempotencyKey.set(exchange.getRequestHeaders().getFirst("X-Idempotency-Key"));
             requestBody.set(objectMapper.readTree(exchange.getRequestBody()));
 
             String response = """

@@ -8,7 +8,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -23,8 +22,8 @@ public class OrderItemEntity extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "credential_id", unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "credential_id")
     private CredentialEntity credential;
 
     @Column(nullable = false)
@@ -84,4 +83,3 @@ public class OrderItemEntity extends BaseEntity {
         this.totalPriceCents = totalPriceCents;
     }
 }
-

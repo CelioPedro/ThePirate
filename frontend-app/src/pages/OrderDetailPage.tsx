@@ -76,8 +76,9 @@ export function OrderDetailPage() {
 
   const canSimulateLocalPayment = useMemo(() => {
     const isLocalApi = apiBase.includes("localhost") || apiBase.includes("127.0.0.1");
-    return isLocalApi && Boolean(pixState.externalReference || order?.externalReference);
-  }, [apiBase, order?.externalReference, pixState.externalReference]);
+    const isFakePix = Boolean(pixState.copyPaste?.includes("THEPIRATEMAX"));
+    return isLocalApi && isFakePix && Boolean(pixState.externalReference || order?.externalReference);
+  }, [apiBase, order?.externalReference, pixState.copyPaste, pixState.externalReference]);
 
   const shouldPoll = Boolean(order && ["PENDING", "PAID", "DELIVERY_PENDING"].includes(order.status));
 
@@ -168,7 +169,7 @@ export function OrderDetailPage() {
                 {isSimulating ? "Simulando..." : "Simular pagamento local"}
               </button>
             ) : null}
-            <p className="helper-text">{paymentHint(order?.status)}</p>
+            <p className="helper-text">{paymentHint(order?.status, canSimulateLocalPayment)}</p>
           </div>
         ) : (
           <div className="empty-state-panel">
@@ -214,11 +215,12 @@ export function OrderDetailPage() {
   );
 }
 
-function paymentHint(status?: string) {
+function paymentHint(status?: string, canSimulateLocalPayment = false) {
   if (status === "DELIVERED") return "Pagamento confirmado e entrega concluida.";
   if (status === "PAID" || status === "DELIVERY_PENDING") return "Pagamento confirmado. A entrega sera atualizada automaticamente.";
   if (status === "CANCELED") return "Pedido cancelado. Este PIX nao deve mais ser pago.";
-  return "Aguardando pagamento PIX. Em ambiente local, use a simulacao para validar o fluxo.";
+  if (canSimulateLocalPayment) return "Aguardando pagamento PIX. Em ambiente local, use a simulacao para validar o fluxo.";
+  return "Aguardando confirmacao do Mercado Pago. A tela sera atualizada automaticamente quando o webhook chegar.";
 }
 
 function deliveryHint(status?: string) {

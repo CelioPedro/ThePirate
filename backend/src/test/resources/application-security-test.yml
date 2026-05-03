@@ -33,5 +33,7 @@ app:
       base-url: https://api.mercadopago.com
       notification-url: https://thepiratemax.test/api/webhooks/mercadopago
       pix-expiration-minutes: 30
+      payer-email: test@testuser.com
+      payer-first-name: APRO
   redis:
     credentials-delivery-queue: credentials.delivery

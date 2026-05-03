@@ -10,11 +10,13 @@ export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, totalCents, clear } = useCart();
   const { apiBase, token, user, isDevFallback } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const grouped = useMemo(() => items, [items]);
 
   async function handleCheckout() {
     if (grouped.length === 0 || isSubmitting) return;
+    setCheckoutError(null);
     if (!user) {
       navigate("/login");
       return;
@@ -35,6 +37,9 @@ export function CartDrawer() {
           fromDevSession: isDevFallback
         }
       });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Nao foi possivel finalizar a compra agora.";
+      setCheckoutError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -80,6 +85,7 @@ export function CartDrawer() {
             <strong>{formatCurrency(totalCents)}</strong>
           </div>
           {!user ? <p className="helper-text">Voce fara login antes de concluir o pedido.</p> : null}
+          {checkoutError ? <p className="form-error">{checkoutError}</p> : null}
           <button type="button" className="primary-button" onClick={handleCheckout} disabled={grouped.length === 0 || isSubmitting}>
             {isSubmitting ? "Gerando pedido..." : "Finalizar compra"}
           </button>
