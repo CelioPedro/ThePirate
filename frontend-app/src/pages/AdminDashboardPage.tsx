@@ -25,6 +25,15 @@ const EMPTY_PRODUCT_FORM = {
   fulfillmentNotes: ""
 };
 
+type AdminTab = "products" | "stock" | "orders" | "diagnostics";
+
+const ADMIN_TABS: { id: AdminTab; label: string; description: string }[] = [
+  { id: "products", label: "Produtos", description: "Catalogo e precificacao" },
+  { id: "stock", label: "Estoque", description: "Credenciais e inventario" },
+  { id: "orders", label: "Pedidos", description: "Fila operacional" },
+  { id: "diagnostics", label: "Diagnostico", description: "Pagamento e entrega" }
+];
+
 export function AdminDashboardPage() {
   const { apiBase, token, user } = useSession();
   const [orders, setOrders] = useState<OrderDetail[]>([]);
@@ -37,6 +46,8 @@ export function AdminDashboardPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [credentialProductFilter, setCredentialProductFilter] = useState("");
   const [credentialStatusFilter, setCredentialStatusFilter] = useState("AVAILABLE");
+  const [credentialSearch, setCredentialSearch] = useState("");
+  const [revealedCredentialIds, setRevealedCredentialIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isActing, setIsActing] = useState(false);
   const [isLoadingCredentials, setIsLoadingCredentials] = useState(false);
@@ -48,6 +59,7 @@ export function AdminDashboardPage() {
   const [diagnosticsMessage, setDiagnosticsMessage] = useState("");
   const [stockMessage, setStockMessage] = useState("");
   const [productMessage, setProductMessage] = useState("");
+  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>("products");
 
   useEffect(() => {
     void loadDashboard();
@@ -161,8 +173,9 @@ export function AdminDashboardPage() {
   }
 
   async function createCredential() {
-    if (!credentialForm.productId || !credentialForm.login || !credentialForm.password) {
-      setStockMessage("Informe produto, login e senha para cadastrar a credencial.");
+    const errors = validateCredentialForm(credentialForm);
+    if (errors.length > 0) {
+      setStockMessage(`Corrija antes de cadastrar: ${errors.join(" ")}`);
       return;
     }
 
@@ -184,6 +197,27 @@ export function AdminDashboardPage() {
     }
   }
 
+  async function copyCredentialValue(value: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setStockMessage(`${label} copiado para a area de transferencia.`);
+    } catch {
+      setStockMessage(`Nao foi possivel copiar ${label.toLowerCase()}.`);
+    }
+  }
+
+  function toggleCredentialReveal(credentialId: string) {
+    setRevealedCredentialIds((current) => {
+      const next = new Set(current);
+      if (next.has(credentialId)) {
+        next.delete(credentialId);
+      } else {
+        next.add(credentialId);
+      }
+      return next;
+    });
+  }
+
   async function invalidateCredential(credential: AdminCredentialResponse) {
     const reason = window.prompt("Motivo da invalidacao", "Invalidada operacionalmente pelo admin");
     if (!reason?.trim()) return;
@@ -200,9 +234,15 @@ export function AdminDashboardPage() {
   }
 
   async function saveProduct() {
-    setIsSavingProduct(true);
     setProductMessage("");
     const priceCents = parsePriceToCents(productForm.priceReais);
+    const validationErrors = validateProductForm(productForm, isCreatingProductMode, adminProducts, priceCents);
+    if (validationErrors.length > 0 || priceCents === null) {
+      setProductMessage(`Corrija antes de salvar: ${validationErrors.join(" ")}`);
+      return;
+    }
+
+    setIsSavingProduct(true);
     try {
       const response = isCreatingProductMode
         ? await apiClient.createAdminProduct({
@@ -256,6 +296,17 @@ export function AdminDashboardPage() {
 
   const filteredOrders = statusFilter === "ALL" ? orders : orders.filter((order) => order.status === statusFilter);
   const selectedOrder = orders.find((order) => order.id === selectedOrderId);
+  const filteredCredentials = credentials.filter((credential) => {
+    const term = credentialSearch.trim().toLowerCase();
+    if (!term) return true;
+    return [
+      credential.productName,
+      credential.productSku,
+      credential.sourceBatch || "",
+      credential.login,
+      credential.credentialId
+    ].join(" ").toLowerCase().includes(term);
+  });
 
   if (user?.role !== "ADMIN") {
     return (
@@ -286,6 +337,21 @@ export function AdminDashboardPage() {
         ))}
       </section>
 
+      <nav className="admin-tabs" aria-label="Areas do painel administrativo">
+        {ADMIN_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={activeAdminTab === tab.id ? "admin-tab active" : "admin-tab"}
+            onClick={() => setActiveAdminTab(tab.id)}
+          >
+            <strong>{tab.label}</strong>
+            <span>{tab.description}</span>
+          </button>
+        ))}
+      </nav>
+
+      {activeAdminTab === "products" ? (
       <section className="panel-card panel-card-wide">
         <div className="admin-section-head">
           <div>
@@ -381,7 +447,10 @@ export function AdminDashboardPage() {
               <input
                 inputMode="decimal"
                 value={productForm.priceReais}
-                onBlur={() => setProductForm((current) => ({ ...current, priceReais: formatPriceInput(parsePriceToCents(current.priceReais)) }))}
+                onBlur={() => setProductForm((current) => {
+                  const parsedPrice = parsePriceToCents(current.priceReais);
+                  return parsedPrice === null ? current : { ...current, priceReais: formatPriceInput(parsedPrice) };
+                })}
                 onChange={(event) => setProductForm((current) => ({ ...current, priceReais: event.target.value }))}
                 placeholder="Ex: 25,99"
               />
@@ -437,8 +506,10 @@ export function AdminDashboardPage() {
           </div>
         </div>
       </section>
+      ) : null}
 
-      <section className="admin-columns">
+      {activeAdminTab === "orders" ? (
+      <section className="admin-columns admin-single-column">
         <div className="panel-card">
           <div className="admin-section-head">
             <div>
@@ -463,7 +534,10 @@ export function AdminDashboardPage() {
                 key={order.id}
                 type="button"
                 className={order.id === selectedOrderId ? "admin-order-row selected" : "admin-order-row"}
-                onClick={() => setSelectedOrderId(order.id)}
+                onClick={() => {
+                  setSelectedOrderId(order.id);
+                  setActiveAdminTab("diagnostics");
+                }}
               >
                 <div className="order-card-head">
                   <strong>{order.id}</strong>
@@ -475,10 +549,28 @@ export function AdminDashboardPage() {
             ))}
           </div>
         </div>
+      </section>
+      ) : null}
 
+      {activeAdminTab === "diagnostics" ? (
+      <section className="admin-columns admin-single-column">
         <div className="panel-card">
-          <span className="eyebrow">diagnostico</span>
-          <h2>{selectedOrder ? selectedOrder.id : "Selecione um pedido"}</h2>
+          <div className="admin-section-head">
+            <div>
+              <span className="eyebrow">diagnostico</span>
+              <h2>{selectedOrder ? selectedOrder.id : "Selecione um pedido"}</h2>
+            </div>
+            <select
+              value={selectedOrderId || ""}
+              onChange={(event) => setSelectedOrderId(event.target.value || null)}
+              className="admin-select"
+            >
+              <option value="">Selecionar pedido</option>
+              {orders.map((order) => (
+                <option key={order.id} value={order.id}>{order.id.slice(0, 8)} - {labelStatus(order.status)}</option>
+              ))}
+            </select>
+          </div>
           {diagnosticsMessage ? <div className="inline-banner">{diagnosticsMessage}</div> : null}
           {diagnostics ? (
             <div className="admin-diagnostics">
@@ -512,7 +604,10 @@ export function AdminDashboardPage() {
           )}
         </div>
       </section>
+      ) : null}
 
+      {activeAdminTab === "stock" ? (
+      <>
       <section className="panel-card panel-card-wide">
         <div className="admin-section-head">
           <div>
@@ -611,11 +706,19 @@ export function AdminDashboardPage() {
               <option value="INVALID">Invalida</option>
             </select>
           </label>
+          <label>
+            Busca
+            <input
+              value={credentialSearch}
+              onChange={(event) => setCredentialSearch(event.target.value)}
+              placeholder="Produto, SKU, lote ou login"
+            />
+          </label>
         </div>
         <div className="credential-admin-list">
           {isLoadingCredentials ? <div className="empty-state-panel">Carregando credenciais...</div> : null}
-          {!isLoadingCredentials && credentials.length === 0 ? <div className="empty-state-panel">Nenhuma credencial nesse filtro.</div> : null}
-          {credentials.map((credential) => (
+          {!isLoadingCredentials && filteredCredentials.length === 0 ? <div className="empty-state-panel">Nenhuma credencial nesse filtro.</div> : null}
+          {filteredCredentials.map((credential) => (
             <article key={credential.credentialId} className="credential-admin-row">
               <div>
                 <strong>{credential.productName}</strong>
@@ -623,8 +726,27 @@ export function AdminDashboardPage() {
                 <small>Criada em {formatDate(credential.createdAt)}</small>
               </div>
               <span className={`status-pill ${credentialStatusTone(credential.status)}`}>{credentialStatusLabel(credential.status)}</span>
+              <div className="credential-secret-fields">
+                <div>
+                  <span>Login</span>
+                  <code>{revealedCredentialIds.has(credential.credentialId) ? credential.login : maskCredential(credential.login)}</code>
+                </div>
+                <div>
+                  <span>Senha</span>
+                  <code>{revealedCredentialIds.has(credential.credentialId) ? credential.password : maskCredential(credential.password)}</code>
+                </div>
+              </div>
               <div className="credential-admin-actions">
                 <small>{credential.credentialId.slice(0, 8)}</small>
+                <button type="button" className="secondary-button compact" onClick={() => toggleCredentialReveal(credential.credentialId)}>
+                  {revealedCredentialIds.has(credential.credentialId) ? "Ocultar" : "Revelar"}
+                </button>
+                <button type="button" className="secondary-button compact" onClick={() => void copyCredentialValue(credential.login, "Login")}>
+                  Copiar login
+                </button>
+                <button type="button" className="secondary-button compact" onClick={() => void copyCredentialValue(credential.password, "Senha")}>
+                  Copiar senha
+                </button>
                 {credential.status !== "DELIVERED" && credential.status !== "INVALID" ? (
                   <button type="button" className="secondary-button compact" onClick={() => void invalidateCredential(credential)}>
                     Invalidar
@@ -635,6 +757,8 @@ export function AdminDashboardPage() {
           ))}
         </div>
       </section>
+      </>
+      ) : null}
     </div>
   );
 }
@@ -654,6 +778,19 @@ function credentialStatusTone(status: string) {
   if (status === "RESERVED") return "warning";
   if (status === "DELIVERED") return "info";
   return "danger";
+}
+
+function maskCredential(value: string) {
+  if (!value) return "********";
+  return "*".repeat(Math.min(Math.max(value.length, 8), 18));
+}
+
+function validateCredentialForm(form: typeof EMPTY_CREDENTIAL_FORM) {
+  const errors: string[] = [];
+  if (!form.productId) errors.push("Selecione um produto.");
+  if (!form.login.trim()) errors.push("Informe o login.");
+  if (!form.password.trim()) errors.push("Informe a senha.");
+  return errors;
 }
 
 function toProductForm(product?: AdminProduct) {
@@ -720,12 +857,12 @@ function createSku(category: string, slug: string) {
 
 function parsePriceToCents(value: string) {
   const trimmed = value.trim();
-  if (!trimmed) return 0;
+  if (!trimmed || !/\d/.test(trimmed)) return null;
   const normalized = trimmed.includes(",")
     ? trimmed.replace(/\./g, "").replace(",", ".")
     : trimmed;
   const parsed = Number(normalized.replace(/[^\d.]/g, ""));
-  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
   return Math.round(parsed * 100);
 }
 
@@ -734,4 +871,32 @@ function formatPriceInput(priceCents: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+}
+
+function validateProductForm(
+  form: typeof EMPTY_PRODUCT_FORM,
+  isCreating: boolean,
+  products: AdminProduct[],
+  priceCents: number | null
+) {
+  const errors: string[] = [];
+  if (isCreating && !form.sku.trim()) errors.push("Informe o SKU.");
+  if (isCreating && !form.slug.trim()) errors.push("Informe o slug.");
+  if (!form.name.trim()) errors.push("Informe o nome.");
+  if (!form.provider.trim()) errors.push("Informe a plataforma ou fornecedor.");
+  if (priceCents === null || priceCents <= 0) errors.push("Informe um preco maior que zero.");
+  if (!Number.isFinite(form.durationDays) || form.durationDays < 0) errors.push("Informe uma duracao valida.");
+
+  if (isCreating) {
+    const normalizedSku = form.sku.trim().toUpperCase();
+    const normalizedSlug = form.slug.trim().toLowerCase();
+    if (products.some((product) => product.sku.toUpperCase() === normalizedSku)) {
+      errors.push("Ja existe um produto com esse SKU.");
+    }
+    if (products.some((product) => product.slug.toLowerCase() === normalizedSlug)) {
+      errors.push("Ja existe um produto com esse slug.");
+    }
+  }
+
+  return errors;
 }

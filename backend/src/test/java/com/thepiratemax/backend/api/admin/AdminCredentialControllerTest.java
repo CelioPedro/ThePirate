@@ -111,6 +111,8 @@ class AdminCredentialControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].credentialId").value(available.getId().toString()))
                 .andExpect(jsonPath("$[0].status").value("AVAILABLE"))
+                .andExpect(jsonPath("$[0].login").value("credential-login"))
+                .andExpect(jsonPath("$[0].password").value("credential-pass"))
                 .andExpect(jsonPath("$[0].productSku").value(product.getSku()));
     }
 
@@ -150,9 +152,9 @@ class AdminCredentialControllerTest {
     private CredentialEntity createCredential(CredentialStatus status) {
         CredentialEntity credential = new CredentialEntity();
         credential.setProduct(product);
-        credential.setLoginEncrypted("credential-login");
-        credential.setPasswordEncrypted("credential-pass");
-        credential.setEncryptionKeyVersion("test-v1");
+        credential.setLoginEncrypted(credentialCryptoService.encrypt("credential-login"));
+        credential.setPasswordEncrypted(credentialCryptoService.encrypt("credential-pass"));
+        credential.setEncryptionKeyVersion(credentialCryptoService.currentKeyVersion());
         credential.setStatus(status);
         credential.setSourceBatch("credential-batch");
         return credentialRepository.save(credential);

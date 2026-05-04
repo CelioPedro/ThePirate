@@ -108,6 +108,8 @@ public class AdminCredentialOperationsService {
                 credential.getProduct().getSku(),
                 credential.getProduct().getName(),
                 credential.getStatus().name(),
+                credentialCryptoService.decrypt(credential.getLoginEncrypted(), credential.getEncryptionKeyVersion()),
+                credentialCryptoService.decrypt(credential.getPasswordEncrypted(), credential.getEncryptionKeyVersion()),
                 credential.getSourceBatch(),
                 credential.getCreatedAt(),
                 credential.getReservedAt(),

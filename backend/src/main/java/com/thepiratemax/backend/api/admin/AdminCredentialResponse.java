@@ -10,6 +10,8 @@ public record AdminCredentialResponse(
         String productSku,
         String productName,
         String status,
+        String login,
+        String password,
         String sourceBatch,
         Instant createdAt,
         OffsetDateTime reservedAt,

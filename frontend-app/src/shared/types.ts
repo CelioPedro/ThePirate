@@ -153,6 +153,8 @@ export interface AdminCredentialResponse {
   productSku: string;
   productName: string;
   status: string;
+  login: string;
+  password: string;
   sourceBatch?: string | null;
   createdAt?: string | null;
   reservedAt?: string | null;
