@@ -262,6 +262,34 @@ class MercadoPagoWebhookControllerTest {
     }
 
     @Test
+    void treatsProcessedOrderStatusAsApprovedPayment() throws Exception {
+        String payload = """
+                {
+                  "action": "order.updated",
+                  "data": {
+                    "id": "mp-order-processed-001",
+                    "status": "processed",
+                    "external_reference": "TPM-WEBHOOK-REF-001"
+                  }
+                }
+                """;
+
+        mockMvc.perform(post("/api/webhooks/mercadopago")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.received").value(true));
+
+        OrderEntity refreshedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        PaymentEntity payment = paymentRepository.findByOrder_ExternalReference(order.getExternalReference()).orElseThrow();
+
+        org.junit.jupiter.api.Assertions.assertEquals(OrderStatus.PAID, refreshedOrder.getStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(refreshedOrder.getPaidAt());
+        org.junit.jupiter.api.Assertions.assertEquals("processed", payment.getProviderStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(payment.getPaidAt());
+    }
+
+    @Test
     void rejectsWebhookWithoutRequiredFields() throws Exception {
         String payload = """
                 {

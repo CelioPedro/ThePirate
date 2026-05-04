@@ -114,7 +114,7 @@ public class MercadoPagoWebhookService {
     }
 
     private boolean isApproved(String providerStatus) {
-        return "approved".equalsIgnoreCase(providerStatus);
+        return "approved".equalsIgnoreCase(providerStatus) || "processed".equalsIgnoreCase(providerStatus);
     }
 
     private boolean shouldReprocessProcessedEvent(PaymentEntity payment, String providerStatus) {
