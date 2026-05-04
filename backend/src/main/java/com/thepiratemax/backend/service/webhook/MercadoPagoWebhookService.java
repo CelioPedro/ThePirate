@@ -71,12 +71,6 @@ public class MercadoPagoWebhookService {
         webhookEvent.setSignatureValid(true);
         webhookEvent.setPayload(rawPayload);
 
-        if (webhookEvent.isProcessed()) {
-            logger.info("event=webhook_duplicate provider={} providerEventId={} externalReference={}", PROVIDER, providerEventId, externalReference);
-            webhookEventRepository.save(webhookEvent);
-            return;
-        }
-
         String resolvedExternalReference = externalReference;
         PaymentEntity payment = paymentRepository.findByOrder_ExternalReference(resolvedExternalReference)
                 .orElseThrow(() -> new InvalidRequestException(
@@ -84,7 +78,21 @@ public class MercadoPagoWebhookService {
                         "Order payment not found for external reference: " + resolvedExternalReference
                 ));
 
-        payment.setProviderPaymentId(providerEventId);
+        if (webhookEvent.isProcessed() && !shouldReprocessProcessedEvent(payment, providerStatus)) {
+            logger.info("event=webhook_duplicate provider={} providerEventId={} externalReference={} providerStatus={}",
+                    PROVIDER, providerEventId, externalReference, providerStatus);
+            webhookEventRepository.save(webhookEvent);
+            return;
+        }
+
+        if (webhookEvent.isProcessed()) {
+            logger.info("event=webhook_status_reprocessed provider={} providerEventId={} externalReference={} providerStatus={}",
+                    PROVIDER, providerEventId, externalReference, providerStatus);
+        }
+
+        if (payment.getProviderPaymentId() == null || payment.getProviderPaymentId().isBlank()) {
+            payment.setProviderPaymentId(providerEventId);
+        }
         payment.setProviderStatus(providerStatus);
         payment.setProviderPayload(providerPayload.toString());
 
@@ -107,6 +115,10 @@ public class MercadoPagoWebhookService {
 
     private boolean isApproved(String providerStatus) {
         return "approved".equalsIgnoreCase(providerStatus);
+    }
+
+    private boolean shouldReprocessProcessedEvent(PaymentEntity payment, String providerStatus) {
+        return isApproved(providerStatus) && payment.getPaidAt() == null;
     }
 
     private JsonNode fetchProviderOrder(String providerEventId) {

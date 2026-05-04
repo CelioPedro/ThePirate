@@ -211,6 +211,57 @@ class MercadoPagoWebhookControllerTest {
     }
 
     @Test
+    void reprocessesSameOrderWebhookWhenStatusChangesToApproved() throws Exception {
+        String pendingPayload = """
+                {
+                  "action": "order.updated",
+                  "data": {
+                    "id": "mp-order-001",
+                    "status": "action_required",
+                    "external_reference": "TPM-WEBHOOK-REF-001"
+                  }
+                }
+                """;
+        String approvedPayload = """
+                {
+                  "action": "order.updated",
+                  "data": {
+                    "id": "mp-order-001",
+                    "status": "approved",
+                    "external_reference": "TPM-WEBHOOK-REF-001"
+                  }
+                }
+                """;
+
+        mockMvc.perform(post("/api/webhooks/mercadopago")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(pendingPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.received").value(true));
+
+        OrderEntity stillPendingOrder = orderRepository.findById(order.getId()).orElseThrow();
+        PaymentEntity pendingPayment = paymentRepository.findByOrder_ExternalReference(order.getExternalReference()).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertEquals(OrderStatus.PENDING, stillPendingOrder.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("action_required", pendingPayment.getProviderStatus());
+        org.junit.jupiter.api.Assertions.assertEquals(1, webhookEventRepository.count());
+
+        mockMvc.perform(post("/api/webhooks/mercadopago")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(approvedPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.received").value(true));
+
+        OrderEntity refreshedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        PaymentEntity approvedPayment = paymentRepository.findByOrder_ExternalReference(order.getExternalReference()).orElseThrow();
+
+        org.junit.jupiter.api.Assertions.assertEquals(OrderStatus.PAID, refreshedOrder.getStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(refreshedOrder.getPaidAt());
+        org.junit.jupiter.api.Assertions.assertEquals("approved", approvedPayment.getProviderStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(approvedPayment.getPaidAt());
+        org.junit.jupiter.api.Assertions.assertEquals(1, webhookEventRepository.count());
+    }
+
+    @Test
     void rejectsWebhookWithoutRequiredFields() throws Exception {
         String payload = """
                 {
