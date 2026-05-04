@@ -107,13 +107,21 @@ export interface OrderDetail {
 export interface DeliveredCredential {
   orderItemId: string;
   productName: string;
-  login: string;
-  password: string;
+  loginHint: string;
+  secretAvailable: boolean;
 }
 
 export interface DeliveredCredentialsResponse {
   orderId: string;
   credentials: DeliveredCredential[];
+}
+
+export interface DeliveredCredentialSecretResponse {
+  orderId: string;
+  orderItemId: string;
+  productName: string;
+  login: string;
+  password: string;
 }
 
 export interface CreateOrderResponse {

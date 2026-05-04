@@ -1,6 +1,7 @@
 package com.thepiratemax.backend.service.order;
 
 import com.thepiratemax.backend.api.order.OrderCredentialsResponse;
+import com.thepiratemax.backend.api.order.OrderCredentialSecretResponse;
 import com.thepiratemax.backend.api.order.OrderDetailResponse;
 import com.thepiratemax.backend.api.order.OrderStatusResponse;
 import com.thepiratemax.backend.api.order.OrderSummaryResponse;
@@ -92,19 +93,46 @@ public class OrderQueryService {
         List<OrderItemEntity> items = orderItemRepository.findAllByOrderIdAndOrderUserIdOrderByCreatedAtAsc(orderId, user.getId());
         List<OrderCredentialsResponse.CredentialResponse> credentials = items.stream()
                 .map(item -> {
-                    registerCredentialView(user, order, item);
                     CredentialEntity credential = item.getCredential();
                     return new OrderCredentialsResponse.CredentialResponse(
                             item.getId(),
                             item.getProduct().getId(),
                             item.getProduct().getName(),
-                            credentialCryptoService.decrypt(credential.getLoginEncrypted(), credential.getEncryptionKeyVersion()),
-                            credentialCryptoService.decrypt(credential.getPasswordEncrypted(), credential.getEncryptionKeyVersion())
+                            credential != null
+                                    ? loginHint(credentialCryptoService.decrypt(credential.getLoginEncrypted(), credential.getEncryptionKeyVersion()))
+                                    : "",
+                            credential != null
                     );
                 })
                 .toList();
 
         return new OrderCredentialsResponse(order.getId(), order.getStatus().name(), credentials);
+    }
+
+    @Transactional
+    public OrderCredentialSecretResponse revealOrderCredential(UUID orderId, UUID orderItemId) {
+        UserEntity user = currentUserProvider.getCurrentUser();
+        OrderEntity order = findOwnedOrder(orderId, user);
+        if (order.getStatus() != OrderStatus.DELIVERED) {
+            throw new ConflictException("CREDENTIALS_NOT_READY", "Credentials are not ready yet");
+        }
+
+        OrderItemEntity item = orderItemRepository.findByIdAndOrderIdAndOrderUserId(orderItemId, orderId, user.getId())
+                .orElseThrow(() -> new NotFoundException("ORDER_ITEM_NOT_FOUND", "Order item not found: " + orderItemId));
+        CredentialEntity credential = item.getCredential();
+        if (credential == null) {
+            throw new ConflictException("CREDENTIALS_NOT_READY", "Credentials are not ready yet");
+        }
+
+        registerCredentialView(user, order, item);
+        return new OrderCredentialSecretResponse(
+                order.getId(),
+                item.getId(),
+                item.getProduct().getId(),
+                item.getProduct().getName(),
+                credentialCryptoService.decrypt(credential.getLoginEncrypted(), credential.getEncryptionKeyVersion()),
+                credentialCryptoService.decrypt(credential.getPasswordEncrypted(), credential.getEncryptionKeyVersion())
+        );
     }
 
     private void registerCredentialView(UserEntity user, OrderEntity order, OrderItemEntity item) {
@@ -121,6 +149,22 @@ public class OrderQueryService {
                 .orElseThrow(() -> new NotFoundException("ORDER_NOT_FOUND", "Order not found: " + orderId));
     }
 
+    private String loginHint(String login) {
+        if (login == null || login.isBlank()) {
+            return "";
+        }
+        int at = login.indexOf('@');
+        if (at > 2) {
+            String name = login.substring(0, at);
+            String domain = login.substring(at);
+            return name.substring(0, 2) + "*".repeat(Math.min(name.length() - 2, 8)) + domain;
+        }
+        if (login.length() <= 3) {
+            return "*".repeat(login.length());
+        }
+        return login.substring(0, 2) + "*".repeat(Math.min(login.length() - 2, 8));
+    }
+
     private OrderSummaryResponse toSummary(OrderEntity order) {
         return new OrderSummaryResponse(
                 order.getId(),
@@ -130,7 +174,8 @@ public class OrderQueryService {
                 order.getCurrency(),
                 order.getCreatedAt().atOffset(OffsetDateTime.now().getOffset()),
                 order.getPaidAt(),
-                order.getDeliveredAt()
+                order.getDeliveredAt(),
+                order.getCanceledAt()
         );
     }
 
@@ -146,6 +191,7 @@ public class OrderQueryService {
                 order.getCreatedAt().atOffset(OffsetDateTime.now().getOffset()),
                 order.getPaidAt(),
                 order.getDeliveredAt(),
+                order.getCanceledAt(),
                 payment != null ? new OrderDetailResponse.PaymentDetailResponse(
                         payment.getProvider().name(),
                         payment.getProviderStatus(),

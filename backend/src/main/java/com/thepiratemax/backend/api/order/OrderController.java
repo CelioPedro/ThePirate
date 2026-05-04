@@ -51,4 +51,9 @@ public class OrderController {
     public OrderCredentialsResponse getOrderCredentials(@PathVariable UUID orderId) {
         return orderQueryService.getOrderCredentials(orderId);
     }
+
+    @PostMapping("/{orderId}/credentials/{orderItemId}/secret")
+    public OrderCredentialSecretResponse revealOrderCredential(@PathVariable UUID orderId, @PathVariable UUID orderItemId) {
+        return orderQueryService.revealOrderCredential(orderId, orderItemId);
+    }
 }

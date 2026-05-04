@@ -1,5 +1,6 @@
 package com.thepiratemax.backend.api.order;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -147,6 +148,90 @@ class OrderControllerTest {
                         .content(payload))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.code").value("OUT_OF_STOCK"));
+    }
+
+    @Test
+    void returnsSameOrderWhenCheckoutIsRetriedWithSameIdempotencyKey() throws Exception {
+        String payload = """
+                {
+                  "items": [
+                    {
+                      "productId": "%s",
+                      "quantity": 1
+                    }
+                  ],
+                  "paymentMethod": "PIX",
+                  "idempotencyKey": "checkout-test-001"
+                }
+                """.formatted(product.getId());
+
+        String firstResponse = mockMvc.perform(post("/api/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.order.id", notNullValue()))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String secondResponse = mockMvc.perform(post("/api/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.order.id", notNullValue()))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String firstOrderId = com.jayway.jsonpath.JsonPath.read(firstResponse, "$.order.id");
+        String secondOrderId = com.jayway.jsonpath.JsonPath.read(secondResponse, "$.order.id");
+        assertThat(secondOrderId).isEqualTo(firstOrderId);
+        assertThat(orderRepository.findAll()).hasSize(1);
+        assertThat(orderItemRepository.findAll()).hasSize(1);
+    }
+
+    @Test
+    void doesNotReuseReservedCredentialForDifferentCheckoutIntentions() throws Exception {
+        String firstPayload = """
+                {
+                  "items": [
+                    {
+                      "productId": "%s",
+                      "quantity": 1
+                    }
+                  ],
+                  "paymentMethod": "PIX",
+                  "idempotencyKey": "checkout-stock-001"
+                }
+                """.formatted(product.getId());
+
+        String secondPayload = """
+                {
+                  "items": [
+                    {
+                      "productId": "%s",
+                      "quantity": 1
+                    }
+                  ],
+                  "paymentMethod": "PIX",
+                  "idempotencyKey": "checkout-stock-002"
+                }
+                """.formatted(product.getId());
+
+        mockMvc.perform(post("/api/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(firstPayload))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(secondPayload))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("OUT_OF_STOCK"));
+
+        assertThat(orderRepository.findAll()).hasSize(1);
+        assertThat(orderItemRepository.findAll()).hasSize(1);
+        assertThat(credentialRepository.countByProduct_IdAndStatus(product.getId(), CredentialStatus.RESERVED)).isEqualTo(1);
     }
 
     @Test

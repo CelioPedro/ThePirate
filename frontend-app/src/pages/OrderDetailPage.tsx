@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, PackageCheck } from "lu
 import { apiClient } from "../shared/api/client";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
 import { useSession } from "../shared/session/SessionContext";
-import type { DeliveredCredentialsResponse, OrderDetail } from "../shared/types";
+import type { DeliveredCredential, DeliveredCredentialSecretResponse, DeliveredCredentialsResponse, OrderDetail } from "../shared/types";
 
 interface PixState {
   qrCode?: string | null;
@@ -24,6 +24,7 @@ export function OrderDetailPage() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [error, setError] = useState("");
   const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
+  const [credentialSecrets, setCredentialSecrets] = useState<Record<string, DeliveredCredentialSecretResponse>>({});
   const [pixState, setPixState] = useState<PixState>({
     qrCode: (location.state as { pixQrCode?: string | null } | null)?.pixQrCode,
     copyPaste: (location.state as { pixCopyPaste?: string } | null)?.pixCopyPaste,
@@ -53,6 +54,8 @@ export function OrderDetailPage() {
         setCredentials(delivered);
       } else {
         setCredentials(null);
+        setCredentialSecrets({});
+        setRevealedCredentials(new Set());
       }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Nao foi possivel atualizar o pedido.");
@@ -120,6 +123,45 @@ export function OrderDetailPage() {
       setError(requestError instanceof Error ? requestError.message : "Nao foi possivel simular o pagamento.");
     } finally {
       setIsSimulating(false);
+    }
+  }
+
+  async function loadCredentialSecret(orderItemId: string) {
+    const cached = credentialSecrets[orderItemId];
+    if (cached) {
+      return cached;
+    }
+    const secret = await apiClient.revealOrderCredential(orderId, orderItemId, apiBase, token);
+    setCredentialSecrets((current) => ({ ...current, [orderItemId]: secret }));
+    return secret;
+  }
+
+  async function revealCredential(credential: DeliveredCredential) {
+    if (revealedCredentials.has(credential.orderItemId)) {
+      setRevealedCredentials((current) => {
+        const next = new Set(current);
+        next.delete(credential.orderItemId);
+        return next;
+      });
+      return;
+    }
+
+    setError("");
+    try {
+      await loadCredentialSecret(credential.orderItemId);
+      setRevealedCredentials((current) => new Set(current).add(credential.orderItemId));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Nao foi possivel revelar a credencial.");
+    }
+  }
+
+  async function copyCredentialValue(credential: DeliveredCredential, field: "login" | "password") {
+    setError("");
+    try {
+      const secret = await loadCredentialSecret(credential.orderItemId);
+      await navigator.clipboard.writeText(secret[field]);
+    } catch {
+      setError(`Nao foi possivel copiar ${field === "login" ? "o login" : "a senha"} automaticamente.`);
     }
   }
 
@@ -252,22 +294,23 @@ export function OrderDetailPage() {
                     type="button"
                     className="icon-only-button"
                     aria-label={revealedCredentials.has(credential.orderItemId) ? "Ocultar credencial" : "Revelar credencial"}
-                    onClick={() => toggleCredentialReveal(credential.orderItemId, setRevealedCredentials)}
+                    onClick={() => void revealCredential(credential)}
+                    disabled={!credential.secretAvailable}
                   >
                     {revealedCredentials.has(credential.orderItemId) ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
                 <span>Login</span>
                 <div className="credential-copy-row">
-                  <code>{revealedCredentials.has(credential.orderItemId) ? credential.login : maskCredential(credential.login)}</code>
-                  <button type="button" className="icon-only-button" aria-label="Copiar login" onClick={() => void copyCredentialField(credential.login, "Login", setError)}>
+                  <code>{credentialDisplayValue(credential, credentialSecrets[credential.orderItemId], revealedCredentials, "login")}</code>
+                  <button type="button" className="icon-only-button" aria-label="Copiar login" onClick={() => void copyCredentialValue(credential, "login")} disabled={!credential.secretAvailable}>
                     <Copy size={15} />
                   </button>
                 </div>
                 <span>Senha</span>
                 <div className="credential-copy-row">
-                  <code>{revealedCredentials.has(credential.orderItemId) ? credential.password : maskCredential(credential.password)}</code>
-                  <button type="button" className="icon-only-button" aria-label="Copiar senha" onClick={() => void copyCredentialField(credential.password, "Senha", setError)}>
+                  <code>{credentialDisplayValue(credential, credentialSecrets[credential.orderItemId], revealedCredentials, "password")}</code>
+                  <button type="button" className="icon-only-button" aria-label="Copiar senha" onClick={() => void copyCredentialValue(credential, "password")} disabled={!credential.secretAvailable}>
                     <Copy size={15} />
                   </button>
                 </div>
@@ -331,24 +374,20 @@ function orderStateDescription(status: string, failureReason?: string | null) {
   return "Acompanhe o estado do pedido por aqui.";
 }
 
-function maskCredential(value: string) {
-  if (!value) return "********";
-  return "*".repeat(Math.min(Math.max(value.length, 8), 18));
-}
-
-function toggleCredentialReveal(
-  credentialId: string,
-  setRevealedCredentials: Dispatch<SetStateAction<Set<string>>>
+function credentialDisplayValue(
+  credential: DeliveredCredential,
+  secret: DeliveredCredentialSecretResponse | undefined,
+  revealedCredentials: Set<string>,
+  field: "login" | "password"
 ) {
-  setRevealedCredentials((current) => {
-    const next = new Set(current);
-    if (next.has(credentialId)) {
-      next.delete(credentialId);
-    } else {
-      next.add(credentialId);
-    }
-    return next;
-  });
+  if (!credential.secretAvailable) return "indisponivel";
+  if (revealedCredentials.has(credential.orderItemId) && secret) {
+    return secret[field];
+  }
+  if (field === "login") {
+    return credential.loginHint || "********";
+  }
+  return "********";
 }
 
 function isQrImage(value?: string | null) {
@@ -369,14 +408,5 @@ async function copyPix(value: string | undefined, setError: Dispatch<SetStateAct
     setError("");
   } catch {
     setError("Nao foi possivel copiar o PIX automaticamente.");
-  }
-}
-
-async function copyCredentialField(value: string, label: string, setError: Dispatch<SetStateAction<string>>) {
-  try {
-    await navigator.clipboard.writeText(value);
-    setError("");
-  } catch {
-    setError(`Nao foi possivel copiar ${label.toLowerCase()} automaticamente.`);
   }
 }

@@ -11,6 +11,7 @@ public record OrderSummaryResponse(
         String currency,
         OffsetDateTime createdAt,
         OffsetDateTime paidAt,
-        OffsetDateTime deliveredAt
+        OffsetDateTime deliveredAt,
+        OffsetDateTime canceledAt
 ) {
 }

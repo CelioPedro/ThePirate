@@ -9,7 +9,14 @@ import com.thepiratemax.backend.repository.PaymentRepository;
 import com.thepiratemax.backend.repository.WebhookEventRepository;
 import com.thepiratemax.backend.service.exception.InvalidRequestException;
 import com.thepiratemax.backend.service.order.OrderStateService;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -44,11 +51,21 @@ public class MercadoPagoWebhookService {
 
     @Transactional
     public void process(JsonNode payload, String rawPayload) {
+        process(payload, rawPayload, null, null, null);
+    }
+
+    @Transactional
+    public void process(JsonNode payload, String rawPayload, String queryDataId, String requestId, String signatureHeader) {
         String eventType = textValue(payload, "action", "type");
-        String providerEventId = textValue(payload.path("data"), "id");
+        String providerEventId = firstNonBlank(queryDataId, textValue(payload.path("data"), "id"));
         String externalReference = textValue(payload.path("data"), "external_reference");
         String providerStatus = textValue(payload.path("data"), "status");
         JsonNode providerPayload = payload;
+
+        boolean signatureValid = validateSignature(providerEventId, queryDataId, requestId, signatureHeader);
+        if (mercadoPagoProperties.usesRealGateway() && providerEventId != null && providerEventId.startsWith("dev-")) {
+            throw new InvalidRequestException("INVALID_WEBHOOK", "Development webhook payload is not accepted with real Mercado Pago gateway");
+        }
 
         if (providerEventId != null && (externalReference == null || providerStatus == null) && mercadoPagoProperties.usesRealGateway()) {
             providerPayload = fetchProviderOrder(providerEventId);
@@ -68,7 +85,7 @@ public class MercadoPagoWebhookService {
         webhookEvent.setProvider(PROVIDER);
         webhookEvent.setEventType(eventType);
         webhookEvent.setProviderEventId(providerEventId);
-        webhookEvent.setSignatureValid(true);
+        webhookEvent.setSignatureValid(signatureValid);
         webhookEvent.setPayload(rawPayload);
 
         String resolvedExternalReference = externalReference;
@@ -115,6 +132,69 @@ public class MercadoPagoWebhookService {
 
     private boolean isApproved(String providerStatus) {
         return "approved".equalsIgnoreCase(providerStatus) || "processed".equalsIgnoreCase(providerStatus);
+    }
+
+    private boolean validateSignature(String providerEventId, String queryDataId, String requestId, String signatureHeader) {
+        if (!mercadoPagoProperties.usesRealGateway()) {
+            return true;
+        }
+
+        String webhookSecret = mercadoPagoProperties.webhookSecret();
+        if (webhookSecret == null || webhookSecret.isBlank()) {
+            throw new InvalidRequestException("MERCADO_PAGO_WEBHOOK_SECRET_REQUIRED", "Mercado Pago webhook secret is required for real webhooks");
+        }
+
+        Map<String, String> signatureParts = parseSignatureHeader(signatureHeader);
+        String timestamp = signatureParts.get("ts");
+        String receivedHash = signatureParts.get("v1");
+        String dataIdForSignature = firstNonBlank(queryDataId, providerEventId);
+
+        if (dataIdForSignature == null || requestId == null || requestId.isBlank() || timestamp == null || receivedHash == null) {
+            throw new InvalidRequestException("INVALID_WEBHOOK_SIGNATURE", "Missing Mercado Pago webhook signature data");
+        }
+
+        String manifest = "id:%s;request-id:%s;ts:%s;"
+                .formatted(dataIdForSignature.toLowerCase(Locale.ROOT), requestId, timestamp);
+        String expectedHash = hmacSha256Hex(webhookSecret, manifest);
+        if (!MessageDigest.isEqual(
+                expectedHash.getBytes(StandardCharsets.UTF_8),
+                receivedHash.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8)
+        )) {
+            logger.warn("event=mercado_pago_webhook_signature_invalid providerEventId={} requestId={}", providerEventId, requestId);
+            throw new InvalidRequestException("INVALID_WEBHOOK_SIGNATURE", "Invalid Mercado Pago webhook signature");
+        }
+
+        return true;
+    }
+
+    private Map<String, String> parseSignatureHeader(String signatureHeader) {
+        Map<String, String> values = new HashMap<>();
+        if (signatureHeader == null || signatureHeader.isBlank()) {
+            return values;
+        }
+
+        for (String part : signatureHeader.split(",")) {
+            String[] keyValue = part.split("=", 2);
+            if (keyValue.length == 2 && !keyValue[0].isBlank() && !keyValue[1].isBlank()) {
+                values.put(keyValue[0].trim(), keyValue[1].trim());
+            }
+        }
+        return values;
+    }
+
+    private String hmacSha256Hex(String secret, String manifest) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] digest = mac.doFinal(manifest.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte value : digest) {
+                hex.append(String.format("%02x", value));
+            }
+            return hex.toString();
+        } catch (Exception exception) {
+            throw new InvalidRequestException("INVALID_WEBHOOK_SIGNATURE", "Could not validate Mercado Pago webhook signature");
+        }
     }
 
     private boolean shouldReprocessProcessedEvent(PaymentEntity payment, String providerStatus) {

@@ -11,6 +11,7 @@ import com.thepiratemax.backend.domain.payment.PaymentEntity;
 import com.thepiratemax.backend.domain.payment.PaymentProvider;
 import com.thepiratemax.backend.domain.product.ProductEntity;
 import com.thepiratemax.backend.domain.product.ProductStatus;
+import com.thepiratemax.backend.domain.user.UserEntity;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
 import com.thepiratemax.backend.repository.OrderRepository;
@@ -67,6 +68,19 @@ public class OrderCreationService {
     @Transactional
     public CreateOrderResponse create(CreateOrderRequest request) {
         validateQuantities(request);
+        UserEntity currentUser = currentUserProvider.getCurrentUser();
+        String idempotencyKey = normalizeIdempotencyKey(request.idempotencyKey());
+
+        if (idempotencyKey != null) {
+            CreateOrderResponse existingResponse = orderRepository.findByUserIdAndIdempotencyKey(currentUser.getId(), idempotencyKey)
+                    .map(this::toCreateOrderResponse)
+                    .orElse(null);
+            if (existingResponse != null) {
+                logger.info("event=order_idempotency_hit userId={} orderId={} idempotencyKey={}",
+                        currentUser.getId(), existingResponse.order().id(), idempotencyKey);
+                return existingResponse;
+            }
+        }
 
         List<UUID> productIds = request.items().stream().map(CreateOrderRequest.OrderItemRequest::productId).toList();
         List<ProductEntity> products = productRepository.findAllByIdInAndStatus(productIds, ProductStatus.ACTIVE);
@@ -80,11 +94,12 @@ public class OrderCreationService {
         }
 
         OrderEntity order = new OrderEntity();
-        order.setUser(currentUserProvider.getCurrentUser());
+        order.setUser(currentUser);
         order.setStatus(OrderStatus.PENDING);
         order.setPaymentMethod(request.paymentMethod());
         order.setCurrency("BRL");
         order.setExternalReference("TPM-" + UUID.randomUUID());
+        order.setIdempotencyKey(idempotencyKey);
 
         long subtotal = request.items().stream()
                 .mapToLong(item -> productsById.get(item.productId()).getPriceCents() * item.quantity())
@@ -127,6 +142,16 @@ public class OrderCreationService {
                 order.getId(), order.getExternalReference(), order.getUser().getId(), order.getTotalCents(),
                 request.items().size(), order.getPaymentMethod().name());
 
+        return toCreateOrderResponse(order, payment);
+    }
+
+    private CreateOrderResponse toCreateOrderResponse(OrderEntity order) {
+        PaymentEntity payment = paymentRepository.findByOrder_Id(order.getId())
+                .orElseThrow(() -> new NotFoundException("PAYMENT_NOT_FOUND", "Payment not found for order: " + order.getId()));
+        return toCreateOrderResponse(order, payment);
+    }
+
+    private CreateOrderResponse toCreateOrderResponse(OrderEntity order, PaymentEntity payment) {
         return new CreateOrderResponse(
                 new CreateOrderResponse.OrderResponse(
                         order.getId(),
@@ -142,9 +167,16 @@ public class OrderCreationService {
                         payment.getPaymentMethod().name(),
                         payment.getPixQrCode(),
                         payment.getPixCopyPaste(),
-                        pixPaymentDetails.expiresAt()
+                        payment.getPixExpiresAt()
                 )
         );
+    }
+
+    private String normalizeIdempotencyKey(String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return null;
+        }
+        return idempotencyKey.trim();
     }
 
     private void validateQuantities(CreateOrderRequest request) {

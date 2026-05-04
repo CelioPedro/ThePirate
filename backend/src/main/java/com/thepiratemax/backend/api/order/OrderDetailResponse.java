@@ -15,6 +15,7 @@ public record OrderDetailResponse(
         OffsetDateTime createdAt,
         OffsetDateTime paidAt,
         OffsetDateTime deliveredAt,
+        OffsetDateTime canceledAt,
         PaymentDetailResponse payment,
         List<OrderItemDetailResponse> items
 ) {

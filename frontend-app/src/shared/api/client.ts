@@ -8,6 +8,7 @@ import type {
   AdminOrderDiagnostics,
   CreateOrderResponse,
   DeliveredCredentialsResponse,
+  DeliveredCredentialSecretResponse,
   InventoryItem,
   OrderDetail,
   OrderStatusResponse,
@@ -53,8 +54,12 @@ async function request<T>(path: string, options: RequestInit & { apiBase?: strin
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
     try {
-      const payload = await response.json() as { message?: string; code?: string };
-      if (payload?.message) {
+      const payload = await response.json() as { message?: string; code?: string; error?: { message?: string; code?: string } };
+      if (payload?.error?.message) {
+        message = payload.error.message;
+      } else if (payload?.error?.code) {
+        message = payload.error.code;
+      } else if (payload?.message) {
         message = payload.message;
       } else if (payload?.code) {
         message = payload.code;
@@ -113,7 +118,14 @@ export const apiClient = {
   getOrderCredentials(orderId: string, apiBase?: string, token?: string | null) {
     return request<DeliveredCredentialsResponse>(`/api/orders/${orderId}/credentials`, { apiBase, token });
   },
-  createOrder(payload: { items: { productId: string; quantity: number }[]; paymentMethod: "PIX" }, apiBase?: string, token?: string | null) {
+  revealOrderCredential(orderId: string, orderItemId: string, apiBase?: string, token?: string | null) {
+    return request<DeliveredCredentialSecretResponse>(`/api/orders/${orderId}/credentials/${orderItemId}/secret`, {
+      apiBase,
+      token,
+      method: "POST"
+    });
+  },
+  createOrder(payload: { items: { productId: string; quantity: number }[]; paymentMethod: "PIX"; idempotencyKey?: string }, apiBase?: string, token?: string | null) {
     return request<CreateOrderResponse>("/api/orders", {
       apiBase,
       token,

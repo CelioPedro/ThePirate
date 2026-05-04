@@ -13,8 +13,8 @@ public record OrderCredentialsResponse(
             UUID orderItemId,
             UUID productId,
             String productName,
-            String login,
-            String password
+            String loginHint,
+            boolean secretAvailable
     ) {
     }
 }

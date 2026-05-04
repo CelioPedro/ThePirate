@@ -1,6 +1,7 @@
 package com.thepiratemax.backend.api.order;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -66,6 +67,7 @@ class OrderQueryControllerTest {
     private CredentialViewRepository credentialViewRepository;
 
     private OrderEntity deliveredOrder;
+    private OrderItemEntity deliveredOrderItem;
 
     @BeforeEach
     void setUp() {
@@ -123,14 +125,14 @@ class OrderQueryControllerTest {
         deliveredOrder.setDeliveredAt(OffsetDateTime.now().minusMinutes(1));
         deliveredOrder = orderRepository.save(deliveredOrder);
 
-        OrderItemEntity orderItem = new OrderItemEntity();
-        orderItem.setOrder(deliveredOrder);
-        orderItem.setProduct(product);
-        orderItem.setCredential(credential);
-        orderItem.setQuantity(1);
-        orderItem.setUnitPriceCents(1590L);
-        orderItem.setTotalPriceCents(1590L);
-        orderItemRepository.save(orderItem);
+        deliveredOrderItem = new OrderItemEntity();
+        deliveredOrderItem.setOrder(deliveredOrder);
+        deliveredOrderItem.setProduct(product);
+        deliveredOrderItem.setCredential(credential);
+        deliveredOrderItem.setQuantity(1);
+        deliveredOrderItem.setUnitPriceCents(1590L);
+        deliveredOrderItem.setTotalPriceCents(1590L);
+        deliveredOrderItem = orderItemRepository.save(deliveredOrderItem);
     }
 
     @Test
@@ -142,14 +144,29 @@ class OrderQueryControllerTest {
     }
 
     @Test
-    void returnsDeliveredCredentialsAndAuditsView() throws Exception {
+    void returnsDeliveredCredentialMetadataWithoutSecrets() throws Exception {
         mockMvc.perform(get("/api/orders/" + deliveredOrder.getId() + "/credentials"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderId").value(deliveredOrder.getId().toString()))
                 .andExpect(jsonPath("$.status").value("DELIVERED"))
                 .andExpect(jsonPath("$.credentials[0].productName").value("Query Product"))
-                .andExpect(jsonPath("$.credentials[0].login").value("query-login@test.local"))
-                .andExpect(jsonPath("$.credentials[0].password").value("query-pass"));
+                .andExpect(jsonPath("$.credentials[0].loginHint").value("qu********@test.local"))
+                .andExpect(jsonPath("$.credentials[0].secretAvailable").value(true))
+                .andExpect(jsonPath("$.credentials[0].login").doesNotExist())
+                .andExpect(jsonPath("$.credentials[0].password").doesNotExist());
+
+        org.junit.jupiter.api.Assertions.assertEquals(0, credentialViewRepository.count());
+    }
+
+    @Test
+    void revealsDeliveredCredentialSecretAndAuditsView() throws Exception {
+        mockMvc.perform(post("/api/orders/" + deliveredOrder.getId() + "/credentials/" + deliveredOrderItem.getId() + "/secret"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(deliveredOrder.getId().toString()))
+                .andExpect(jsonPath("$.orderItemId").value(deliveredOrderItem.getId().toString()))
+                .andExpect(jsonPath("$.productName").value("Query Product"))
+                .andExpect(jsonPath("$.login").value("query-login@test.local"))
+                .andExpect(jsonPath("$.password").value("query-pass"));
 
         org.junit.jupiter.api.Assertions.assertEquals(1, credentialViewRepository.count());
     }

@@ -40,6 +40,9 @@ public class OrderEntity extends BaseEntity {
     @Column(name = "external_reference", nullable = false, unique = true)
     private String externalReference;
 
+    @Column(name = "idempotency_key", length = 120)
+    private String idempotencyKey;
+
     @Column(name = "failure_reason")
     private String failureReason;
 
@@ -106,6 +109,14 @@ public class OrderEntity extends BaseEntity {
 
     public void setExternalReference(String externalReference) {
         this.externalReference = externalReference;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 
     public OffsetDateTime getPaidAt() {

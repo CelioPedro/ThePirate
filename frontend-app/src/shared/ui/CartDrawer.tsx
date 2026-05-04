@@ -11,6 +11,7 @@ export function CartDrawer() {
   const { apiBase, token, user, isDevFallback } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutIdempotencyKey, setCheckoutIdempotencyKey] = useState<string | null>(null);
 
   const grouped = useMemo(() => items, [items]);
 
@@ -23,12 +24,16 @@ export function CartDrawer() {
     }
 
     setIsSubmitting(true);
+    const idempotencyKey = checkoutIdempotencyKey || createCheckoutIdempotencyKey();
+    setCheckoutIdempotencyKey(idempotencyKey);
     try {
       const response = await apiClient.createOrder({
         items: grouped.map((item) => ({ productId: item.id, quantity: 1 })),
-        paymentMethod: "PIX"
+        paymentMethod: "PIX",
+        idempotencyKey
       }, apiBase, token);
       clear();
+      setCheckoutIdempotencyKey(null);
       navigate(`/pedidos/${response.order.id}`, {
         state: {
           pixQrCode: response.payment.qrCode,
@@ -66,7 +71,7 @@ export function CartDrawer() {
             </div>
           ) : (
             grouped.map((item) => (
-              <article key={`${item.id}-${Math.random()}`} className="drawer-row">
+              <article key={item.id} className="drawer-row">
                 <div>
                   <strong>{item.name}</strong>
                   <span>{item.sku}</span>
@@ -94,4 +99,11 @@ export function CartDrawer() {
       </aside>
     </>
   );
+}
+
+function createCheckoutIdempotencyKey() {
+  if (crypto.randomUUID) {
+    return `checkout-${crypto.randomUUID()}`;
+  }
+  return `checkout-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
