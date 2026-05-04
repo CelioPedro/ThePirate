@@ -27,9 +27,8 @@ public class ProductEntity extends BaseEntity {
     @Column(nullable = false)
     private ProductCategory category;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProductProvider provider;
+    private String provider;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -97,12 +96,16 @@ public class ProductEntity extends BaseEntity {
         this.category = category;
     }
 
-    public ProductProvider getProvider() {
+    public String getProvider() {
         return provider;
     }
 
-    public void setProvider(ProductProvider provider) {
+    public void setProvider(String provider) {
         this.provider = provider;
+    }
+
+    public void setProvider(ProductProvider provider) {
+        this.provider = provider.name();
     }
 
     public ProductStatus getStatus() {

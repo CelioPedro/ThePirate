@@ -12,7 +12,11 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID> {
 
     List<ProductEntity> findAllByIdInAndStatus(Collection<UUID> ids, ProductStatus status);
 
+    List<ProductEntity> findAllByOrderByNameAsc();
+
     List<ProductEntity> findAllByStatusOrderByNameAsc(ProductStatus status);
 
     Optional<ProductEntity> findBySku(String sku);
+
+    Optional<ProductEntity> findBySlug(String slug);
 }

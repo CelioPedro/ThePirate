@@ -132,7 +132,7 @@ export function CatalogPage() {
                 <div className="product-footer">
                   <div>
                     <strong>{formatCurrency(product.priceCents)}</strong>
-                    <span>{humanizeCategory(product.category)}</span>
+                    <span>{humanizeCategory(product.category)} | {formatDuration(product.durationDays)}</span>
                   </div>
                   <button type="button" className="secondary-button compact" onClick={() => addItem(product)}>
                     Adicionar
@@ -173,4 +173,8 @@ export function CatalogPage() {
       </section>
     </div>
   );
+}
+
+function formatDuration(durationDays: number) {
+  return durationDays === 0 ? "Vitalicio" : `${durationDays} dias`;
 }

@@ -1,6 +1,8 @@
 package com.thepiratemax.backend.api.admin;
 
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,6 +16,7 @@ import com.thepiratemax.backend.domain.product.ProductProvider;
 import com.thepiratemax.backend.domain.product.ProductStatus;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.ProductRepository;
+import com.thepiratemax.backend.service.credential.CredentialCryptoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +39,9 @@ class AdminCredentialControllerTest {
 
     @Autowired
     private CredentialRepository credentialRepository;
+
+    @Autowired
+    private CredentialCryptoService credentialCryptoService;
 
     private ProductEntity product;
 
@@ -60,6 +66,52 @@ class AdminCredentialControllerTest {
         product.setRequiresStock(true);
         product.setFulfillmentNotes("Credential operation test");
         product = productRepository.save(product);
+    }
+
+    @Test
+    void createsAvailableCredentialFromAdminEndpoint() throws Exception {
+        mockMvc.perform(post("/api/admin/credentials")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "productId": "%s",
+                                  "login": "new-login@thepiratemax.local",
+                                  "password": "new-secret",
+                                  "sourceBatch": "manual-test"
+                                }
+                                """.formatted(product.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.credentialId", notNullValue()))
+                .andExpect(jsonPath("$.productId").value(product.getId().toString()))
+                .andExpect(jsonPath("$.productSku").value(product.getSku()))
+                .andExpect(jsonPath("$.productName").value(product.getName()))
+                .andExpect(jsonPath("$.status").value("AVAILABLE"))
+                .andExpect(jsonPath("$.sourceBatch").value("manual-test"));
+
+        CredentialEntity credential = credentialRepository.findAll().getFirst();
+        org.assertj.core.api.Assertions.assertThat(credentialCryptoService.decrypt(
+                credential.getLoginEncrypted(),
+                credential.getEncryptionKeyVersion()
+        )).isEqualTo("new-login@thepiratemax.local");
+        org.assertj.core.api.Assertions.assertThat(credentialCryptoService.decrypt(
+                credential.getPasswordEncrypted(),
+                credential.getEncryptionKeyVersion()
+        )).isEqualTo("new-secret");
+    }
+
+    @Test
+    void listsCredentialsForAdminOperations() throws Exception {
+        CredentialEntity available = createCredential(CredentialStatus.AVAILABLE);
+        createCredential(CredentialStatus.INVALID);
+
+        mockMvc.perform(get("/api/admin/credentials")
+                        .param("productId", product.getId().toString())
+                        .param("status", "AVAILABLE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].credentialId").value(available.getId().toString()))
+                .andExpect(jsonPath("$[0].status").value("AVAILABLE"))
+                .andExpect(jsonPath("$[0].productSku").value(product.getSku()));
     }
 
     @Test

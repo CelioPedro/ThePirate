@@ -1,6 +1,8 @@
 import type {
   AuthResponse,
   AuthUser,
+  AdminCredentialResponse,
+  AdminProduct,
   AdminOrderDiagnostics,
   CreateOrderResponse,
   DeliveredCredentialsResponse,
@@ -118,6 +120,15 @@ export const apiClient = {
       body: JSON.stringify(payload)
     });
   },
+  createAdminCredential(payload: { productId: string; login: string; password: string; sourceBatch?: string }, apiBase?: string, token?: string | null) {
+    return request<AdminCredentialResponse>("/api/admin/credentials", {
+      apiBase,
+      token,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  },
   simulatePayment(externalReference: string, apiBase?: string) {
     return request<{ message: string }>("/api/webhooks/mercadopago", {
       apiBase,
@@ -136,6 +147,53 @@ export const apiClient = {
   getAdminOrderDiagnostics(orderId: string, apiBase?: string, token?: string | null) {
     return request<AdminOrderDiagnostics>(`/api/admin/orders/${orderId}/diagnostics`, { apiBase, token });
   },
+  getAdminCredentials(filters: { productId?: string; status?: string } = {}, apiBase?: string, token?: string | null) {
+    const params = new URLSearchParams();
+    if (filters.productId) params.set("productId", filters.productId);
+    if (filters.status) params.set("status", filters.status);
+    const query = params.toString();
+    return request<AdminCredentialResponse[]>(`/api/admin/credentials${query ? `?${query}` : ""}`, { apiBase, token });
+  },
+  getAdminProducts(apiBase?: string, token?: string | null) {
+    return request<AdminProduct[]>("/api/admin/products", { apiBase, token });
+  },
+  updateAdminProduct(productId: string, payload: {
+    name: string;
+    description?: string | null;
+    provider: string;
+    priceCents: number;
+    status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+    durationDays: number;
+    fulfillmentNotes?: string | null;
+  }, apiBase?: string, token?: string | null) {
+    return request<AdminProduct>(`/api/admin/products/${productId}`, {
+      apiBase,
+      token,
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  },
+  createAdminProduct(payload: {
+    sku: string;
+    slug: string;
+    name: string;
+    description?: string | null;
+    category: string;
+    provider: string;
+    priceCents: number;
+    status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+    durationDays: number;
+    fulfillmentNotes?: string | null;
+  }, apiBase?: string, token?: string | null) {
+    return request<AdminProduct>("/api/admin/products", {
+      apiBase,
+      token,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  },
   reprocessAdminOrderDelivery(orderId: string, apiBase?: string, token?: string | null) {
     return request<OrderStatusResponse>(`/api/admin/orders/${orderId}/reprocess-delivery`, {
       apiBase,
@@ -148,6 +206,15 @@ export const apiClient = {
       apiBase,
       token,
       method: "POST"
+    });
+  },
+  invalidateAdminCredential(credentialId: string, reason: string, apiBase?: string, token?: string | null) {
+    return request<AdminCredentialResponse>(`/api/admin/credentials/${credentialId}/invalidate`, {
+      apiBase,
+      token,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason })
     });
   }
 };

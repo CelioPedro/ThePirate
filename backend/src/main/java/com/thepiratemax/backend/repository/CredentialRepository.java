@@ -21,6 +21,20 @@ public interface CredentialRepository extends JpaRepository<CredentialEntity, UU
     List<CredentialEntity> findByEncryptionKeyVersion(String encryptionKeyVersion);
 
     @Query("""
+            select c
+            from CredentialEntity c
+            join fetch c.product p
+            where (:productId is null or p.id = :productId)
+              and (:status is null or c.status = :status)
+            order by c.createdAt desc
+            """)
+    List<CredentialEntity> searchAdminCredentials(
+            @Param("productId") UUID productId,
+            @Param("status") CredentialStatus status,
+            Pageable pageable
+    );
+
+    @Query("""
             select c.product.id, count(c)
             from CredentialEntity c
             where c.product.id in :productIds and c.status = :status

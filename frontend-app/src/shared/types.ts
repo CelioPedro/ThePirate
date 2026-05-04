@@ -17,6 +17,11 @@ export interface Product {
   availableStock?: number;
 }
 
+export interface AdminProduct extends Product {
+  status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+  deliveryType: string;
+}
+
 export interface InventoryItem {
   sku: string;
   slug: string;
@@ -140,4 +145,18 @@ export interface AdminOrderDiagnostics {
     reservedAt?: string | null;
     deliveredAt?: string | null;
   }[];
+}
+
+export interface AdminCredentialResponse {
+  credentialId: string;
+  productId: string;
+  productSku: string;
+  productName: string;
+  status: string;
+  sourceBatch?: string | null;
+  createdAt?: string | null;
+  reservedAt?: string | null;
+  deliveredAt?: string | null;
+  invalidatedAt?: string | null;
+  invalidationReason?: string | null;
 }

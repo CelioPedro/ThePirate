@@ -38,7 +38,7 @@ public class ProductCatalogService {
                         product.getName(),
                         product.getDescription(),
                         product.getCategory().name(),
-                        product.getProvider().name(),
+                        product.getProvider(),
                         product.getPriceCents(),
                         product.getCurrency(),
                         product.getRegionCode(),
@@ -60,7 +60,7 @@ public class ProductCatalogService {
                         product.getSku(),
                         product.getSlug(),
                         product.getName(),
-                        product.getProvider().name(),
+                        product.getProvider(),
                         product.getPriceCents(),
                         stockByProductId.getOrDefault(product.getId(), 0)
                 ))

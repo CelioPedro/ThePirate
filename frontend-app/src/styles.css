@@ -114,6 +114,9 @@ button, input {
 .topbar-search input,
 .toolbar-search,
 .auth-form-card input,
+.credential-create-panel input,
+.product-edit-panel input,
+.product-edit-panel textarea,
 .stack-input input {
   width: 100%;
   border: 0;
@@ -1079,6 +1082,242 @@ button, input {
   background: var(--surface);
 }
 
+.credential-create-panel {
+  display: grid;
+  grid-template-columns: 1.1fr minmax(180px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr) minmax(160px, 0.7fr) auto;
+  gap: 14px;
+  align-items: end;
+  margin: 8px 0 22px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+
+.credential-create-panel h3 {
+  margin: 0;
+}
+
+.credential-create-panel label {
+  display: grid;
+  gap: 8px;
+  color: #4c5d77;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.credential-create-panel input {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.product-admin-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.product-admin-list,
+.product-edit-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.product-admin-list {
+  max-height: 640px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.product-admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.product-admin-row:hover,
+.product-admin-row.selected {
+  border-color: rgba(20, 99, 255, 0.45);
+  background: rgba(20, 99, 255, 0.05);
+}
+
+.product-admin-row > div {
+  display: grid;
+  gap: 5px;
+}
+
+.product-admin-row span,
+.product-admin-row small {
+  color: var(--muted);
+}
+
+.product-edit-panel {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: min-content;
+  align-items: start;
+  align-content: start;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  min-height: 0;
+}
+
+.product-edit-panel label {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  color: #4c5d77;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.product-edit-panel .field-help {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.product-edit-panel .code-actions {
+  display: grid;
+  gap: 8px;
+  align-content: end;
+  min-height: 84px;
+}
+
+.product-edit-panel .code-actions small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.product-edit-panel input,
+.product-edit-panel textarea {
+  width: 100%;
+  height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.product-edit-panel textarea {
+  height: 118px;
+  resize: vertical;
+}
+
+.product-edit-panel .wide-field {
+  grid-column: 1 / -1;
+}
+
+.product-edit-panel .lifetime-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.product-edit-panel .lifetime-field input {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  padding: 0;
+  accent-color: var(--brand);
+}
+
+.product-edit-panel .lifetime-field span {
+  display: grid;
+  gap: 2px;
+}
+
+.product-edit-panel .lifetime-field strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.product-edit-panel .lifetime-field small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.product-edit-panel .primary-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  align-self: start;
+  min-height: 42px;
+  height: 42px;
+  padding: 0 18px;
+}
+
+.credential-filters-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.credential-filters-row label {
+  display: grid;
+  gap: 8px;
+  min-width: 220px;
+  color: #4c5d77;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.credential-admin-list {
+  display: grid;
+  gap: 12px;
+}
+
+.credential-admin-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.credential-admin-row > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.credential-admin-row span,
+.credential-admin-row small,
+.credential-admin-actions small {
+  color: var(--muted);
+}
+
+.credential-admin-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .admin-order-row {
   width: 100%;
   display: grid;
@@ -1176,6 +1415,9 @@ button, input {
   .order-detail-grid,
   .orders-page-grid,
   .orders-stats-grid,
+  .credential-create-panel,
+  .product-admin-layout,
+  .product-edit-panel,
   .admin-columns,
   .metrics-grid {
     grid-template-columns: 1fr;
@@ -1248,8 +1490,11 @@ button, input {
   .orders-overview,
   .orders-toolbar,
   .order-card-head,
-  .order-card-footer {
+  .order-card-footer,
+  .credential-admin-row,
+  .credential-admin-actions {
     align-items: stretch;
+    grid-template-columns: 1fr;
     flex-direction: column;
   }
 
