@@ -9,10 +9,12 @@ import com.thepiratemax.backend.domain.credential.CredentialEntity;
 import com.thepiratemax.backend.domain.order.OrderEntity;
 import com.thepiratemax.backend.domain.order.OrderItemEntity;
 import com.thepiratemax.backend.domain.order.OrderStatus;
+import com.thepiratemax.backend.domain.payment.PaymentEntity;
 import com.thepiratemax.backend.domain.user.UserEntity;
 import com.thepiratemax.backend.repository.CredentialViewRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
 import com.thepiratemax.backend.repository.OrderRepository;
+import com.thepiratemax.backend.repository.PaymentRepository;
 import com.thepiratemax.backend.service.auth.CurrentUserProvider;
 import com.thepiratemax.backend.service.credential.CredentialCryptoService;
 import com.thepiratemax.backend.service.exception.ConflictException;
@@ -28,6 +30,7 @@ public class OrderQueryService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final PaymentRepository paymentRepository;
     private final CredentialViewRepository credentialViewRepository;
     private final CurrentUserProvider currentUserProvider;
     private final CredentialCryptoService credentialCryptoService;
@@ -35,12 +38,14 @@ public class OrderQueryService {
     public OrderQueryService(
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
+            PaymentRepository paymentRepository,
             CredentialViewRepository credentialViewRepository,
             CurrentUserProvider currentUserProvider,
             CredentialCryptoService credentialCryptoService
     ) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
+        this.paymentRepository = paymentRepository;
         this.credentialViewRepository = credentialViewRepository;
         this.currentUserProvider = currentUserProvider;
         this.credentialCryptoService = credentialCryptoService;
@@ -59,7 +64,8 @@ public class OrderQueryService {
         UserEntity user = currentUserProvider.getCurrentUser();
         OrderEntity order = findOwnedOrder(orderId, user);
         List<OrderItemEntity> items = orderItemRepository.findAllByOrderIdAndOrderUserIdOrderByCreatedAtAsc(orderId, user.getId());
-        return toDetail(order, items);
+        PaymentEntity payment = paymentRepository.findByOrder_Id(orderId).orElse(null);
+        return toDetail(order, items, payment);
     }
 
     @Transactional(readOnly = true)
@@ -128,9 +134,10 @@ public class OrderQueryService {
         );
     }
 
-    private OrderDetailResponse toDetail(OrderEntity order, List<OrderItemEntity> items) {
+    private OrderDetailResponse toDetail(OrderEntity order, List<OrderItemEntity> items, PaymentEntity payment) {
         return new OrderDetailResponse(
                 order.getId(),
+                order.getExternalReference(),
                 order.getStatus().name(),
                 order.getFailureReason(),
                 order.getPaymentMethod().name(),
@@ -139,6 +146,14 @@ public class OrderQueryService {
                 order.getCreatedAt().atOffset(OffsetDateTime.now().getOffset()),
                 order.getPaidAt(),
                 order.getDeliveredAt(),
+                payment != null ? new OrderDetailResponse.PaymentDetailResponse(
+                        payment.getProvider().name(),
+                        payment.getProviderStatus(),
+                        payment.getProviderPaymentId(),
+                        payment.getPixQrCode(),
+                        payment.getPixCopyPaste(),
+                        payment.getPixExpiresAt()
+                ) : null,
                 items.stream()
                         .map(item -> new OrderDetailResponse.OrderItemDetailResponse(
                                 item.getId(),

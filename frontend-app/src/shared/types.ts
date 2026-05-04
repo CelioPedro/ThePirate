@@ -63,6 +63,14 @@ export interface OrderDetail {
   canceledAt?: string | null;
   failureReason?: string | null;
   externalReference?: string | null;
+  payment?: {
+    provider: string;
+    providerStatus?: string | null;
+    providerPaymentId?: string | null;
+    qrCode?: string | null;
+    copyPaste?: string | null;
+    pixExpiresAt?: string | null;
+  } | null;
   items: OrderItem[];
 }
 
@@ -87,6 +95,7 @@ export interface CreateOrderResponse {
     externalReference?: string | null;
   };
   payment: {
+    qrCode?: string | null;
     copyPaste: string;
     expiresAt?: string | null;
   };

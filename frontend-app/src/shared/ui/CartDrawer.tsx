@@ -31,6 +31,7 @@ export function CartDrawer() {
       clear();
       navigate(`/pedidos/${response.order.id}`, {
         state: {
+          pixQrCode: response.payment.qrCode,
           pixCopyPaste: response.payment.copyPaste,
           pixExpiresAt: response.payment.expiresAt,
           externalReference: response.order.externalReference,

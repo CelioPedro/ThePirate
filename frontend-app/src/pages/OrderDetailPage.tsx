@@ -1,12 +1,13 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
 import { useSession } from "../shared/session/SessionContext";
 import type { DeliveredCredentialsResponse, OrderDetail } from "../shared/types";
 
 interface PixState {
+  qrCode?: string | null;
   copyPaste?: string;
   expiresAt?: string | null;
   externalReference?: string | null;
@@ -24,6 +25,7 @@ export function OrderDetailPage() {
   const [error, setError] = useState("");
   const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
   const [pixState, setPixState] = useState<PixState>({
+    qrCode: (location.state as { pixQrCode?: string | null } | null)?.pixQrCode,
     copyPaste: (location.state as { pixCopyPaste?: string } | null)?.pixCopyPaste,
     expiresAt: (location.state as { pixExpiresAt?: string } | null)?.pixExpiresAt,
     externalReference: (location.state as { externalReference?: string } | null)?.externalReference
@@ -41,6 +43,9 @@ export function OrderDetailPage() {
       setOrder(detail);
       setPixState((current) => ({
         ...current,
+        qrCode: current.qrCode || detail.payment?.qrCode || undefined,
+        copyPaste: current.copyPaste || detail.payment?.copyPaste || undefined,
+        expiresAt: current.expiresAt || detail.payment?.pixExpiresAt || undefined,
         externalReference: current.externalReference || detail.externalReference || undefined
       }));
       if (detail.status === "DELIVERED") {
@@ -80,6 +85,7 @@ export function OrderDetailPage() {
     return isLocalApi && isFakePix && Boolean(pixState.externalReference || order?.externalReference);
   }, [apiBase, order?.externalReference, pixState.copyPaste, pixState.externalReference]);
 
+  const isDelivered = order?.status === "DELIVERED";
   const shouldPoll = Boolean(order && ["PENDING", "PAID", "DELIVERY_PENDING"].includes(order.status));
 
   useEffect(() => {
@@ -157,20 +163,40 @@ export function OrderDetailPage() {
         </div>
       </section>
 
-      <section className="panel-card">
+      <section className={isDelivered ? "panel-card payment-card complete" : "panel-card payment-card"}>
         <span className="eyebrow">pagamento</span>
-        <h2>PIX atual</h2>
+        <h2>{isDelivered ? "Pagamento aprovado" : "PIX atual"}</h2>
         {pixState.copyPaste ? (
-          <div className="pix-card-v2">
-            <code>{pixState.copyPaste}</code>
-            <span>Expira em {formatDate(pixState.expiresAt)}</span>
-            {canSimulateLocalPayment ? (
-              <button type="button" className="secondary-button compact" onClick={() => void simulatePayment()} disabled={isSimulating || order?.status === "DELIVERED"}>
-                {isSimulating ? "Simulando..." : "Simular pagamento local"}
-              </button>
-            ) : null}
-            <p className="helper-text">{paymentHint(order?.status, canSimulateLocalPayment)}</p>
-          </div>
+          isDelivered ? (
+            <div className="payment-complete-card">
+              <div className="complete-icon">
+                <CheckCircle2 size={22} />
+              </div>
+              <div>
+                <strong>Pagamento confirmado via PIX</strong>
+                <p className="helper-text">Entrega concluida. As credenciais deste pedido ja estao liberadas abaixo.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="pix-card-v2">
+              <code>{pixState.copyPaste}</code>
+              {isQrImage(pixState.qrCode) ? (
+                <img className="pix-qr-image" src={pixImageSrc(pixState.qrCode)} alt="QR Code PIX" />
+              ) : null}
+              <div className="pix-actions-row">
+                <span>Expira em {formatDate(pixState.expiresAt)}</span>
+                <button type="button" className="secondary-button compact" onClick={() => void copyPix(pixState.copyPaste, setError)}>
+                  Copiar PIX
+                </button>
+              </div>
+              {canSimulateLocalPayment ? (
+                <button type="button" className="secondary-button compact" onClick={() => void simulatePayment()} disabled={isSimulating || order?.status === "DELIVERED"}>
+                  {isSimulating ? "Simulando..." : "Simular pagamento local"}
+                </button>
+              ) : null}
+              <p className="helper-text">{paymentHint(order?.status, canSimulateLocalPayment)}</p>
+            </div>
+          )
         ) : (
           <div className="empty-state-panel">
             <strong>PIX nao capturado nesta sessao</strong>
@@ -182,6 +208,15 @@ export function OrderDetailPage() {
       <section className="panel-card panel-card-wide">
         <span className="eyebrow">credenciais</span>
         <h2>Entrega</h2>
+        {isDelivered ? (
+          <div className="delivery-complete-banner">
+            <CheckCircle2 size={20} />
+            <div>
+              <strong>Pedido entregue</strong>
+              <span>Use o botao de olho para revelar login e senha apenas quando estiver pronto para copiar.</span>
+            </div>
+          </div>
+        ) : null}
         {credentials?.credentials?.length ? (
           <div className="credentials-grid">
             {credentials.credentials.map((credential) => (
@@ -249,4 +284,25 @@ function toggleCredentialReveal(
     }
     return next;
   });
+}
+
+function isQrImage(value?: string | null) {
+  if (!value) return false;
+  return value.startsWith("data:image/") || !value.startsWith("000201");
+}
+
+function pixImageSrc(value?: string | null) {
+  if (!value) return "";
+  if (value.startsWith("data:image/")) return value;
+  return `data:image/png;base64,${value}`;
+}
+
+async function copyPix(value: string | undefined, setError: Dispatch<SetStateAction<string>>) {
+  if (!value) return;
+  try {
+    await navigator.clipboard.writeText(value);
+    setError("");
+  } catch {
+    setError("Nao foi possivel copiar o PIX automaticamente.");
+  }
 }

@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record OrderDetailResponse(
         UUID id,
+        String externalReference,
         String status,
         String failureReason,
         String paymentMethod,
@@ -14,8 +15,19 @@ public record OrderDetailResponse(
         OffsetDateTime createdAt,
         OffsetDateTime paidAt,
         OffsetDateTime deliveredAt,
+        PaymentDetailResponse payment,
         List<OrderItemDetailResponse> items
 ) {
+
+    public record PaymentDetailResponse(
+            String provider,
+            String providerStatus,
+            String providerPaymentId,
+            String qrCode,
+            String copyPaste,
+            OffsetDateTime pixExpiresAt
+    ) {
+    }
 
     public record OrderItemDetailResponse(
             UUID id,
