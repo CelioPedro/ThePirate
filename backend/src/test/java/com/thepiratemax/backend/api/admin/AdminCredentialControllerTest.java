@@ -2,11 +2,13 @@ package com.thepiratemax.backend.api.admin;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.thepiratemax.backend.domain.audit.AdminCredentialAccessLogEntity;
 import com.thepiratemax.backend.domain.credential.CredentialEntity;
 import com.thepiratemax.backend.domain.credential.CredentialStatus;
 import com.thepiratemax.backend.domain.product.DeliveryType;
@@ -14,8 +16,13 @@ import com.thepiratemax.backend.domain.product.ProductCategory;
 import com.thepiratemax.backend.domain.product.ProductEntity;
 import com.thepiratemax.backend.domain.product.ProductProvider;
 import com.thepiratemax.backend.domain.product.ProductStatus;
+import com.thepiratemax.backend.domain.user.UserEntity;
+import com.thepiratemax.backend.domain.user.UserRole;
+import com.thepiratemax.backend.domain.user.UserStatus;
+import com.thepiratemax.backend.repository.AdminCredentialAccessLogRepository;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.ProductRepository;
+import com.thepiratemax.backend.repository.UserRepository;
 import com.thepiratemax.backend.service.credential.CredentialCryptoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,14 +48,29 @@ class AdminCredentialControllerTest {
     private CredentialRepository credentialRepository;
 
     @Autowired
+    private AdminCredentialAccessLogRepository accessLogRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private CredentialCryptoService credentialCryptoService;
 
     private ProductEntity product;
 
     @BeforeEach
     void setUp() {
+        accessLogRepository.deleteAll();
         credentialRepository.deleteAll();
         productRepository.deleteAll();
+        userRepository.deleteAll();
+
+        UserEntity admin = new UserEntity();
+        admin.setEmail("dev@thepiratemax.local");
+        admin.setName("Dev Admin");
+        admin.setRole(UserRole.ADMIN);
+        admin.setStatus(UserStatus.ACTIVE);
+        userRepository.save(admin);
 
         product = new ProductEntity();
         product.setSku("TPM-ADMIN-CREDENTIAL-001");
@@ -89,11 +111,11 @@ class AdminCredentialControllerTest {
                 .andExpect(jsonPath("$.sourceBatch").value("manual-test"));
 
         CredentialEntity credential = credentialRepository.findAll().getFirst();
-        org.assertj.core.api.Assertions.assertThat(credentialCryptoService.decrypt(
+        assertThat(credentialCryptoService.decrypt(
                 credential.getLoginEncrypted(),
                 credential.getEncryptionKeyVersion()
         )).isEqualTo("new-login@thepiratemax.local");
-        org.assertj.core.api.Assertions.assertThat(credentialCryptoService.decrypt(
+        assertThat(credentialCryptoService.decrypt(
                 credential.getPasswordEncrypted(),
                 credential.getEncryptionKeyVersion()
         )).isEqualTo("new-secret");
@@ -111,9 +133,33 @@ class AdminCredentialControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].credentialId").value(available.getId().toString()))
                 .andExpect(jsonPath("$[0].status").value("AVAILABLE"))
-                .andExpect(jsonPath("$[0].login").value("credential-login"))
-                .andExpect(jsonPath("$[0].password").value("credential-pass"))
+                .andExpect(jsonPath("$[0].loginHint").value("cr********"))
+                .andExpect(jsonPath("$[0].login").doesNotExist())
+                .andExpect(jsonPath("$[0].password").doesNotExist())
                 .andExpect(jsonPath("$[0].productSku").value(product.getSku()));
+    }
+
+    @Test
+    void revealsCredentialSecretWithAuditLog() throws Exception {
+        CredentialEntity credential = createCredential(CredentialStatus.AVAILABLE);
+
+        mockMvc.perform(post("/api/admin/credentials/{credentialId}/secret", credential.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("User-Agent", "admin-test-agent")
+                        .content("""
+                                {
+                                  "action": "COPY_PASSWORD"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.credentialId").value(credential.getId().toString()))
+                .andExpect(jsonPath("$.login").value("credential-login"))
+                .andExpect(jsonPath("$.password").value("credential-pass"));
+
+        assertThat(accessLogRepository.findAll()).hasSize(1);
+        AdminCredentialAccessLogEntity log = accessLogRepository.findAll().getFirst();
+        assertThat(log.getAction()).isEqualTo("COPY_PASSWORD");
+        assertThat(log.getCredential().getId()).isEqualTo(credential.getId());
     }
 
     @Test

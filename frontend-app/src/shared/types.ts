@@ -56,6 +56,31 @@ export interface OrderSummary {
   id: string;
 }
 
+export interface AdminOrderSummary {
+  orderId: string;
+  externalReference?: string | null;
+  status: string;
+  paymentMethod: string;
+  totalCents: number;
+  currency: string;
+  createdAt: string;
+  paidAt?: string | null;
+  deliveredAt?: string | null;
+  canceledAt?: string | null;
+  failureReason?: string | null;
+  customer: {
+    userId: string;
+    name: string;
+    email: string;
+  };
+  items: {
+    productId: string;
+    productSku: string;
+    productName: string;
+    quantity: number;
+  }[];
+}
+
 export interface OrderDetail {
   id: string;
   status: string;
@@ -153,12 +178,17 @@ export interface AdminCredentialResponse {
   productSku: string;
   productName: string;
   status: string;
-  login: string;
-  password: string;
+  loginHint: string;
   sourceBatch?: string | null;
   createdAt?: string | null;
   reservedAt?: string | null;
   deliveredAt?: string | null;
   invalidatedAt?: string | null;
   invalidationReason?: string | null;
+}
+
+export interface AdminCredentialSecretResponse {
+  credentialId: string;
+  login: string;
+  password: string;
 }

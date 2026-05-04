@@ -48,6 +48,14 @@ app:
       expiration-hours: ${AUTH_JWT_EXPIRATION_HOURS:24}
   dev:
     default-user-email: ${DEV_DEFAULT_USER_EMAIL:dev@thepiratemax.local}
+  initial-admin:
+    enabled: ${INITIAL_ADMIN_ENABLED:false}
+    email: ${INITIAL_ADMIN_EMAIL:}
+    password: ${INITIAL_ADMIN_PASSWORD:}
+    name: ${INITIAL_ADMIN_NAME:Admin}
+  web:
+    cors:
+      allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:*}
   credentials:
     encryption:
       secret: ${CREDENTIAL_ENCRYPTION_SECRET:the-pirate-max-local-credential-secret-2026}

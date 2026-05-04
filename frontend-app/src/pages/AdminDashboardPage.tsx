@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../shared/api/client";
 import { formatCurrency, formatDate, humanizeCategory, labelStatus, statusTone } from "../shared/lib/format";
 import { useSession } from "../shared/session/SessionContext";
-import type { AdminCredentialResponse, AdminOrderDiagnostics, AdminProduct, InventoryItem, OrderDetail, Product } from "../shared/types";
+import type { AdminCredentialResponse, AdminOrderDiagnostics, AdminOrderSummary, AdminProduct, InventoryItem, Product } from "../shared/types";
 
 const EMPTY_CREDENTIAL_FORM = {
   productId: "",
@@ -36,7 +36,7 @@ const ADMIN_TABS: { id: AdminTab; label: string; description: string }[] = [
 
 export function AdminDashboardPage() {
   const { apiBase, token, user } = useSession();
-  const [orders, setOrders] = useState<OrderDetail[]>([]);
+  const [orders, setOrders] = useState<AdminOrderSummary[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -44,10 +44,12 @@ export function AdminDashboardPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [diagnostics, setDiagnostics] = useState<AdminOrderDiagnostics | null>(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [orderSearch, setOrderSearch] = useState("");
   const [credentialProductFilter, setCredentialProductFilter] = useState("");
   const [credentialStatusFilter, setCredentialStatusFilter] = useState("AVAILABLE");
   const [credentialSearch, setCredentialSearch] = useState("");
   const [revealedCredentialIds, setRevealedCredentialIds] = useState<Set<string>>(new Set());
+  const [credentialSecrets, setCredentialSecrets] = useState<Record<string, { login: string; password: string }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isActing, setIsActing] = useState(false);
   const [isLoadingCredentials, setIsLoadingCredentials] = useState(false);
@@ -84,13 +86,11 @@ export function AdminDashboardPage() {
     setDiagnosticsMessage("");
     try {
       const [ordersResponse, inventoryResponse, productsResponse] = await Promise.all([
-        apiClient.getOrders(apiBase, token).catch(() => []),
+        apiClient.getAdminOrders(apiBase, token).catch(() => []),
         apiClient.getInventory(apiBase),
         apiClient.getProducts(apiBase)
       ]);
-      const detailResponses = await Promise.all(ordersResponse.map((summary) => apiClient.getOrder(summary.id, apiBase, token).catch(() => null)));
-      const details = detailResponses.filter(Boolean) as OrderDetail[];
-      setOrders(details);
+      setOrders(ordersResponse);
       setInventory(inventoryResponse);
       setProducts(productsResponse);
       setCredentialForm((current) => ({
@@ -99,10 +99,10 @@ export function AdminDashboardPage() {
       }));
       setCredentialProductFilter((current) => current || productsResponse[0]?.id || "");
       setSelectedOrderId((current) => {
-        if (current && details.some((order) => order.id === current)) {
+        if (current && ordersResponse.some((order) => order.orderId === current)) {
           return current;
         }
-        return details[0]?.id || null;
+        return ordersResponse[0]?.orderId || null;
       });
       await loadAdminProducts();
     } finally {
@@ -153,18 +153,23 @@ export function AdminDashboardPage() {
 
   async function runAdminAction(action: "reprocess" | "release") {
     if (!selectedOrderId) return;
+    await runAdminActionForOrder(selectedOrderId, action);
+  }
+
+  async function runAdminActionForOrder(orderId: string, action: "reprocess" | "release") {
     setIsActing(true);
     setDiagnosticsMessage("");
     try {
       if (action === "reprocess") {
-        await apiClient.reprocessAdminOrderDelivery(selectedOrderId, apiBase, token);
+        await apiClient.reprocessAdminOrderDelivery(orderId, apiBase, token);
         setDiagnosticsMessage("Reprocessamento solicitado com sucesso.");
       } else {
-        await apiClient.releaseAdminOrderReservation(selectedOrderId, apiBase, token);
+        await apiClient.releaseAdminOrderReservation(orderId, apiBase, token);
         setDiagnosticsMessage("Reserva liberada com sucesso.");
       }
+      setSelectedOrderId(orderId);
       await loadDashboard();
-      await loadDiagnostics(selectedOrderId);
+      await loadDiagnostics(orderId);
     } catch (error) {
       setDiagnosticsMessage(error instanceof Error ? error.message : "Nao foi possivel executar a acao.");
     } finally {
@@ -197,16 +202,38 @@ export function AdminDashboardPage() {
     }
   }
 
-  async function copyCredentialValue(value: string, label: string) {
+  async function loadCredentialSecret(credentialId: string, action: "REVEAL" | "COPY_LOGIN" | "COPY_PASSWORD") {
+    const cached = credentialSecrets[credentialId];
+    if (cached) {
+      return cached;
+    }
+    const response = await apiClient.revealAdminCredential(credentialId, action, apiBase, token);
+    const secret = { login: response.login, password: response.password };
+    setCredentialSecrets((current) => ({ ...current, [credentialId]: secret }));
+    return secret;
+  }
+
+  async function copyCredentialValue(credential: AdminCredentialResponse, field: "login" | "password") {
+    const label = field === "login" ? "Login" : "Senha";
     try {
-      await navigator.clipboard.writeText(value);
+      const secret = await loadCredentialSecret(credential.credentialId, field === "login" ? "COPY_LOGIN" : "COPY_PASSWORD");
+      await navigator.clipboard.writeText(secret[field]);
       setStockMessage(`${label} copiado para a area de transferencia.`);
-    } catch {
-      setStockMessage(`Nao foi possivel copiar ${label.toLowerCase()}.`);
+    } catch (error) {
+      setStockMessage(error instanceof Error ? error.message : `Nao foi possivel copiar ${label.toLowerCase()}.`);
     }
   }
 
-  function toggleCredentialReveal(credentialId: string) {
+  async function toggleCredentialReveal(credentialId: string) {
+    if (!revealedCredentialIds.has(credentialId)) {
+      try {
+        await loadCredentialSecret(credentialId, "REVEAL");
+      } catch (error) {
+        setStockMessage(error instanceof Error ? error.message : "Nao foi possivel revelar a credencial.");
+        return;
+      }
+    }
+
     setRevealedCredentialIds((current) => {
       const next = new Set(current);
       if (next.has(credentialId)) {
@@ -294,8 +321,19 @@ export function AdminDashboardPage() {
     { label: "Criticos", value: String(inventory.filter((item) => item.availableStock <= 3).length) }
   ];
 
-  const filteredOrders = statusFilter === "ALL" ? orders : orders.filter((order) => order.status === statusFilter);
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId);
+  const filteredOrders = orders.filter((order) => {
+    if (statusFilter !== "ALL" && order.status !== statusFilter) return false;
+    const term = orderSearch.trim().toLowerCase();
+    if (!term) return true;
+    return [
+      order.orderId,
+      order.externalReference || "",
+      order.customer.name,
+      order.customer.email,
+      order.items.map((item) => `${item.productName} ${item.productSku}`).join(" ")
+    ].join(" ").toLowerCase().includes(term);
+  });
+  const selectedOrder = orders.find((order) => order.orderId === selectedOrderId);
   const filteredCredentials = credentials.filter((credential) => {
     const term = credentialSearch.trim().toLowerCase();
     if (!term) return true;
@@ -303,7 +341,7 @@ export function AdminDashboardPage() {
       credential.productName,
       credential.productSku,
       credential.sourceBatch || "",
-      credential.login,
+      credential.loginHint,
       credential.credentialId
     ].join(" ").toLowerCase().includes(term);
   });
@@ -516,36 +554,73 @@ export function AdminDashboardPage() {
               <span className="eyebrow">pedidos</span>
               <h2>Fila operacional</h2>
             </div>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="admin-select">
-              <option value="ALL">Todos</option>
-              <option value="PENDING">Pendente</option>
-              <option value="PAID">Pago</option>
-              <option value="DELIVERY_PENDING">Em entrega</option>
-              <option value="DELIVERED">Entregue</option>
-              <option value="DELIVERY_FAILED">Falhou</option>
-              <option value="CANCELED">Cancelado</option>
-            </select>
+            <button type="button" className="secondary-button compact" onClick={() => void loadDashboard()}>
+              Atualizar
+            </button>
+          </div>
+          <div className="orders-admin-toolbar">
+            <label>
+              Busca
+              <input
+                value={orderSearch}
+                onChange={(event) => setOrderSearch(event.target.value)}
+                placeholder="Pedido, cliente, produto, SKU ou referencia"
+              />
+            </label>
+            <label>
+              Status
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="admin-select">
+                <option value="ALL">Todos</option>
+                <option value="PENDING">Pendente</option>
+                <option value="PAID">Pago</option>
+                <option value="DELIVERY_PENDING">Em entrega</option>
+                <option value="DELIVERED">Entregue</option>
+                <option value="DELIVERY_FAILED">Falhou</option>
+                <option value="CANCELED">Cancelado</option>
+              </select>
+            </label>
           </div>
           <div className="orders-list compact">
             {isLoading ? <div className="empty-state-panel">Carregando pedidos...</div> : null}
             {!isLoading && filteredOrders.length === 0 ? <div className="empty-state-panel">Nenhum pedido nesse filtro.</div> : null}
             {filteredOrders.map((order) => (
-              <button
-                key={order.id}
-                type="button"
-                className={order.id === selectedOrderId ? "admin-order-row selected" : "admin-order-row"}
-                onClick={() => {
-                  setSelectedOrderId(order.id);
-                  setActiveAdminTab("diagnostics");
-                }}
-              >
-                <div className="order-card-head">
-                  <strong>{order.id}</strong>
-                  <span className={`status-pill ${statusTone(order.status)}`}>{labelStatus(order.status)}</span>
+              <article key={order.orderId} className={order.orderId === selectedOrderId ? "admin-order-row selected" : "admin-order-row"}>
+                <button
+                  type="button"
+                  className="admin-order-main"
+                  onClick={() => {
+                    setSelectedOrderId(order.orderId);
+                    setActiveAdminTab("diagnostics");
+                  }}
+                >
+                  <div className="order-card-head">
+                    <strong>{order.orderId}</strong>
+                    <span className={`status-pill ${statusTone(order.status)}`}>{labelStatus(order.status)}</span>
+                  </div>
+                  <span>{order.items.map((item) => `${item.productName} (${item.quantity})`).join(", ")}</span>
+                  <small>{order.customer.name} | {order.customer.email}</small>
+                  <small>{formatCurrency(order.totalCents)} | {formatDate(order.createdAt)}</small>
+                  {order.failureReason ? <small className="danger-text">{order.failureReason}</small> : null}
+                </button>
+                <div className="admin-order-quick-actions">
+                  <button type="button" className="secondary-button compact" onClick={() => {
+                    setSelectedOrderId(order.orderId);
+                    setActiveAdminTab("diagnostics");
+                  }}>
+                    Diagnostico
+                  </button>
+                  {isOrderReprocessable(order.status) ? (
+                    <button type="button" className="secondary-button compact" disabled={isActing} onClick={() => void runAdminActionForOrder(order.orderId, "reprocess")}>
+                      Reprocessar
+                    </button>
+                  ) : null}
+                  {isOrderReservationReleasable(order.status) ? (
+                    <button type="button" className="secondary-button compact" disabled={isActing} onClick={() => void runAdminActionForOrder(order.orderId, "release")}>
+                      Liberar reserva
+                    </button>
+                  ) : null}
                 </div>
-                <span>{order.items.map((item) => item.productName).join(", ")}</span>
-                <small>{formatCurrency(order.totalCents)} | {formatDate(order.createdAt)}</small>
-              </button>
+              </article>
             ))}
           </div>
         </div>
@@ -558,7 +633,7 @@ export function AdminDashboardPage() {
           <div className="admin-section-head">
             <div>
               <span className="eyebrow">diagnostico</span>
-              <h2>{selectedOrder ? selectedOrder.id : "Selecione um pedido"}</h2>
+              <h2>{selectedOrder ? selectedOrder.orderId : "Selecione um pedido"}</h2>
             </div>
             <select
               value={selectedOrderId || ""}
@@ -567,7 +642,7 @@ export function AdminDashboardPage() {
             >
               <option value="">Selecionar pedido</option>
               {orders.map((order) => (
-                <option key={order.id} value={order.id}>{order.id.slice(0, 8)} - {labelStatus(order.status)}</option>
+                <option key={order.orderId} value={order.orderId}>{order.orderId.slice(0, 8)} - {labelStatus(order.status)}</option>
               ))}
             </select>
           </div>
@@ -729,22 +804,22 @@ export function AdminDashboardPage() {
               <div className="credential-secret-fields">
                 <div>
                   <span>Login</span>
-                  <code>{revealedCredentialIds.has(credential.credentialId) ? credential.login : maskCredential(credential.login)}</code>
+                  <code>{revealedCredentialIds.has(credential.credentialId) ? credentialSecrets[credential.credentialId]?.login : credential.loginHint}</code>
                 </div>
                 <div>
                   <span>Senha</span>
-                  <code>{revealedCredentialIds.has(credential.credentialId) ? credential.password : maskCredential(credential.password)}</code>
+                  <code>{revealedCredentialIds.has(credential.credentialId) ? credentialSecrets[credential.credentialId]?.password : "********"}</code>
                 </div>
               </div>
               <div className="credential-admin-actions">
                 <small>{credential.credentialId.slice(0, 8)}</small>
-                <button type="button" className="secondary-button compact" onClick={() => toggleCredentialReveal(credential.credentialId)}>
+                <button type="button" className="secondary-button compact" onClick={() => void toggleCredentialReveal(credential.credentialId)}>
                   {revealedCredentialIds.has(credential.credentialId) ? "Ocultar" : "Revelar"}
                 </button>
-                <button type="button" className="secondary-button compact" onClick={() => void copyCredentialValue(credential.login, "Login")}>
+                <button type="button" className="secondary-button compact" onClick={() => void copyCredentialValue(credential, "login")}>
                   Copiar login
                 </button>
-                <button type="button" className="secondary-button compact" onClick={() => void copyCredentialValue(credential.password, "Senha")}>
+                <button type="button" className="secondary-button compact" onClick={() => void copyCredentialValue(credential, "password")}>
                   Copiar senha
                 </button>
                 {credential.status !== "DELIVERED" && credential.status !== "INVALID" ? (
@@ -773,16 +848,19 @@ function credentialStatusLabel(status: string) {
   return map[status] || status;
 }
 
+function isOrderReprocessable(status: string) {
+  return ["PAID", "DELIVERY_PENDING", "DELIVERY_FAILED"].includes(status);
+}
+
+function isOrderReservationReleasable(status: string) {
+  return ["PENDING", "CANCELED"].includes(status);
+}
+
 function credentialStatusTone(status: string) {
   if (status === "AVAILABLE") return "success";
   if (status === "RESERVED") return "warning";
   if (status === "DELIVERED") return "info";
   return "danger";
-}
-
-function maskCredential(value: string) {
-  if (!value) return "********";
-  return "*".repeat(Math.min(Math.max(value.length, 8), 18));
 }
 
 function validateCredentialForm(form: typeof EMPTY_CREDENTIAL_FORM) {

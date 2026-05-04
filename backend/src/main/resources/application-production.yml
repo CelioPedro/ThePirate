@@ -1,0 +1,46 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      repositories:
+        enabled: false
+app:
+  auth:
+    enabled: true
+    jwt:
+      secret: ${AUTH_JWT_SECRET}
+      expiration-hours: ${AUTH_JWT_EXPIRATION_HOURS:24}
+  initial-admin:
+    enabled: ${INITIAL_ADMIN_ENABLED:false}
+    email: ${INITIAL_ADMIN_EMAIL:}
+    password: ${INITIAL_ADMIN_PASSWORD:}
+    name: ${INITIAL_ADMIN_NAME:Admin}
+  web:
+    cors:
+      allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS}
+  credentials:
+    encryption:
+      secret: ${CREDENTIAL_ENCRYPTION_SECRET}
+      key-version: ${CREDENTIAL_ENCRYPTION_KEY_VERSION:prod-aesgcm-v1}
+  integrations:
+    mercado-pago:
+      gateway: real
+      access-token: ${MERCADO_PAGO_ACCESS_TOKEN}
+      webhook-secret: ${MERCADO_PAGO_WEBHOOK_SECRET}
+      base-url: ${MERCADO_PAGO_BASE_URL:https://api.mercadopago.com}
+      notification-url: ${MERCADO_PAGO_NOTIFICATION_URL}
+      pix-expiration-minutes: ${MERCADO_PAGO_PIX_EXPIRATION_MINUTES:30}
+      payer-email: ${MERCADO_PAGO_PAYER_EMAIL:}
+      payer-first-name: ${MERCADO_PAGO_PAYER_FIRST_NAME:}

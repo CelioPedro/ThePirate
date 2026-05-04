@@ -1,6 +1,6 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import { CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, PackageCheck } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
 import { useSession } from "../shared/session/SessionContext";
@@ -43,10 +43,10 @@ export function OrderDetailPage() {
       setOrder(detail);
       setPixState((current) => ({
         ...current,
-        qrCode: current.qrCode || detail.payment?.qrCode || undefined,
-        copyPaste: current.copyPaste || detail.payment?.copyPaste || undefined,
-        expiresAt: current.expiresAt || detail.payment?.pixExpiresAt || undefined,
-        externalReference: current.externalReference || detail.externalReference || undefined
+        qrCode: detail.payment?.qrCode || current.qrCode || undefined,
+        copyPaste: detail.payment?.copyPaste || current.copyPaste || undefined,
+        expiresAt: detail.payment?.pixExpiresAt || current.expiresAt || undefined,
+        externalReference: detail.externalReference || current.externalReference || undefined
       }));
       if (detail.status === "DELIVERED") {
         const delivered = await apiClient.getOrderCredentials(orderId, apiBase, token);
@@ -86,6 +86,7 @@ export function OrderDetailPage() {
   }, [apiBase, order?.externalReference, pixState.copyPaste, pixState.externalReference]);
 
   const isDelivered = order?.status === "DELIVERED";
+  const hasIssue = order?.status === "CANCELED" || order?.status === "DELIVERY_FAILED";
   const shouldPoll = Boolean(order && ["PENDING", "PAID", "DELIVERY_PENDING"].includes(order.status));
 
   useEffect(() => {
@@ -136,11 +137,21 @@ export function OrderDetailPage() {
   return (
     <div className="order-detail-grid">
       <section className="panel-card">
+        <Link to="/pedidos" className="text-button compact order-back-link">Voltar aos pedidos</Link>
         <span className="eyebrow">pedido</span>
         <div className="panel-header-inline">
           <h1>{order?.id || orderId}</h1>
           {order ? <span className={`status-pill ${statusTone(order.status)}`}>{labelStatus(order.status)}</span> : null}
         </div>
+        {order ? (
+          <div className={`order-state-banner ${orderStateTone(order.status)}`}>
+            {hasIssue ? <AlertTriangle size={20} /> : isDelivered ? <CheckCircle2 size={20} /> : <PackageCheck size={20} />}
+            <div>
+              <strong>{orderStateTitle(order.status)}</strong>
+              <span>{orderStateDescription(order.status, order.failureReason)}</span>
+            </div>
+          </div>
+        ) : null}
         <div className="order-action-row">
           <button type="button" className="secondary-button compact" onClick={() => void refreshNow()} disabled={isRefreshing || isLoading}>
             {isRefreshing ? "Atualizando..." : "Atualizar status"}
@@ -161,6 +172,20 @@ export function OrderDetailPage() {
             </div>
           ))}
         </div>
+        {order?.items.length ? (
+          <div className="order-items-summary">
+            <span className="eyebrow">itens</span>
+            {order.items.map((item) => (
+              <div key={item.id} className="order-item-line">
+                <div>
+                  <strong>{item.productName}</strong>
+                  <span>{item.quantity} unidade(s)</span>
+                </div>
+                <span>{formatCurrency(item.totalPriceCents)}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className={isDelivered ? "panel-card payment-card complete" : "panel-card payment-card"}>
@@ -233,9 +258,19 @@ export function OrderDetailPage() {
                   </button>
                 </div>
                 <span>Login</span>
-                <code>{revealedCredentials.has(credential.orderItemId) ? credential.login : maskCredential(credential.login)}</code>
+                <div className="credential-copy-row">
+                  <code>{revealedCredentials.has(credential.orderItemId) ? credential.login : maskCredential(credential.login)}</code>
+                  <button type="button" className="icon-only-button" aria-label="Copiar login" onClick={() => void copyCredentialField(credential.login, "Login", setError)}>
+                    <Copy size={15} />
+                  </button>
+                </div>
                 <span>Senha</span>
-                <code>{revealedCredentials.has(credential.orderItemId) ? credential.password : maskCredential(credential.password)}</code>
+                <div className="credential-copy-row">
+                  <code>{revealedCredentials.has(credential.orderItemId) ? credential.password : maskCredential(credential.password)}</code>
+                  <button type="button" className="icon-only-button" aria-label="Copiar senha" onClick={() => void copyCredentialField(credential.password, "Senha", setError)}>
+                    <Copy size={15} />
+                  </button>
+                </div>
               </article>
             ))}
           </div>
@@ -254,6 +289,7 @@ function paymentHint(status?: string, canSimulateLocalPayment = false) {
   if (status === "DELIVERED") return "Pagamento confirmado e entrega concluida.";
   if (status === "PAID" || status === "DELIVERY_PENDING") return "Pagamento confirmado. A entrega sera atualizada automaticamente.";
   if (status === "CANCELED") return "Pedido cancelado. Este PIX nao deve mais ser pago.";
+  if (status === "DELIVERY_FAILED") return "Pagamento identificado, mas a entrega precisa de revisao operacional.";
   if (canSimulateLocalPayment) return "Aguardando pagamento PIX. Em ambiente local, use a simulacao para validar o fluxo.";
   return "Aguardando confirmacao do Mercado Pago. A tela sera atualizada automaticamente quando o webhook chegar.";
 }
@@ -264,6 +300,35 @@ function deliveryHint(status?: string) {
   if (status === "CANCELED") return "Pedido cancelado antes da entrega.";
   if (status === "DELIVERY_FAILED") return "A entrega falhou e precisa de reprocessamento operacional.";
   return "Quando o pedido chegar a ENTREGUE, as credenciais aparecerao aqui.";
+}
+
+function orderStateTone(status: string) {
+  if (status === "DELIVERED") return "success";
+  if (status === "CANCELED" || status === "DELIVERY_FAILED") return "danger";
+  if (status === "PAID" || status === "DELIVERY_PENDING") return "info";
+  return "warning";
+}
+
+function orderStateTitle(status: string) {
+  const map: Record<string, string> = {
+    PENDING: "Aguardando pagamento PIX",
+    PAID: "Pagamento aprovado",
+    DELIVERY_PENDING: "Entrega em processamento",
+    DELIVERED: "Credenciais liberadas",
+    DELIVERY_FAILED: "Entrega precisa de suporte",
+    CANCELED: "Pedido cancelado"
+  };
+  return map[status] || "Pedido em acompanhamento";
+}
+
+function orderStateDescription(status: string, failureReason?: string | null) {
+  if (status === "PENDING") return "Pague usando o PIX desta tela. A confirmacao vem automaticamente pelo Mercado Pago.";
+  if (status === "PAID") return "Recebemos a confirmacao e estamos preparando a entrega.";
+  if (status === "DELIVERY_PENDING") return "A entrega foi colocada em processamento. Esta tela atualiza sozinha.";
+  if (status === "DELIVERED") return "O pedido foi concluido. Revele e copie as credenciais abaixo quando precisar.";
+  if (status === "DELIVERY_FAILED") return failureReason || "A entrega nao foi concluida automaticamente e precisa de acao operacional.";
+  if (status === "CANCELED") return "Este pedido nao esta mais valido. Nao pague um PIX vencido ou cancelado.";
+  return "Acompanhe o estado do pedido por aqui.";
 }
 
 function maskCredential(value: string) {
@@ -304,5 +369,14 @@ async function copyPix(value: string | undefined, setError: Dispatch<SetStateAct
     setError("");
   } catch {
     setError("Nao foi possivel copiar o PIX automaticamente.");
+  }
+}
+
+async function copyCredentialField(value: string, label: string, setError: Dispatch<SetStateAction<string>>) {
+  try {
+    await navigator.clipboard.writeText(value);
+    setError("");
+  } catch {
+    setError(`Nao foi possivel copiar ${label.toLowerCase()} automaticamente.`);
   }
 }

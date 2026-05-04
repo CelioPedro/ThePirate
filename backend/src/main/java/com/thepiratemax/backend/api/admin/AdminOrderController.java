@@ -1,8 +1,10 @@
 package com.thepiratemax.backend.api.admin;
 
 import com.thepiratemax.backend.api.admin.AdminOrderDiagnosticsResponse;
+import com.thepiratemax.backend.api.admin.AdminOrderSummaryResponse;
 import com.thepiratemax.backend.api.order.OrderStatusResponse;
 import com.thepiratemax.backend.service.admin.AdminOrderOperationsService;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +20,11 @@ public class AdminOrderController {
 
     public AdminOrderController(AdminOrderOperationsService adminOrderOperationsService) {
         this.adminOrderOperationsService = adminOrderOperationsService;
+    }
+
+    @GetMapping
+    public List<AdminOrderSummaryResponse> listOrders() {
+        return adminOrderOperationsService.listOrders();
     }
 
     @PostMapping("/{orderId}/reprocess-delivery")

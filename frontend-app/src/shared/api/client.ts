@@ -2,6 +2,8 @@ import type {
   AuthResponse,
   AuthUser,
   AdminCredentialResponse,
+  AdminCredentialSecretResponse,
+  AdminOrderSummary,
   AdminProduct,
   AdminOrderDiagnostics,
   CreateOrderResponse,
@@ -129,6 +131,15 @@ export const apiClient = {
       body: JSON.stringify(payload)
     });
   },
+  revealAdminCredential(credentialId: string, action: "REVEAL" | "COPY_LOGIN" | "COPY_PASSWORD", apiBase?: string, token?: string | null) {
+    return request<AdminCredentialSecretResponse>(`/api/admin/credentials/${credentialId}/secret`, {
+      apiBase,
+      token,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action })
+    });
+  },
   simulatePayment(externalReference: string, apiBase?: string) {
     return request<{ message: string }>("/api/webhooks/mercadopago", {
       apiBase,
@@ -146,6 +157,9 @@ export const apiClient = {
   },
   getAdminOrderDiagnostics(orderId: string, apiBase?: string, token?: string | null) {
     return request<AdminOrderDiagnostics>(`/api/admin/orders/${orderId}/diagnostics`, { apiBase, token });
+  },
+  getAdminOrders(apiBase?: string, token?: string | null) {
+    return request<AdminOrderSummary[]>("/api/admin/orders", { apiBase, token });
   },
   getAdminCredentials(filters: { productId?: string; status?: string } = {}, apiBase?: string, token?: string | null) {
     const params = new URLSearchParams();

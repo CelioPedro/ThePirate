@@ -2,6 +2,7 @@ package com.thepiratemax.backend.api.admin;
 
 import com.thepiratemax.backend.service.admin.AdminCredentialOperationsService;
 import com.thepiratemax.backend.domain.credential.CredentialStatus;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -41,11 +42,33 @@ public class AdminCredentialController {
         );
     }
 
+    @PostMapping("/{credentialId}/secret")
+    public AdminCredentialSecretResponse revealCredential(
+            @PathVariable UUID credentialId,
+            @Valid @RequestBody AdminCredentialSecretRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return adminCredentialOperationsService.revealCredential(
+                credentialId,
+                request.action(),
+                clientIp(httpRequest),
+                httpRequest.getHeader("User-Agent")
+        );
+    }
+
     @PostMapping("/{credentialId}/invalidate")
     public AdminCredentialResponse invalidateCredential(
             @PathVariable UUID credentialId,
             @Valid @RequestBody InvalidateCredentialRequest request
     ) {
         return adminCredentialOperationsService.invalidateCredential(credentialId, request.reason());
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }

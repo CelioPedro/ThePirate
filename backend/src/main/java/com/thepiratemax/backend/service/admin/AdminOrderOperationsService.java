@@ -1,6 +1,7 @@
 package com.thepiratemax.backend.service.admin;
 
 import com.thepiratemax.backend.api.admin.AdminOrderDiagnosticsResponse;
+import com.thepiratemax.backend.api.admin.AdminOrderSummaryResponse;
 import com.thepiratemax.backend.api.order.OrderStatusResponse;
 import com.thepiratemax.backend.domain.credential.CredentialEntity;
 import com.thepiratemax.backend.domain.credential.CredentialStatus;
@@ -20,6 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,6 +58,41 @@ public class AdminOrderOperationsService {
         this.credentialRepository = credentialRepository;
         this.paymentRepository = paymentRepository;
         this.orderDeliveryService = orderDeliveryService;
+    }
+
+    @Transactional(readOnly = true)
+    public List<AdminOrderSummaryResponse> listOrders() {
+        return orderRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, 100)).stream()
+                .map(order -> {
+                    List<OrderItemEntity> items = orderItemRepository.findAllByOrderIdOrderByCreatedAtAsc(order.getId());
+                    return new AdminOrderSummaryResponse(
+                            order.getId(),
+                            order.getExternalReference(),
+                            order.getStatus().name(),
+                            order.getPaymentMethod().name(),
+                            order.getTotalCents(),
+                            order.getCurrency(),
+                            order.getCreatedAt(),
+                            order.getPaidAt(),
+                            order.getDeliveredAt(),
+                            order.getCanceledAt(),
+                            order.getFailureReason(),
+                            new AdminOrderSummaryResponse.CustomerSummaryResponse(
+                                    order.getUser().getId(),
+                                    order.getUser().getName(),
+                                    order.getUser().getEmail()
+                            ),
+                            items.stream()
+                                    .map(item -> new AdminOrderSummaryResponse.ItemSummaryResponse(
+                                            item.getProduct().getId(),
+                                            item.getProduct().getSku(),
+                                            item.getProduct().getName(),
+                                            item.getQuantity()
+                                    ))
+                                    .toList()
+                    );
+                })
+                .toList();
     }
 
     @Transactional
