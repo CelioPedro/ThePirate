@@ -1,74 +1,85 @@
-import { type FormEvent, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Menu, Search, ShoppingCart, UserCircle2 } from "lucide-react";
+import { Search, ShoppingBag, UserCircle2 } from "lucide-react";
 import { useCart } from "../cart/CartContext";
 import { useSession } from "../session/SessionContext";
 import { CartDrawer } from "../ui/CartDrawer";
+import { CategoryDropdown } from "../ui/CategoryDropdown";
 
 export function StoreShell() {
   const { openCart, itemCount } = useCart();
-  const { user, isDevFallback, isLive, apiBase, setApiBase, refreshSession, lastError } = useSession();
+  const { user, isDevFallback, isLive, refreshSession, lastError } = useSession();
   const location = useLocation();
-  const [apiDraft, setApiDraft] = useState(apiBase);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  async function handleApiSubmit(event: FormEvent) {
-    event.preventDefault();
-    await setApiBase(apiDraft.trim());
-  }
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="app-shell">
       <header className="topbar">
         <div className="container topbar-inner">
-          <Link to="/" className="brand-mark">
-            <div className="brand-badge">TPM</div>
-            <div>
-              <strong>The Pirate Max</strong>
-              <span>digital marketplace</span>
+          <nav className="topbar-nav topbar-nav-left" aria-label="Navegacao principal">
+            <button
+              type="button"
+              className={isMenuOpen ? "topbar-menu-button active" : "topbar-menu-button"}
+              aria-label={isMenuOpen ? "Fechar menu" : "Abrir menu"}
+              aria-expanded={isMenuOpen}
+              aria-controls="site-menu"
+              onClick={() => setIsMenuOpen((current) => !current)}
+            >
+              <span className="hamburger-line" />
+              <span className="hamburger-line" />
+              <span className="hamburger-line" />
+            </button>
+            <div className="desktop-nav-links">
+              <NavLink to="/catalogo" className={navClass}>Catalogo</NavLink>
+              <CategoryDropdown />
+              <NavLink to="/pedidos" className={navClass}>Pedidos</NavLink>
+              <NavLink to="/conta" className={navClass}>Conta</NavLink>
+              {user?.role === "ADMIN" ? <NavLink to="/admin" className={navClass}>Admin</NavLink> : null}
             </div>
-          </Link>
-
-          <div className="topbar-search">
-            <Search size={18} />
-            <input placeholder="Busque produto, categoria ou provedor" aria-label="Buscar produtos" />
-          </div>
-
-          <nav className="topbar-nav" aria-label="Navegacao principal">
-            <NavLink to="/catalogo" className={navClass}>Catalogo</NavLink>
-            <NavLink to="/pedidos" className={navClass}>Pedidos</NavLink>
-            <NavLink to="/conta" className={navClass}>Conta</NavLink>
-            {user?.role === "ADMIN" ? <NavLink to="/admin" className={navClass}>Admin</NavLink> : null}
+            <div id="site-menu" className={isMenuOpen ? "site-menu-popover open" : "site-menu-popover"}>
+              <NavLink to="/catalogo" className="site-menu-link">Catalogo</NavLink>
+              <NavLink to="/catalogo#inteligencia-artificial" className="site-menu-link">Inteligencia Artificial</NavLink>
+              <NavLink to="/catalogo#streaming" className="site-menu-link">Streaming</NavLink>
+              <NavLink to="/catalogo#games" className="site-menu-link">Games</NavLink>
+              <NavLink to="/pedidos" className="site-menu-link">Pedidos</NavLink>
+              <NavLink to="/conta" className="site-menu-link">Conta</NavLink>
+              {user?.role === "ADMIN" ? <NavLink to="/admin" className="site-menu-link">Admin</NavLink> : null}
+            </div>
           </nav>
 
-          <div className="topbar-actions">
-            <form className="api-connection-form" onSubmit={handleApiSubmit}>
-              <div className={isLive ? "api-pill online" : "api-pill offline"}>
-                <span className="api-dot" />
-                {isLive ? "API online" : "API offline"}
-              </div>
-              <input
-                value={apiDraft}
-                onChange={(event) => setApiDraft(event.target.value)}
-                className="api-base-input"
-                aria-label="URL da API"
-              />
-              <button type="submit" className="text-button compactless">Conectar</button>
-            </form>
-            <Link to={user ? "/conta" : "/login"} className="icon-button">
+          <Link to="/" className="header-logo-slot" aria-label="The Pirate Max">
+            <img src="/brand/ThePirateMaxLogo.png" alt="The Pirate Max" />
+          </Link>
+
+          <div className="topbar-actions topbar-actions-right">
+            <div className="topbar-search">
+              <Search size={16} />
+              <input placeholder="Buscar produtos..." aria-label="Buscar produtos" />
+            </div>
+            <Link to={user ? "/conta" : "/login"} className="header-text-link">
               <UserCircle2 size={18} />
               <span>{user ? user.name.split(" ")[0] : "Entrar"}</span>
             </Link>
-            <button type="button" className="icon-button primary" onClick={openCart}>
-              <ShoppingCart size={18} />
+            <button type="button" className="header-bag-button" onClick={openCart} aria-label="Abrir carrinho">
               <span>Carrinho</span>
-              <strong>{itemCount}</strong>
-            </button>
-            <button type="button" className="icon-button mobile-only">
-              <Menu size={18} />
+              <span className="header-bag-icon">
+                <ShoppingBag size={21} />
+                <strong>{itemCount}</strong>
+              </span>
             </button>
           </div>
         </div>
       </header>
+
+      <span
+        className={isLive ? "connection-status-dot online" : "connection-status-dot offline"}
+        aria-label={isLive ? "API conectada" : "API desconectada"}
+        role="status"
+      />
 
       {isDevFallback && location.pathname !== "/login" && location.pathname !== "/cadastro" ? (
         <div className="env-banner">

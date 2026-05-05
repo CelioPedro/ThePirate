@@ -37,7 +37,12 @@ public class ProductCatalogService {
                         product.getSlug(),
                         product.getName(),
                         product.getDescription(),
+                        product.getImageUrl(),
                         product.getCategory().name(),
+                        product.getCatalogCategory().getId(),
+                        product.getCatalogCategory().getSlug(),
+                        product.getCatalogCategory().getName(),
+                        product.getCatalogCategory().getImageUrl(),
                         product.getProvider(),
                         product.getPriceCents(),
                         product.getCurrency(),
@@ -70,6 +75,9 @@ public class ProductCatalogService {
     private Map<UUID, Integer> getStockByProductId(List<ProductEntity> products) {
         Map<UUID, Integer> stockByProductId = new HashMap<>();
         List<UUID> productIds = products.stream().map(ProductEntity::getId).toList();
+        if (productIds.isEmpty()) {
+            return stockByProductId;
+        }
         credentialRepository.countByProductIdsAndStatus(productIds, CredentialStatus.AVAILABLE)
                 .forEach(row -> stockByProductId.put((UUID) row[0], ((Long) row[1]).intValue()));
         return stockByProductId;

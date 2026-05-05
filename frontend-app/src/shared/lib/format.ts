@@ -17,7 +17,15 @@ export function humanizeCategory(category: string) {
   const map: Record<string, string> = {
     STREAMING: "Streaming",
     ASSINATURA: "Assinaturas",
-    GAMES: "Games"
+    GAMES: "Games",
+    "inteligencia-artificial": "Inteligencia Artificial",
+    "assinaturas-premium": "Assinaturas e Premium",
+    "gift-cards": "Gift Cards",
+    "softwares-licencas": "Softwares e Licencas",
+    "redes-sociais": "Redes Sociais",
+    "servicos-digitais": "Servicos Digitais",
+    "cursos-treinamentos": "Cursos e Treinamentos",
+    "contas-digitais": "Contas Digitais"
   };
   return map[category] || category;
 }

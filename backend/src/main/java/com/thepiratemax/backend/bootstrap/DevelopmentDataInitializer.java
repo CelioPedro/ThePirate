@@ -12,6 +12,7 @@ import com.thepiratemax.backend.domain.user.UserEntity;
 import com.thepiratemax.backend.domain.user.UserRole;
 import com.thepiratemax.backend.domain.user.UserStatus;
 import com.thepiratemax.backend.repository.CredentialRepository;
+import com.thepiratemax.backend.repository.CatalogCategoryRepository;
 import com.thepiratemax.backend.repository.ProductRepository;
 import com.thepiratemax.backend.repository.UserRepository;
 import java.util.List;
@@ -31,6 +32,7 @@ public class DevelopmentDataInitializer {
     CommandLineRunner seedDevelopmentData(
             UserRepository userRepository,
             ProductRepository productRepository,
+            CatalogCategoryRepository catalogCategoryRepository,
             CredentialRepository credentialRepository,
             DevUserProperties devUserProperties,
             PasswordEncoder passwordEncoder,
@@ -38,12 +40,13 @@ public class DevelopmentDataInitializer {
             TransactionTemplate transactionTemplate
     ) {
         return args -> transactionTemplate.executeWithoutResult(status ->
-                seedCatalogAndInventory(userRepository, productRepository, credentialRepository, devUserProperties, passwordEncoder, credentialCryptoService));
+                seedCatalogAndInventory(userRepository, productRepository, catalogCategoryRepository, credentialRepository, devUserProperties, passwordEncoder, credentialCryptoService));
     }
 
     void seedCatalogAndInventory(
             UserRepository userRepository,
             ProductRepository productRepository,
+            CatalogCategoryRepository catalogCategoryRepository,
             CredentialRepository credentialRepository,
             DevUserProperties devUserProperties,
             PasswordEncoder passwordEncoder,
@@ -99,7 +102,9 @@ public class DevelopmentDataInitializer {
                             999L,
                             30,
                             "Entrega por credencial com operacao inicial de 30 dias.",
-                            5
+                            5,
+                            "streaming",
+                            "/catalog/products/hulu.png"
                     ),
                     new CatalogProductSeed(
                             "TPM-NBA-001",
@@ -111,7 +116,9 @@ public class DevelopmentDataInitializer {
                             999L,
                             30,
                             "Entrega por credencial com vigencia inicial de 30 dias.",
-                            4
+                            4,
+                            "streaming",
+                            "/catalog/products/nba.png"
                     ),
                     new CatalogProductSeed(
                             "TPM-PARAMOUNT-001",
@@ -198,6 +205,412 @@ public class DevelopmentDataInitializer {
                             4
                     ),
                     new CatalogProductSeed(
+                            "TPM-ADOBE-001",
+                            "adobe-creative-cloud",
+                            "Adobe Creative Cloud",
+                            "Acesso premium para ferramentas criativas e edicao.",
+                            ProductCategory.ASSINATURA,
+                            "ADOBE",
+                            2499L,
+                            30,
+                            "Entrega por credencial com orientacao de uso individual.",
+                            5,
+                            "softwares-licencas",
+                            "/catalog/products/adobe.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-CAPCUT-001",
+                            "capcut-pro",
+                            "CapCut Pro",
+                            "Assinatura para edicao de videos e recursos premium.",
+                            ProductCategory.ASSINATURA,
+                            "CAPCUT",
+                            1499L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            5,
+                            "softwares-licencas",
+                            "/catalog/products/capcut.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-COPILOT-001",
+                            "copilot-pro",
+                            "Copilot Pro",
+                            "Acesso premium de IA para produtividade e assistencia digital.",
+                            ProductCategory.ASSINATURA,
+                            "COPILOT",
+                            2599L,
+                            30,
+                            "Entrega por credencial com orientacao de uso individual.",
+                            5,
+                            "inteligencia-artificial",
+                            "/catalog/products/copilot.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-MIDJOURNEY-001",
+                            "midjourney",
+                            "Midjourney",
+                            "Acesso a geracao de imagens por IA.",
+                            ProductCategory.ASSINATURA,
+                            "MIDJOURNEY",
+                            2999L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            4,
+                            "inteligencia-artificial",
+                            "/catalog/products/midjourney.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-NOTION-001",
+                            "notion-plus",
+                            "Notion Plus",
+                            "Workspace premium para notas, projetos e documentos.",
+                            ProductCategory.ASSINATURA,
+                            "NOTION",
+                            1299L,
+                            30,
+                            "Entrega por credencial com uso individual.",
+                            5,
+                            "assinaturas-premium",
+                            "/catalog/products/notion.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-DROPBOX-001",
+                            "dropbox-plus",
+                            "Dropbox Plus",
+                            "Armazenamento em nuvem com recursos premium.",
+                            ProductCategory.ASSINATURA,
+                            "DROPBOX",
+                            1499L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            5,
+                            "assinaturas-premium",
+                            "/catalog/products/dropbox.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-GDRIVE-001",
+                            "google-drive",
+                            "Google Drive",
+                            "Acesso digital para armazenamento e produtividade em nuvem.",
+                            ProductCategory.ASSINATURA,
+                            "GOOGLE_DRIVE",
+                            1299L,
+                            30,
+                            "Entrega por credencial com orientacao de uso individual.",
+                            5,
+                            "assinaturas-premium",
+                            "/catalog/products/googledrive.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-ICLOUD-001",
+                            "icloud-plus",
+                            "iCloud+",
+                            "Armazenamento e recursos premium para conta digital.",
+                            ProductCategory.ASSINATURA,
+                            "ICLOUD",
+                            1299L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            5,
+                            "contas-digitais",
+                            "/catalog/products/icloud.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-GITHUB-001",
+                            "github-pro",
+                            "GitHub Pro",
+                            "Acesso premium para desenvolvimento e repositorios.",
+                            ProductCategory.ASSINATURA,
+                            "GITHUB",
+                            1999L,
+                            30,
+                            "Entrega por credencial com uso individual.",
+                            4,
+                            "softwares-licencas",
+                            "/catalog/products/github.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-VSCODE-001",
+                            "vscode-tools",
+                            "VS Code Tools",
+                            "Pacote digital para produtividade e desenvolvimento.",
+                            ProductCategory.ASSINATURA,
+                            "VSCODE",
+                            999L,
+                            30,
+                            "Entrega por credencial ou instrucoes operacionais.",
+                            4,
+                            "softwares-licencas",
+                            "/catalog/products/vscode.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-DUOLINGO-001",
+                            "duolingo-super",
+                            "Duolingo Super",
+                            "Acesso premium para estudos e pratica de idiomas.",
+                            ProductCategory.ASSINATURA,
+                            "DUOLINGO",
+                            999L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            5,
+                            "cursos-treinamentos",
+                            "/catalog/products/duolinguo.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-SPOTIFY-001",
+                            "spotify-premium",
+                            "Spotify Premium",
+                            "Streaming de musica com recursos premium.",
+                            ProductCategory.STREAMING,
+                            "SPOTIFY",
+                            999L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            6,
+                            "streaming",
+                            "/catalog/products/spotify.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-TWITCH-001",
+                            "twitch-premium",
+                            "Twitch Premium",
+                            "Acesso digital para comunidade, lives e beneficios premium.",
+                            ProductCategory.STREAMING,
+                            "TWITCH",
+                            999L,
+                            30,
+                            "Entrega por credencial com uso regional BR.",
+                            4,
+                            "streaming",
+                            "/catalog/products/twicth.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-STEAM-001",
+                            "steam",
+                            "Steam",
+                            "Conta ou credito digital para plataforma de jogos.",
+                            ProductCategory.GAMES,
+                            "STEAM",
+                            1999L,
+                            0,
+                            "Entrega de acesso digital com instrucoes operacionais.",
+                            5,
+                            "games",
+                            "/catalog/products/steam.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-XBOX-001",
+                            "xbox",
+                            "Xbox",
+                            "Produto digital para jogos, conta ou beneficios Xbox.",
+                            ProductCategory.GAMES,
+                            "XBOX",
+                            1999L,
+                            0,
+                            "Entrega de acesso digital com instrucoes operacionais.",
+                            5,
+                            "games",
+                            "/catalog/products/xbox.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-ROBLOX-001",
+                            "roblox",
+                            "Roblox",
+                            "Produto digital para conta, creditos ou beneficios Roblox.",
+                            ProductCategory.GAMES,
+                            "ROBLOX",
+                            1499L,
+                            0,
+                            "Entrega de acesso digital com instrucoes operacionais.",
+                            5,
+                            "games",
+                            "/catalog/products/roblox.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-NINTENDO-001",
+                            "nintendo",
+                            "Nintendo",
+                            "Produto digital para conta, jogos ou beneficios Nintendo.",
+                            ProductCategory.GAMES,
+                            "NINTENDO",
+                            1999L,
+                            0,
+                            "Entrega de acesso digital com instrucoes operacionais.",
+                            4,
+                            "games",
+                            "/catalog/products/nintendp.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-DISCORD-001",
+                            "discord-nitro",
+                            "Discord Nitro",
+                            "Acesso premium para comunidade, chamadas e recursos sociais.",
+                            ProductCategory.ASSINATURA,
+                            "DISCORD",
+                            1499L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            5,
+                            "redes-sociais",
+                            "/catalog/products/discord.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-INSTAGRAM-001",
+                            "instagram",
+                            "Instagram",
+                            "Servico digital para perfil e operacao em rede social.",
+                            ProductCategory.ASSINATURA,
+                            "INSTAGRAM",
+                            999L,
+                            30,
+                            "Entrega conforme instrucoes operacionais do servico.",
+                            5,
+                            "redes-sociais",
+                            "/catalog/products/instagrram.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-LINKEDIN-001",
+                            "linkedin-premium",
+                            "LinkedIn Premium",
+                            "Acesso premium para networking e carreira.",
+                            ProductCategory.ASSINATURA,
+                            "LINKEDIN",
+                            1999L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            4,
+                            "redes-sociais",
+                            "/catalog/products/linkedin.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-PINTEREST-001",
+                            "pinterest",
+                            "Pinterest",
+                            "Servico digital para perfil e operacao em rede social.",
+                            ProductCategory.ASSINATURA,
+                            "PINTEREST",
+                            999L,
+                            30,
+                            "Entrega conforme instrucoes operacionais do servico.",
+                            4,
+                            "redes-sociais",
+                            "/catalog/products/pinterest.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-REDDIT-001",
+                            "reddit-premium",
+                            "Reddit Premium",
+                            "Acesso premium e beneficios para comunidade digital.",
+                            ProductCategory.ASSINATURA,
+                            "REDDIT",
+                            999L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            4,
+                            "redes-sociais",
+                            "/catalog/products/reddit.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-SNAPCHAT-001",
+                            "snapchat-plus",
+                            "Snapchat+",
+                            "Acesso premium para rede social e recursos extras.",
+                            ProductCategory.ASSINATURA,
+                            "SNAPCHAT",
+                            999L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            4,
+                            "redes-sociais",
+                            "/catalog/products/snapchat.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-TELEGRAM-001",
+                            "telegram-premium",
+                            "Telegram Premium",
+                            "Acesso premium para mensagens, arquivos e comunidade.",
+                            ProductCategory.ASSINATURA,
+                            "TELEGRAM",
+                            999L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            4,
+                            "redes-sociais",
+                            "/catalog/products/telegram.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-TIKTOK-001",
+                            "tiktok",
+                            "TikTok",
+                            "Servico digital para perfil e operacao em rede social.",
+                            ProductCategory.ASSINATURA,
+                            "TIKTOK",
+                            999L,
+                            30,
+                            "Entrega conforme instrucoes operacionais do servico.",
+                            5,
+                            "redes-sociais",
+                            "/catalog/products/tiktok.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-WHATSAPP-001",
+                            "whatsapp-business",
+                            "WhatsApp Business",
+                            "Servico digital para conta, atendimento e operacao.",
+                            ProductCategory.ASSINATURA,
+                            "WHATSAPP",
+                            999L,
+                            30,
+                            "Entrega conforme instrucoes operacionais do servico.",
+                            5,
+                            "redes-sociais",
+                            "/catalog/products/whatsapp.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-X-001",
+                            "x-premium",
+                            "X Premium",
+                            "Acesso premium para rede social X.",
+                            ProductCategory.ASSINATURA,
+                            "X",
+                            1499L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            4,
+                            "redes-sociais",
+                            "/catalog/products/x.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-PAYPAL-001",
+                            "paypal",
+                            "PayPal",
+                            "Conta digital ou servico operacional para pagamentos.",
+                            ProductCategory.ASSINATURA,
+                            "PAYPAL",
+                            1499L,
+                            30,
+                            "Entrega conforme instrucoes operacionais do servico.",
+                            4,
+                            "contas-digitais",
+                            "/catalog/products/paypal.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-TEKNISA-001",
+                            "teknisa",
+                            "Teknisa",
+                            "Acesso digital para software e operacao profissional.",
+                            ProductCategory.ASSINATURA,
+                            "TEKNISA",
+                            1999L,
+                            30,
+                            "Entrega por credencial com vigencia operacional de 30 dias.",
+                            3,
+                            "servicos-digitais",
+                            "/catalog/products/teknisa.png"
+                    ),
+                    new CatalogProductSeed(
                             "TPM-LOL-D1-001",
                             "lol-diamante-1",
                             "Conta LoL Diamante 1",
@@ -207,7 +620,9 @@ public class DevelopmentDataInitializer {
                             24990L,
                             0,
                             "Entrega de conta individual com troca imediata de acesso recomendada.",
-                            3
+                            3,
+                            "games",
+                            "/catalog/products/lol.png"
                     ),
                     new CatalogProductSeed(
                             "TPM-LOL-P2-001",
@@ -219,7 +634,9 @@ public class DevelopmentDataInitializer {
                             15890L,
                             0,
                             "Entrega de conta individual com troca imediata de acesso recomendada.",
-                            4
+                            4,
+                            "games",
+                            "/catalog/products/lol.png"
                     ),
                     new CatalogProductSeed(
                             "TPM-LOL-CHALL-001",
@@ -231,12 +648,140 @@ public class DevelopmentDataInitializer {
                             38999L,
                             0,
                             "Entrega de conta individual com prioridade operacional.",
-                            2
+                            2,
+                            "games",
+                            "/catalog/products/lol.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-LOL-FERRO-001",
+                            "lol-ferro",
+                            "Conta LoL Ferro",
+                            "Conta de League of Legends pronta para uso em tier Ferro.",
+                            ProductCategory.GAMES,
+                            ProductProvider.LEAGUE_OF_LEGENDS,
+                            5990L,
+                            0,
+                            "Entrega de conta individual com troca imediata de acesso recomendada.",
+                            3,
+                            "games",
+                            "/catalog/products/lol.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-LOL-BRONZE-001",
+                            "lol-bronze",
+                            "Conta LoL Bronze",
+                            "Conta de League of Legends pronta para uso em tier Bronze.",
+                            ProductCategory.GAMES,
+                            ProductProvider.LEAGUE_OF_LEGENDS,
+                            7990L,
+                            0,
+                            "Entrega de conta individual com troca imediata de acesso recomendada.",
+                            3,
+                            "games",
+                            "/catalog/products/lol.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-LOL-PRATA-001",
+                            "lol-prata",
+                            "Conta LoL Prata",
+                            "Conta de League of Legends pronta para uso em tier Prata.",
+                            ProductCategory.GAMES,
+                            ProductProvider.LEAGUE_OF_LEGENDS,
+                            9990L,
+                            0,
+                            "Entrega de conta individual com troca imediata de acesso recomendada.",
+                            3,
+                            "games",
+                            "/catalog/products/lol.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-LOL-OURO-001",
+                            "lol-ouro",
+                            "Conta LoL Ouro",
+                            "Conta de League of Legends pronta para uso em tier Ouro.",
+                            ProductCategory.GAMES,
+                            ProductProvider.LEAGUE_OF_LEGENDS,
+                            12990L,
+                            0,
+                            "Entrega de conta individual com troca imediata de acesso recomendada.",
+                            3,
+                            "games",
+                            "/catalog/products/lol.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-LOL-ESMERALDA-001",
+                            "lol-esmeralda",
+                            "Conta LoL Esmeralda",
+                            "Conta de League of Legends pronta para uso em tier Esmeralda.",
+                            ProductCategory.GAMES,
+                            ProductProvider.LEAGUE_OF_LEGENDS,
+                            18990L,
+                            0,
+                            "Entrega de conta individual com troca imediata de acesso recomendada.",
+                            3,
+                            "games",
+                            "/catalog/products/lol.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-LOL-MESTRE-001",
+                            "lol-mestre",
+                            "Conta LoL Mestre",
+                            "Conta de League of Legends pronta para uso em tier Mestre.",
+                            ProductCategory.GAMES,
+                            ProductProvider.LEAGUE_OF_LEGENDS,
+                            44990L,
+                            0,
+                            "Entrega de conta individual com prioridade operacional.",
+                            2,
+                            "games",
+                            "/catalog/products/lol.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-DOTA-ANCIENT-001",
+                            "dota-ancient",
+                            "Conta Dota Ancient",
+                            "Conta de Dota 2 pronta para uso em tier Ancient.",
+                            ProductCategory.GAMES,
+                            "DOTA_2",
+                            18990L,
+                            0,
+                            "Entrega de conta individual com troca imediata de acesso recomendada.",
+                            3,
+                            "games",
+                            "/catalog/products/dota.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-DOTA-DIVINE-001",
+                            "dota-divine",
+                            "Conta Dota Divine",
+                            "Conta de Dota 2 pronta para uso em tier Divine.",
+                            ProductCategory.GAMES,
+                            "DOTA_2",
+                            28990L,
+                            0,
+                            "Entrega de conta individual com troca imediata de acesso recomendada.",
+                            3,
+                            "games",
+                            "/catalog/products/dota.png"
+                    ),
+                    new CatalogProductSeed(
+                            "TPM-DOTA-IMMORTAL-001",
+                            "dota-immortal",
+                            "Conta Dota Immortal",
+                            "Conta de Dota 2 pronta para uso em tier Immortal.",
+                            ProductCategory.GAMES,
+                            "DOTA_2",
+                            49990L,
+                            0,
+                            "Entrega de conta individual com prioridade operacional.",
+                            2,
+                            "games",
+                            "/catalog/products/dota.png"
                     )
             );
 
             List<ProductEntity> products = seeds.stream()
-                    .map(seed -> upsertProduct(productRepository, seed))
+                    .map(seed -> upsertProduct(productRepository, catalogCategoryRepository, seed))
                     .toList();
 
             seeds.forEach(seed -> {
@@ -250,13 +795,19 @@ public class DevelopmentDataInitializer {
             migrateLegacyCredentials(credentialRepository, credentialCryptoService);
     }
 
-    private ProductEntity upsertProduct(ProductRepository productRepository, CatalogProductSeed seed) {
+    private ProductEntity upsertProduct(
+            ProductRepository productRepository,
+            CatalogCategoryRepository catalogCategoryRepository,
+            CatalogProductSeed seed
+    ) {
         ProductEntity product = productRepository.findBySku(seed.sku()).orElseGet(ProductEntity::new);
         product.setSku(seed.sku());
         product.setSlug(seed.slug());
         product.setName(seed.name());
         product.setDescription(seed.description());
+        product.setImageUrl(seed.imageUrl());
         product.setCategory(seed.category());
+        product.setCatalogCategory(catalogCategoryRepository.findBySlug(resolveSeedCategorySlug(seed)).orElseThrow());
         product.setProvider(seed.provider());
         product.setStatus(ProductStatus.ACTIVE);
         product.setPriceCents(seed.priceCents());
@@ -295,6 +846,23 @@ public class DevelopmentDataInitializer {
             credential.setSourceBatch(seed.slug() + "-batch-" + (existingAvailableCredentials > 0 ? "topup" : "001"));
             credentialRepository.save(credential);
         }
+    }
+
+    private String resolveSeedCategorySlug(CatalogProductSeed seed) {
+        if (seed.catalogCategorySlug() != null && !seed.catalogCategorySlug().isBlank()) {
+            return seed.catalogCategorySlug();
+        }
+        if (seed.category() == ProductCategory.STREAMING) {
+            return "streaming";
+        }
+        if (seed.category() == ProductCategory.GAMES) {
+            return "games";
+        }
+        String haystack = (seed.name() + " " + seed.provider() + " " + seed.slug()).toLowerCase();
+        if (haystack.contains("chatgpt") || haystack.contains("gemini") || haystack.contains("ia")) {
+            return "inteligencia-artificial";
+        }
+        return "assinaturas-premium";
     }
 
     private void upsertUser(

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../shared/api/client";
 import { formatCurrency, formatDate, humanizeCategory, labelStatus, statusTone } from "../shared/lib/format";
 import { useSession } from "../shared/session/SessionContext";
-import type { AdminCredentialResponse, AdminOrderDiagnostics, AdminOrderSummary, AdminProduct, InventoryItem, Product } from "../shared/types";
+import type { AdminCredentialResponse, AdminOrderDiagnostics, AdminOrderSummary, AdminProduct, CatalogCategory, InventoryItem, Product } from "../shared/types";
 
 const EMPTY_CREDENTIAL_FORM = {
   productId: "",
@@ -17,6 +17,8 @@ const EMPTY_PRODUCT_FORM = {
   slug: "",
   name: "",
   description: "",
+  imageUrl: "",
+  categoryId: "",
   category: "STREAMING",
   provider: "",
   priceReais: "0,00",
@@ -39,6 +41,7 @@ export function AdminDashboardPage() {
   const [orders, setOrders] = useState<AdminOrderSummary[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
+  const [categories, setCategories] = useState<CatalogCategory[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [credentials, setCredentials] = useState<AdminCredentialResponse[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -85,14 +88,16 @@ export function AdminDashboardPage() {
     setIsLoading(true);
     setDiagnosticsMessage("");
     try {
-      const [ordersResponse, inventoryResponse, productsResponse] = await Promise.all([
+      const [ordersResponse, inventoryResponse, productsResponse, categoriesResponse] = await Promise.all([
         apiClient.getAdminOrders(apiBase, token).catch(() => []),
         apiClient.getInventory(apiBase),
-        apiClient.getProducts(apiBase)
+        apiClient.getProducts(apiBase),
+        apiClient.getCategories(apiBase).catch(() => [])
       ]);
       setOrders(ordersResponse);
       setInventory(inventoryResponse);
       setProducts(productsResponse);
+      setCategories(categoriesResponse);
       setCredentialForm((current) => ({
         ...current,
         productId: current.productId || productsResponse[0]?.id || ""
@@ -104,13 +109,13 @@ export function AdminDashboardPage() {
         }
         return ordersResponse[0]?.orderId || null;
       });
-      await loadAdminProducts();
+      await loadAdminProducts(categoriesResponse);
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function loadAdminProducts() {
+  async function loadAdminProducts(availableCategories = categories) {
     try {
       const response = await apiClient.getAdminProducts(apiBase, token);
       setAdminProducts(response);
@@ -118,7 +123,7 @@ export function AdminDashboardPage() {
         if (current.id && response.some((product) => product.id === current.id)) {
           return current;
         }
-        return toProductForm(response[0]);
+        return toProductForm(response[0], availableCategories);
       });
     } catch {
       setAdminProducts([]);
@@ -277,6 +282,8 @@ export function AdminDashboardPage() {
             slug: productForm.slug,
             name: productForm.name,
             description: productForm.description,
+            imageUrl: productForm.imageUrl,
+            categoryId: productForm.categoryId || null,
             category: productForm.category,
             provider: productForm.provider,
             priceCents,
@@ -287,6 +294,8 @@ export function AdminDashboardPage() {
         : await apiClient.updateAdminProduct(productForm.id, {
             name: productForm.name,
             description: productForm.description,
+            imageUrl: productForm.imageUrl,
+            categoryId: productForm.categoryId || null,
             provider: productForm.provider,
             priceCents,
             status: productForm.status,
@@ -309,7 +318,7 @@ export function AdminDashboardPage() {
       return {
         ...current,
         slug,
-        sku: createSku(current.category, slug)
+        sku: createSku(current.categoryId || current.category, slug, categories)
       };
     });
   }
@@ -402,7 +411,7 @@ export function AdminDashboardPage() {
               className="secondary-button compact"
               onClick={() => {
                 setIsCreatingProductMode(true);
-                setProductForm(EMPTY_PRODUCT_FORM);
+                setProductForm(createEmptyProductForm(categories));
               }}
             >
               Novo produto
@@ -420,12 +429,12 @@ export function AdminDashboardPage() {
                 className={product.id === productForm.id ? "product-admin-row selected" : "product-admin-row"}
                 onClick={() => {
                   setIsCreatingProductMode(false);
-                  setProductForm(toProductForm(product));
+                  setProductForm(toProductForm(product, categories));
                 }}
               >
                 <div>
                   <strong>{product.name}</strong>
-                  <span>{product.sku} | {humanizeCategory(product.category)}</span>
+                  <span>{product.sku} | {product.categoryName || humanizeCategory(product.categorySlug || product.category)}</span>
                 </div>
                 <div>
                   <span className={`status-pill ${productStatusTone(product.status)}`}>{productStatusLabel(product.status)}</span>
@@ -447,18 +456,6 @@ export function AdminDashboardPage() {
                   <input value={productForm.slug} onChange={(event) => setProductForm((current) => ({ ...current, slug: event.target.value }))} />
                   <small className="field-help">Identificador amigavel usado em URLs e buscas tecnicas.</small>
                 </label>
-                <label>
-                  Categoria
-                  <select
-                    value={productForm.category}
-                    onChange={(event) => setProductForm((current) => ({ ...current, category: event.target.value }))}
-                    className="admin-select"
-                  >
-                    <option value="STREAMING">Streaming</option>
-                    <option value="ASSINATURA">Assinaturas</option>
-                    <option value="GAMES">Games</option>
-                  </select>
-                </label>
                 <div className="code-actions">
                   <button type="button" className="secondary-button compact" onClick={applyGeneratedProductCodes}>
                     Gerar SKU e slug
@@ -467,6 +464,28 @@ export function AdminDashboardPage() {
                 </div>
               </>
             ) : null}
+            <label>
+              Categoria
+              <select
+                value={productForm.categoryId}
+                onChange={(event) => {
+                  const selectedCategory = categories.find((category) => category.id === event.target.value);
+                  setProductForm((current) => ({
+                    ...current,
+                    categoryId: event.target.value,
+                    category: selectedCategory ? legacyCategoryForSlug(selectedCategory.slug) : current.category
+                  }));
+                }}
+                className="admin-select"
+              >
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
+                {categories.length === 0 ? (
+                  <option value="">Categorias indisponiveis</option>
+                ) : null}
+              </select>
+            </label>
             <label>
               Nome
               <input value={productForm.name} onChange={(event) => setProductForm((current) => ({ ...current, name: event.target.value }))} />
@@ -529,6 +548,15 @@ export function AdminDashboardPage() {
                 <strong>Produto vitalicio</strong>
                 <small>Use para contas ou acessos sem prazo de expiracao.</small>
               </span>
+            </label>
+            <label className="wide-field">
+              URL da imagem
+              <input
+                value={productForm.imageUrl}
+                onChange={(event) => setProductForm((current) => ({ ...current, imageUrl: event.target.value }))}
+                placeholder="https://exemplo.com/capa-produto.jpg"
+              />
+              <small className="field-help">Imagem usada nos cards do catalogo. Se ficar vazia, o catalogo usa um fallback visual.</small>
             </label>
             <label className="wide-field">
               Descricao
@@ -871,9 +899,18 @@ function validateCredentialForm(form: typeof EMPTY_CREDENTIAL_FORM) {
   return errors;
 }
 
-function toProductForm(product?: AdminProduct) {
+function createEmptyProductForm(categories: CatalogCategory[]) {
+  const firstCategory = categories[0];
+  return {
+    ...EMPTY_PRODUCT_FORM,
+    categoryId: firstCategory?.id || "",
+    category: firstCategory ? legacyCategoryForSlug(firstCategory.slug) : EMPTY_PRODUCT_FORM.category
+  };
+}
+
+function toProductForm(product?: AdminProduct, categories: CatalogCategory[] = []) {
   if (!product) {
-    return EMPTY_PRODUCT_FORM;
+    return createEmptyProductForm(categories);
   }
 
   return {
@@ -882,6 +919,8 @@ function toProductForm(product?: AdminProduct) {
     slug: product.slug,
     name: product.name,
     description: product.description || "",
+    imageUrl: product.imageUrl || "",
+    categoryId: product.categoryId || categories.find((category) => legacyCategoryForSlug(category.slug) === product.category)?.id || "",
     category: product.category,
     provider: product.provider,
     priceReais: formatPriceInput(product.priceCents),
@@ -920,17 +959,33 @@ function createSlug(value: string) {
     .slice(0, 80) || "produto";
 }
 
-function createSku(category: string, slug: string) {
+function createSku(categoryValue: string, slug: string, categories: CatalogCategory[]) {
+  const selectedCategory = categories.find((category) => category.id === categoryValue);
+  const category = selectedCategory ? selectedCategory.slug : categoryValue;
   const categoryPrefix: Record<string, string> = {
     STREAMING: "STR",
     ASSINATURA: "ASS",
-    GAMES: "GAME"
+    GAMES: "GAME",
+    "inteligencia-artificial": "IA",
+    "assinaturas-premium": "ASS",
+    "gift-cards": "GIFT",
+    "softwares-licencas": "SOFT",
+    "redes-sociais": "SOC",
+    "servicos-digitais": "SERV",
+    "cursos-treinamentos": "CURSO",
+    "contas-digitais": "CONTA"
   };
   const readableSlug = slug
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return `TPM-${categoryPrefix[category] || "PROD"}-${readableSlug}-001`;
+}
+
+function legacyCategoryForSlug(slug: string) {
+  if (slug === "streaming") return "STREAMING";
+  if (slug === "games") return "GAMES";
+  return "ASSINATURA";
 }
 
 function parsePriceToCents(value: string) {
@@ -960,6 +1015,7 @@ function validateProductForm(
   const errors: string[] = [];
   if (isCreating && !form.sku.trim()) errors.push("Informe o SKU.");
   if (isCreating && !form.slug.trim()) errors.push("Informe o slug.");
+  if (!form.categoryId && !form.category.trim()) errors.push("Selecione a categoria.");
   if (!form.name.trim()) errors.push("Informe o nome.");
   if (!form.provider.trim()) errors.push("Informe a plataforma ou fornecedor.");
   if (priceCents === null || priceCents <= 0) errors.push("Informe um preco maior que zero.");

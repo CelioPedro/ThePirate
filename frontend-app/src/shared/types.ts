@@ -1,4 +1,14 @@
-export type ProductCategory = "STREAMING" | "ASSINATURA" | "GAMES";
+export type ProductCategory = string;
+
+export interface CatalogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  sortOrder: number;
+  active: boolean;
+}
 
 export interface Product {
   id: string;
@@ -6,7 +16,12 @@ export interface Product {
   slug: string;
   name: string;
   description: string;
+  imageUrl?: string | null;
   category: ProductCategory;
+  categoryId?: string | null;
+  categorySlug?: string | null;
+  categoryName?: string | null;
+  categoryImageUrl?: string | null;
   provider: string;
   priceCents: number;
   currency: string;

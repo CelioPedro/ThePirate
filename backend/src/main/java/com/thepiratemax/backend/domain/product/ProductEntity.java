@@ -5,6 +5,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -22,6 +25,13 @@ public class ProductEntity extends BaseEntity {
 
     @Column(columnDefinition = "text")
     private String description;
+
+    @Column(name = "image_url", length = 2048)
+    private String imageUrl;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private CatalogCategoryEntity catalogCategory;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -88,12 +98,28 @@ public class ProductEntity extends BaseEntity {
         this.description = description;
     }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
     public ProductCategory getCategory() {
         return category;
     }
 
     public void setCategory(ProductCategory category) {
         this.category = category;
+    }
+
+    public CatalogCategoryEntity getCatalogCategory() {
+        return catalogCategory;
+    }
+
+    public void setCatalogCategory(CatalogCategoryEntity catalogCategory) {
+        this.catalogCategory = catalogCategory;
     }
 
     public String getProvider() {

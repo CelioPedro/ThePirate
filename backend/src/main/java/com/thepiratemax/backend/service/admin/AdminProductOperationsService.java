@@ -3,9 +3,12 @@ package com.thepiratemax.backend.service.admin;
 import com.thepiratemax.backend.api.admin.AdminProductResponse;
 import com.thepiratemax.backend.api.admin.CreateProductRequest;
 import com.thepiratemax.backend.api.admin.UpdateProductRequest;
-import com.thepiratemax.backend.domain.product.DeliveryType;
 import com.thepiratemax.backend.domain.credential.CredentialStatus;
+import com.thepiratemax.backend.domain.product.CatalogCategoryEntity;
+import com.thepiratemax.backend.domain.product.DeliveryType;
 import com.thepiratemax.backend.domain.product.ProductEntity;
+import com.thepiratemax.backend.domain.product.ProductCategory;
+import com.thepiratemax.backend.repository.CatalogCategoryRepository;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.ProductRepository;
 import com.thepiratemax.backend.service.exception.ConflictException;
@@ -26,10 +29,16 @@ public class AdminProductOperationsService {
 
     private final ProductRepository productRepository;
     private final CredentialRepository credentialRepository;
+    private final CatalogCategoryRepository catalogCategoryRepository;
 
-    public AdminProductOperationsService(ProductRepository productRepository, CredentialRepository credentialRepository) {
+    public AdminProductOperationsService(
+            ProductRepository productRepository,
+            CredentialRepository credentialRepository,
+            CatalogCategoryRepository catalogCategoryRepository
+    ) {
         this.productRepository = productRepository;
         this.credentialRepository = credentialRepository;
+        this.catalogCategoryRepository = catalogCategoryRepository;
     }
 
     @Transactional(readOnly = true)
@@ -54,11 +63,14 @@ public class AdminProductOperationsService {
         });
 
         ProductEntity product = new ProductEntity();
+        CatalogCategoryEntity catalogCategory = resolveCatalogCategory(request.categoryId(), request.category());
         product.setSku(sku);
         product.setSlug(slug);
         product.setName(request.name().trim());
         product.setDescription(normalizeText(request.description()));
-        product.setCategory(request.category());
+        product.setImageUrl(normalizeText(request.imageUrl()));
+        product.setCatalogCategory(catalogCategory);
+        product.setCategory(catalogCategory.getLegacyCategory());
         product.setProvider(normalizeRequiredText(request.provider()));
         product.setStatus(request.status());
         product.setPriceCents(request.priceCents());
@@ -82,6 +94,12 @@ public class AdminProductOperationsService {
 
         product.setName(request.name().trim());
         product.setDescription(normalizeText(request.description()));
+        product.setImageUrl(normalizeText(request.imageUrl()));
+        if (request.categoryId() != null) {
+            CatalogCategoryEntity catalogCategory = resolveCatalogCategory(request.categoryId(), null);
+            product.setCatalogCategory(catalogCategory);
+            product.setCategory(catalogCategory.getLegacyCategory());
+        }
         product.setProvider(normalizeRequiredText(request.provider()));
         product.setPriceCents(request.priceCents());
         product.setStatus(request.status());
@@ -114,7 +132,12 @@ public class AdminProductOperationsService {
                 product.getSlug(),
                 product.getName(),
                 product.getDescription(),
+                product.getImageUrl(),
                 product.getCategory().name(),
+                product.getCatalogCategory().getId(),
+                product.getCatalogCategory().getSlug(),
+                product.getCatalogCategory().getName(),
+                product.getCatalogCategory().getImageUrl(),
                 product.getProvider(),
                 product.getStatus().name(),
                 product.getPriceCents(),
@@ -137,5 +160,20 @@ public class AdminProductOperationsService {
 
     private String normalizeRequiredText(String value) {
         return value.trim();
+    }
+
+    private CatalogCategoryEntity resolveCatalogCategory(UUID categoryId, ProductCategory legacyCategory) {
+        if (categoryId != null) {
+            return catalogCategoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new NotFoundException("CATEGORY_NOT_FOUND", "Category not found: " + categoryId));
+        }
+        ProductCategory fallbackCategory = legacyCategory == null ? ProductCategory.ASSINATURA : legacyCategory;
+        String fallbackSlug = switch (fallbackCategory) {
+            case STREAMING -> "streaming";
+            case GAMES -> "games";
+            case ASSINATURA -> "assinaturas-premium";
+        };
+        return catalogCategoryRepository.findBySlug(fallbackSlug)
+                .orElseThrow(() -> new NotFoundException("CATEGORY_NOT_FOUND", "No category configured for: " + fallbackCategory));
     }
 }

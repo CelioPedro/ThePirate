@@ -1,6 +1,7 @@
 import type {
   AuthResponse,
   AuthUser,
+  CatalogCategory,
   AdminCredentialResponse,
   AdminCredentialSecretResponse,
   AdminOrderSummary,
@@ -86,6 +87,9 @@ export const apiClient = {
   },
   getProducts(apiBase?: string) {
     return request<Product[]>("/api/products", { apiBase });
+  },
+  getCategories(apiBase?: string) {
+    return request<CatalogCategory[]>("/api/categories/home", { apiBase });
   },
   getInventory(apiBase?: string) {
     return request<InventoryItem[]>("/api/products/inventory", { apiBase });
@@ -186,6 +190,8 @@ export const apiClient = {
   updateAdminProduct(productId: string, payload: {
     name: string;
     description?: string | null;
+    imageUrl?: string | null;
+    categoryId?: string | null;
     provider: string;
     priceCents: number;
     status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
@@ -205,6 +211,8 @@ export const apiClient = {
     slug: string;
     name: string;
     description?: string | null;
+    imageUrl?: string | null;
+    categoryId?: string | null;
     category: string;
     provider: string;
     priceCents: number;
