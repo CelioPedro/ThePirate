@@ -202,7 +202,9 @@ public class DevelopmentDataInitializer {
                             2599L,
                             30,
                             "Entrega por credencial com operacao inicial de 30 dias.",
-                            4
+                            4,
+                            "assinaturas-premium",
+                            "/catalog/products/antigravity.png"
                     ),
                     new CatalogProductSeed(
                             "TPM-ADOBE-001",

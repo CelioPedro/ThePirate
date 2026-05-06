@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap");
 
 :root {
   color-scheme: light;
@@ -278,18 +278,27 @@ select:focus-visible {
 }
 
 .topbar-menu-button,
-.header-text-link,
+.header-icon-link,
 .header-bag-button {
-  min-height: 32px;
+  width: 38px;
+  height: 38px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   border: 0;
+  border-radius: 999px;
   background: transparent;
   color: var(--text);
   cursor: pointer;
-  font-size: 16px;
-  font-weight: 400;
+  transition: background 0.16s ease, opacity 0.16s ease;
+}
+
+.header-icon-link:hover,
+.header-icon-link:focus-visible,
+.header-bag-button:hover,
+.header-bag-button:focus-visible {
+  background: rgba(21, 21, 21, 0.05);
 }
 
 .topbar-menu-button {
@@ -428,10 +437,10 @@ select:focus-visible {
   position: relative;
 }
 
-.header-text-link svg,
+.header-icon-link svg,
 .header-bag-button svg {
-  width: 21px;
-  height: 21px;
+  width: 24px;
+  height: 24px;
 }
 
 .header-bag-icon {
@@ -442,8 +451,8 @@ select:focus-visible {
 
 .header-bag-button strong {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: -6px;
+  right: -7px;
   min-width: 18px;
   min-height: 18px;
   display: inline-grid;
@@ -811,7 +820,7 @@ select:focus-visible {
   min-height: 300px;
   align-content: center;
   justify-items: center;
-  margin: 0 0 62px;
+  margin: 0 0 42px;
   text-align: center;
 }
 
@@ -820,14 +829,14 @@ select:focus-visible {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 0.18em;
-  font-family: "Space Grotesk", "Segoe UI", Inter, system-ui, sans-serif;
-  font-size: clamp(64px, 9vw, 136px);
+  gap: 0.16em;
+  font-family: "Manrope", "Segoe UI", Inter, system-ui, sans-serif;
+  font-size: clamp(56px, 7.8vw, 118px);
   font-weight: 800;
-  line-height: 0.9;
+  line-height: 0.92;
   letter-spacing: 0;
   color: #000;
-  text-shadow: 0 2px 12px rgba(21, 21, 21, 0.05);
+  text-shadow: 0 2px 10px rgba(21, 21, 21, 0.035);
 }
 
 .catalog-wordmark {
@@ -848,7 +857,7 @@ select:focus-visible {
   content: "®";
   display: inline-block;
   color: #000;
-  font-family: "Space Grotesk", "Segoe UI", Inter, system-ui, sans-serif;
+  font-family: "Manrope", "Segoe UI", Inter, system-ui, sans-serif;
   font-size: clamp(18px, 1.7vw, 28px);
   line-height: 1;
 }
@@ -866,24 +875,24 @@ select:focus-visible {
   content: "";
   position: absolute;
   left: 50%;
-  top: 0.03em;
+  top: 0.075em;
   z-index: 2;
-  width: 0.18em;
-  height: 0.14em;
+  width: 0.14em;
+  height: 0.11em;
   border-radius: 44% 56% 48% 52%;
   background: #000;
-  transform: translateX(-48%) rotate(39deg);
+  transform: translateX(-47%) rotate(37deg);
 }
 
 .pirate-i::after {
   content: "";
   position: absolute;
-  left: 58%;
-  top: 0.1em;
+  left: 56%;
+  top: 0.13em;
   z-index: 1;
-  width: 0.22em;
-  height: 0.14em;
-  border-top: 0.018em solid #000;
+  width: 0.18em;
+  height: 0.11em;
+  border-top: 0.014em solid #000;
   border-radius: 50%;
   transform: rotate(-22deg);
 }
@@ -898,10 +907,10 @@ select:focus-visible {
   position: absolute;
   left: 0.04em;
   right: 0.04em;
-  bottom: -0.16em;
-  height: 3px;
+  bottom: -0.06em;
+  height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255, 199, 99, 0.16), rgba(255, 79, 31, 0.92), rgba(255, 199, 99, 0.20));
+  background: linear-gradient(90deg, rgba(255, 199, 99, 0.04), rgba(255, 153, 52, 0.72), rgba(255, 79, 31, 0.48), rgba(255, 199, 99, 0.05));
 }
 
 .catalog-intro-actions p {
@@ -2591,8 +2600,8 @@ select:focus-visible {
 
   .catalog-intro h1 {
     flex-wrap: wrap;
-    row-gap: 8px;
-    font-size: 42px;
+    row-gap: 4px;
+    font-size: 38px;
   }
 
   .catalog-intro-actions {

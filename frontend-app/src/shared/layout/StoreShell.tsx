@@ -60,14 +60,12 @@ export function StoreShell() {
               <Search size={16} />
               <input placeholder="Buscar produtos..." aria-label="Buscar produtos" />
             </div>
-            <Link to={user ? "/conta" : "/login"} className="header-text-link">
-              <UserCircle2 size={18} />
-              <span>{user ? user.name.split(" ")[0] : "Entrar"}</span>
+            <Link to={user ? "/conta" : "/login"} className="header-icon-link" aria-label={user ? `Abrir conta de ${user.name}` : "Entrar"}>
+              <UserCircle2 size={24} />
             </Link>
             <button type="button" className="header-bag-button" onClick={openCart} aria-label="Abrir carrinho">
-              <span>Carrinho</span>
               <span className="header-bag-icon">
-                <ShoppingBag size={21} />
+                <ShoppingBag size={25} />
                 <strong>{itemCount}</strong>
               </span>
             </button>

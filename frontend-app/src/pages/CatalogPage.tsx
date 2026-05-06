@@ -187,7 +187,7 @@ export function CatalogPage() {
         <div className="catalog-wordmark">
           <h1 aria-label="The Pirate Max">
             <span>The</span>
-            <span className="word-pirate">P<span className="pirate-i">i</span>rate</span>
+            <span className="word-pirate">P<span className="pirate-i">ı</span>rate</span>
             <span className="word-max">Max</span>
           </h1>
           <span aria-hidden="true">®</span>
@@ -420,8 +420,20 @@ function buildCatalogSections(products: Product[], categories: CatalogCategory[]
     id: category.slug,
     title: category.name,
     summary: category.description || "Produtos digitais selecionados para esta categoria.",
-    products: products.filter((product) => product.categorySlug === category.slug || legacyCategorySlug(product.category) === category.slug)
+    products: products.filter((product) => getProductSectionSlugs(product).includes(category.slug))
   }));
+}
+
+function getProductSectionSlugs(product: Product) {
+  const primarySlug = product.categorySlug || legacyCategorySlug(product.category);
+  const slugs = new Set([primarySlug]);
+  const haystack = `${product.slug} ${product.name} ${product.provider} ${product.sku}`.toLowerCase();
+
+  if (haystack.includes("antigravity")) {
+    slugs.add("inteligencia-artificial");
+  }
+
+  return Array.from(slugs);
 }
 
 function getCategoryImageUrl(category: CatalogCategory) {
@@ -451,8 +463,7 @@ function getProductImageFallbackUrl(product: Product) {
 }
 
 function isGeneratedPlaceholderImage(imageUrl: string) {
-  return imageUrl.includes("/catalog/products/league-of-legends.png")
-    || imageUrl.includes("/catalog/products/antigravity.png");
+  return imageUrl.includes("/catalog/products/league-of-legends.png");
 }
 
 function legacyCategorySlug(category: string) {
