@@ -729,6 +729,11 @@ select:focus-visible {
   padding: 18px 0 56px;
 }
 
+.auth-shell .page-main {
+  min-height: 100vh;
+  padding: 0;
+}
+
 .page-section,
 .content-grid,
 .order-detail-grid,
@@ -1233,6 +1238,12 @@ select:focus-visible {
   object-fit: cover;
 }
 
+.product-visual-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .product-visual-streaming {
   background: #181818;
 }
@@ -1314,6 +1325,10 @@ select:focus-visible {
   font-weight: 700;
 }
 
+.rail-product-card .product-body h3 a:hover {
+  color: var(--accent);
+}
+
 .rail-product-card .product-body p {
   min-height: 3em;
   margin: 0;
@@ -1391,6 +1406,173 @@ select:focus-visible {
   color: var(--accent);
   background: rgba(255, 79, 31, 0.035);
   transform: translateY(-1px);
+}
+
+.product-detail-page,
+.category-page {
+  display: grid;
+  gap: 34px;
+}
+
+.back-link {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+.product-detail-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 42px;
+  align-items: center;
+}
+
+.product-detail-media {
+  overflow: hidden;
+  border: 1px solid rgba(21, 21, 21, 0.1);
+  border-radius: 18px;
+  background: #0f0f0f;
+}
+
+.product-detail-media img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.product-detail-info {
+  display: grid;
+  gap: 18px;
+}
+
+.product-detail-kicker {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.product-detail-info h1,
+.category-hero h1 {
+  margin: 0;
+  color: #000;
+  font-size: clamp(38px, 5vw, 72px);
+  line-height: 0.95;
+}
+
+.product-detail-info p,
+.category-hero p,
+.product-detail-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.product-detail-price {
+  color: #000;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.product-detail-actions,
+.trust-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.trust-strip {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.trust-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.product-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.product-detail-grid article {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.product-detail-grid h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.related-products {
+  display: grid;
+  gap: 14px;
+}
+
+.related-product-grid,
+.category-product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.related-product-card,
+.category-product-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.related-product-card img,
+.category-product-card img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.related-product-card span,
+.category-product-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.category-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 28px;
+  align-items: center;
+  min-height: 220px;
+}
+
+.category-hero img {
+  width: 170px;
+  aspect-ratio: 1122 / 1402;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.category-search {
+  margin-bottom: 0;
 }
 
 .catalog-sidepanel,
@@ -1541,7 +1723,9 @@ select:focus-visible {
 }
 
 .drawer-header {
+  position: relative;
   background: #151515;
+  padding-right: 64px;
 }
 
 .drawer-header h3 {
@@ -1551,6 +1735,29 @@ select:focus-visible {
 
 .drawer-header .eyebrow {
   color: var(--accent);
+}
+
+.cart-close-button {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease, color 0.18s ease;
+}
+
+.cart-close-button:hover,
+.cart-close-button:focus-visible {
+  background: rgba(255, 79, 31, 0.12);
+  color: #ff8a54;
+  transform: rotate(4deg);
 }
 
 .cart-drawer .text-button {
@@ -1570,23 +1777,76 @@ select:focus-visible {
   padding: 16px 24px;
   overflow: auto;
   display: grid;
-  gap: 14px;
+  align-content: start;
+  gap: 12px;
 }
 
 .drawer-row {
-  align-items: start;
-  padding: 16px;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 104px;
+  max-height: 118px;
+  padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
 }
 
-.drawer-row strong {
+.drawer-item-thumb {
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #0f0f0f;
+}
+
+.drawer-item-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.drawer-item-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.drawer-row strong,
+.drawer-item-copy strong {
   color: #fff;
 }
 
-.drawer-row span {
+.drawer-item-copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.22;
+}
+
+.drawer-row span,
+.drawer-item-copy span {
   color: rgba(255, 255, 255, 0.62);
+}
+
+.drawer-item-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.drawer-row-actions {
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-row-actions strong {
+  white-space: nowrap;
 }
 
 .cart-drawer .empty-state-panel {
@@ -1994,9 +2254,12 @@ select:focus-visible {
 }
 
 .auth-page {
-  min-height: calc(100vh - 180px);
+  min-height: 100vh;
   display: grid;
   place-items: center;
+  padding: 32px 52px;
+  position: relative;
+  overflow: visible;
 }
 
 .auth-panel-card {
@@ -2032,6 +2295,7 @@ select:focus-visible {
 
 .auth-form-card input:focus,
 .stack-input input:focus,
+.account-input-field input:focus,
 .orders-admin-toolbar input:focus,
 .credential-create-panel input:focus,
 .product-edit-panel input:focus,
@@ -2048,6 +2312,613 @@ select:focus-visible {
   color: var(--accent);
   font-weight: 800;
 }
+
+.login-card-shell {
+  position: relative;
+  width: min(980px, calc(100vw - 48px));
+  min-height: 530px;
+  display: grid;
+  grid-template-columns: minmax(310px, 0.86fr) minmax(370px, 1.14fr);
+  gap: 42px;
+  align-items: stretch;
+  padding: 36px 36px 36px 42px;
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9));
+  border: 0;
+  box-shadow:
+    0 34px 92px rgba(21, 21, 21, 0.13),
+    0 1px 0 rgba(255, 255, 255, 0.82) inset,
+    0 0 0 1px rgba(21, 21, 21, 0.035) inset;
+  isolation: isolate;
+}
+
+.login-card-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow:
+    22px 28px 70px rgba(21, 21, 21, 0.08),
+    -16px -18px 52px rgba(255, 255, 255, 0.95);
+}
+
+.login-form-panel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.login-brand-lockup {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  color: #0e0e0e;
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.login-brand-lockup img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: var(--bg);
+  filter: none;
+  mix-blend-mode: multiply;
+}
+
+.register-card-shell {
+  min-height: 560px;
+}
+
+.login-heading {
+  margin-top: 34px;
+}
+
+.login-heading h1 {
+  margin: 0;
+  color: #111;
+  font-size: clamp(34px, 3.8vw, 46px);
+  line-height: 1.02;
+  font-weight: 900;
+}
+
+.login-heading p {
+  margin: 8px 0 0;
+  color: #66615a;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.login-form-card {
+  margin-top: 22px;
+  gap: 11px;
+}
+
+.auth-form-card label.login-input-field {
+  height: 45px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 13px;
+  border: 1px solid rgba(21, 21, 21, 0.16);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #77716a;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.auth-form-card label.login-input-field:focus-within {
+  border-color: rgba(255, 111, 31, 0.62);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 111, 31, 0.08);
+}
+
+.auth-form-card label.login-input-field > svg:first-child {
+  flex: 0 0 auto;
+  color: #77716a;
+}
+
+.auth-form-card .login-input-field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #1b1b1b;
+  font: inherit;
+  font-size: 14px;
+}
+
+.auth-form-card .login-input-field input:focus {
+  border-color: transparent;
+}
+
+.password-toggle {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #77716a;
+  cursor: pointer;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--accent);
+}
+
+.login-submit-button {
+  height: 47px;
+  margin-top: 2px;
+  border: 0;
+  border-radius: 9px;
+  background: #151515;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 850;
+  box-shadow: 0 16px 34px rgba(21, 21, 21, 0.16);
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.login-submit-button:hover,
+.login-submit-button:focus-visible {
+  background: #000;
+  transform: translateY(-1px);
+  box-shadow: 0 20px 40px rgba(21, 21, 21, 0.2);
+}
+
+.login-submit-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
+}
+
+.forgot-password-button {
+  align-self: center;
+  margin-top: 14px;
+  border: 0;
+  background: transparent;
+  color: #4c4843;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.forgot-password-button:hover,
+.forgot-password-button:focus-visible {
+  color: var(--accent);
+}
+
+.login-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+  margin: 21px 0 14px;
+  color: #8a847d;
+  font-size: 11px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  height: 1px;
+  background: rgba(21, 21, 21, 0.12);
+}
+
+.social-login-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.social-login-stack button {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  border: 1px solid rgba(21, 21, 21, 0.16);
+  border-radius: 9px;
+  background: #fff;
+  color: #1d1d1d;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  transition: border-color 0.18s ease, transform 0.18s ease, color 0.18s ease;
+}
+
+.social-login-stack button:hover,
+.social-login-stack button:focus-visible {
+  border-color: rgba(255, 111, 31, 0.55);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.social-provider-icon {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  display: block;
+}
+
+.login-helper {
+  margin: 22px 0 0;
+  color: #726c65;
+  font-size: 12px;
+}
+
+.login-visual-panel {
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  min-height: 450px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 48% 56%, rgba(255, 214, 144, 0.55), transparent 33%),
+    linear-gradient(135deg, #ff8c2b 0%, #d85a16 48%, #ff9f3d 100%);
+  box-shadow:
+    0 18px 42px rgba(225, 88, 15, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.login-visual-panel > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.login-visual-fallback {
+  height: 100%;
+  min-height: 450px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  padding: 42px;
+  color: #fff;
+  text-align: center;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 28%),
+    linear-gradient(135deg, #ff8a25, #c94a10);
+}
+
+.login-visual-fallback img {
+  width: 92px;
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.24));
+}
+
+.login-visual-fallback strong {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.login-visual-fallback span {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.account-page {
+  width: min(var(--container), calc(100vw - 56px));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 22px;
+  align-items: start;
+}
+
+.account-hero-panel,
+.account-side-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9));
+  box-shadow:
+    0 22px 64px rgba(21, 21, 21, 0.08),
+    0 0 0 1px rgba(21, 21, 21, 0.045) inset;
+}
+
+.account-hero-panel {
+  min-height: 520px;
+  padding: 34px;
+  display: grid;
+  gap: 22px;
+}
+
+.account-hero-panel::after {
+  content: "";
+  position: absolute;
+  right: -120px;
+  top: -150px;
+  width: 360px;
+  height: 360px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 111, 31, 0.16), transparent 62%);
+  pointer-events: none;
+}
+
+.account-profile-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.account-profile-head h1,
+.account-empty-state h1 {
+  margin: 4px 0 8px;
+  color: #050505;
+  font-size: clamp(36px, 4vw, 58px);
+  line-height: 0.96;
+  font-weight: 900;
+}
+
+.account-profile-head p,
+.account-empty-state p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.account-avatar {
+  width: 78px;
+  height: 78px;
+  flex: 0 0 78px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.42), transparent 30%),
+    linear-gradient(135deg, #ff8a25, #df4c10);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 900;
+  box-shadow: 0 18px 40px rgba(255, 111, 31, 0.22);
+}
+
+.account-avatar.ghost {
+  background: #151515;
+  box-shadow: 0 18px 42px rgba(21, 21, 21, 0.16);
+}
+
+.account-profile-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.1fr 1.4fr auto;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(21, 21, 21, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.account-profile-card > div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.account-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.account-profile-card strong,
+.account-profile-card span:not(.account-label):not(.account-role-pill) {
+  min-width: 0;
+  color: #151515;
+  overflow-wrap: anywhere;
+}
+
+.account-role-pill {
+  width: fit-content;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #151515;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.account-action-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.account-action-card {
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(21, 21, 21, 0.1);
+  border-radius: 16px;
+  background: #fff;
+  color: #151515;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+button.account-action-card {
+  font: inherit;
+}
+
+.account-action-card > svg:first-child {
+  color: var(--accent);
+}
+
+.account-action-card strong,
+.account-action-card small {
+  display: block;
+}
+
+.account-action-card small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.account-action-card:hover,
+.account-action-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(255, 111, 31, 0.34);
+  box-shadow: 0 18px 40px rgba(21, 21, 21, 0.08);
+}
+
+.account-action-card.primary {
+  background: #151515;
+  color: #fff;
+  border-color: #151515;
+}
+
+.account-action-card.primary small {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.account-action-card.primary > svg:first-child,
+.account-action-card.primary > svg:last-child {
+  color: var(--accent);
+}
+
+.account-benefit-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: auto;
+}
+
+.account-benefit-grid article {
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 247, 236, 0.78);
+}
+
+.account-benefit-grid svg {
+  color: var(--accent);
+}
+
+.account-benefit-grid strong {
+  color: #151515;
+  font-size: 14px;
+}
+
+.account-benefit-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.account-empty-state {
+  min-height: 420px;
+  display: grid;
+  place-items: start;
+  align-content: center;
+  gap: 12px;
+}
+
+.account-empty-state .button-row {
+  margin-top: 12px;
+}
+
+.account-side-panel {
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+  position: sticky;
+  top: 18px;
+}
+
+.account-side-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-side-head h2 {
+  margin: 3px 0 0;
+  color: #151515;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.account-side-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #151515;
+  color: var(--accent);
+}
+
+.account-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(17, 122, 76, 0.08);
+  color: #14593b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.account-input-field {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.account-input-field input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(21, 21, 21, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  color: #151515;
+}
+
+.status-dot.live {
+  background: #18a160;
+  box-shadow: 0 0 0 4px rgba(24, 161, 96, 0.12);
+}
+
 
 .stack-card {
   padding: 18px;
@@ -2552,8 +3423,18 @@ select:focus-visible {
   .credential-create-panel,
   .product-admin-layout,
   .product-edit-panel,
+  .account-page,
   .admin-columns,
   .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-side-panel {
+    position: static;
+  }
+
+  .account-action-grid,
+  .account-benefit-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2591,11 +3472,28 @@ select:focus-visible {
   .credentials-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .login-card-shell {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    width: min(620px, calc(100vw - 36px));
+    padding: 30px;
+  }
+
+  .auth-page {
+    padding-inline: 28px;
+  }
+
+  .login-visual-panel,
+  .login-visual-fallback {
+    min-height: 340px;
+  }
 }
 
 @media (max-width: 760px) {
   .container,
   .page-section,
+  .account-page,
   .content-grid,
   .order-detail-grid,
   .orders-page-grid,
@@ -2692,6 +3590,40 @@ select:focus-visible {
     font-size: 34px;
   }
 
+  .auth-page {
+    padding: 18px;
+  }
+
+  .login-card-shell {
+    width: 100%;
+    min-height: 0;
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .login-brand-lockup {
+    font-size: 18px;
+  }
+
+  .login-brand-lockup img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .login-heading {
+    margin-top: 28px;
+  }
+
+  .login-heading h1 {
+    font-size: 32px;
+  }
+
+  .login-visual-panel,
+  .login-visual-fallback {
+    min-height: 250px;
+    border-radius: 18px;
+  }
+
   .catalog-toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -2699,6 +3631,7 @@ select:focus-visible {
 
   .orders-overview,
   .orders-toolbar,
+  .account-profile-head,
   .order-card-head,
   .order-card-footer,
   .credential-admin-row,
@@ -2706,6 +3639,37 @@ select:focus-visible {
     align-items: stretch;
     grid-template-columns: 1fr;
     flex-direction: column;
+  }
+
+  .account-page {
+    gap: 16px;
+  }
+
+  .account-hero-panel {
+    min-height: 0;
+    padding: 22px;
+    border-radius: 20px;
+  }
+
+  .account-profile-card {
+    grid-template-columns: 1fr;
+  }
+
+  .account-profile-head {
+    align-items: flex-start;
+  }
+
+  .account-avatar {
+    width: 64px;
+    height: 64px;
+    flex-basis: 64px;
+    border-radius: 18px;
+    font-size: 22px;
+  }
+
+  .account-profile-head h1,
+  .account-empty-state h1 {
+    font-size: 36px;
   }
 
   .catalog-grid,

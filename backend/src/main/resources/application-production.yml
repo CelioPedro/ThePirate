@@ -39,6 +39,7 @@ app:
       gateway: real
       access-token: ${MERCADO_PAGO_ACCESS_TOKEN}
       webhook-secret: ${MERCADO_PAGO_WEBHOOK_SECRET}
+      webhook-signature-validation-enabled: true
       base-url: ${MERCADO_PAGO_BASE_URL:https://api.mercadopago.com}
       notification-url: ${MERCADO_PAGO_NOTIFICATION_URL}
       pix-expiration-minutes: ${MERCADO_PAGO_PIX_EXPIRATION_MINUTES:30}

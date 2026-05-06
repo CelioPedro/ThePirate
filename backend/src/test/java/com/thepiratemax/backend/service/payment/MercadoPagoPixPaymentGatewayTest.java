@@ -37,6 +37,7 @@ class MercadoPagoPixPaymentGatewayTest {
                 "real",
                 "test-access-token",
                 "test-secret",
+                true,
                 "http://127.0.0.1:" + server.getAddress().getPort(),
                 "https://thepiratemax.test/api/webhooks/mercadopago",
                 30,

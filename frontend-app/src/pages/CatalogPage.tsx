@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { useCart } from "../shared/cart/CartContext";
@@ -32,9 +33,9 @@ const CATEGORY_IMAGE_BY_SLUG: Record<string, string> = {
   streaming: "/catalog/categories/Streming.png",
   games: "/catalog/categories/Games.png",
   "gift-cards": "/catalog/categories/Gift Cards.png",
-  "softwares-licencas": "/catalog/categories/Software e Licenças.png",
+  "softwares-licencas": "/catalog/categories/Software%20e%20Licen%C3%A7as.png",
   "redes-sociais": "/catalog/categories/Redes Sociais.png",
-  "servicos-digitais": "/catalog/categories/Serviços Digitais.png",
+  "servicos-digitais": "/catalog/categories/Servi%C3%A7os%20Digitais.png",
   "cursos-treinamentos": "/catalog/categories/Cursos e Treinamentos.png",
   "contas-digitais": "/catalog/categories/Contas Digitais.png"
 };
@@ -132,12 +133,13 @@ const PRODUCT_IMAGE_BY_SKU: Record<string, string> = {
 export function CatalogPage() {
   const { apiBase } = useSession();
   const { addItem } = useCart();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CatalogCategory[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [search, setSearch] = useState("");
+  const search = searchParams.get("busca") || "";
 
   useEffect(() => {
     async function load() {
@@ -206,7 +208,7 @@ export function CatalogPage() {
           {homeCategories.slice(0, 10).map((category) => {
             const imageUrl = getCategoryImageUrl(category);
             return (
-              <a key={category.id} href={`#${category.slug}`} className="popular-category-card">
+              <Link key={category.id} to={`/categoria/${category.slug}`} className="popular-category-card">
                 {imageUrl ? (
                   <img
                     src={imageUrl}
@@ -215,7 +217,7 @@ export function CatalogPage() {
                     onError={(event) => { event.currentTarget.style.display = "none"; }}
                   />
                 ) : null}
-              </a>
+              </Link>
             );
           })}
         </ScrollableRail>
@@ -227,7 +229,7 @@ export function CatalogPage() {
         <input
           className="toolbar-search"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => setSearchParams(event.target.value ? { busca: event.target.value } : {})}
           placeholder="Buscar produto ou provedor"
           aria-label="Buscar no catalogo"
         />
@@ -270,7 +272,7 @@ function CatalogProductSection({ section, onAdd }: { section: CatalogSection; on
           <h2>{section.title}</h2>
           <p>{section.summary}</p>
         </div>
-        <a href={`#${section.id}`}>Ver mais <ArrowRight size={15} /></a>
+        <Link to={`/categoria/${section.id}`}>Ver mais <ArrowRight size={15} /></Link>
       </div>
       {section.products.length > 0 ? (
         <ScrollableRail className="product-rail" label={`Navegar produtos de ${section.title}`}>
@@ -364,6 +366,7 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: (product: Pr
   return (
     <article className="product-card rail-product-card">
       <div className={`product-visual product-visual-${(product.categorySlug || product.category).toLowerCase()}`}>
+        <Link to={`/produto/${product.slug}`} className="product-visual-link" aria-label={`Ver ${product.name}`}>
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -379,16 +382,17 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: (product: Pr
             }}
           />
         ) : null}
+        </Link>
       </div>
       <div className="product-body">
-        <h3>{product.name}</h3>
+        <h3><Link to={`/produto/${product.slug}`}>{product.name}</Link></h3>
         <p>{product.description}</p>
         <div className="product-price">
           <span>{price.currency}</span>
           <strong>{price.amount}</strong>
         </div>
         <div className="product-footer">
-          <span className="product-card-meta">{formatCategoryChip(product)} • {formatDuration(product.durationDays)}</span>
+          <span className="product-card-meta">{formatCategoryChip(product)}{" \u2022 "}{formatDuration(product.durationDays)}</span>
           <button type="button" className="product-add-button" onClick={() => onAdd(product)}>
             Adicionar
           </button>

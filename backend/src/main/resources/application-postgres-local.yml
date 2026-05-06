@@ -19,3 +19,6 @@ spring:
 app:
   auth:
     enabled: true
+  integrations:
+    mercado-pago:
+      webhook-signature-validation-enabled: ${MERCADO_PAGO_WEBHOOK_SIGNATURE_VALIDATION_ENABLED:false}

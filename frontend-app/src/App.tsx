@@ -8,6 +8,8 @@ import { AccountPage } from "./pages/AccountPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { AdminDashboardPage } from "./pages/AdminDashboardPage";
+import { ProductDetailPage } from "./pages/ProductDetailPage";
+import { CategoryPage } from "./pages/CategoryPage";
 
 export function App() {
   return (
@@ -15,6 +17,8 @@ export function App() {
       <Route element={<StoreShell />}>
         <Route path="/" element={<CatalogPage />} />
         <Route path="/catalogo" element={<CatalogPage />} />
+        <Route path="/produto/:slug" element={<ProductDetailPage />} />
+        <Route path="/categoria/:slug" element={<CategoryPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro" element={<RegisterPage />} />
         <Route path="/conta" element={<AccountPage />} />

@@ -2,16 +2,16 @@ import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const CATEGORIES = [
-  { id: "inteligencia-artificial", label: "Inteligencia Artificial", detail: "ChatGPT, Gemini e ferramentas digitais", to: "/catalogo#inteligencia-artificial" },
-  { id: "assinaturas-premium", label: "Assinaturas e Premium", detail: "Acessos premium e softwares", to: "/catalogo#assinaturas-premium" },
-  { id: "streaming", label: "Streaming", detail: "Video, musica e entretenimento", to: "/catalogo#streaming" },
-  { id: "games", label: "Games", detail: "Contas, jogos e creditos", to: "/catalogo#games" },
-  { id: "gift-cards", label: "Gift Cards", detail: "Cartoes digitais e creditos", to: "/catalogo#gift-cards" },
-  { id: "softwares-licencas", label: "Softwares e Licencas", detail: "Chaves e ferramentas", to: "/catalogo#softwares-licencas" },
-  { id: "redes-sociais", label: "Redes Sociais", detail: "Servicos para plataformas sociais", to: "/catalogo#redes-sociais" },
-  { id: "servicos-digitais", label: "Servicos Digitais", detail: "Operacoes sob demanda", to: "/catalogo#servicos-digitais" },
-  { id: "cursos-treinamentos", label: "Cursos e Treinamentos", detail: "Conteudos e formacoes", to: "/catalogo#cursos-treinamentos" },
-  { id: "contas-digitais", label: "Contas Digitais", detail: "Acessos e perfis", to: "/catalogo#contas-digitais" }
+  { id: "inteligencia-artificial", label: "Inteligencia Artificial", detail: "ChatGPT, Gemini e ferramentas digitais", to: "/categoria/inteligencia-artificial" },
+  { id: "assinaturas-premium", label: "Assinaturas e Premium", detail: "Acessos premium e softwares", to: "/categoria/assinaturas-premium" },
+  { id: "streaming", label: "Streaming", detail: "Video, musica e entretenimento", to: "/categoria/streaming" },
+  { id: "games", label: "Games", detail: "Contas, jogos e creditos", to: "/categoria/games" },
+  { id: "gift-cards", label: "Gift Cards", detail: "Cartoes digitais e creditos", to: "/categoria/gift-cards" },
+  { id: "softwares-licencas", label: "Softwares e Licencas", detail: "Chaves e ferramentas", to: "/categoria/softwares-licencas" },
+  { id: "redes-sociais", label: "Redes Sociais", detail: "Servicos para plataformas sociais", to: "/categoria/redes-sociais" },
+  { id: "servicos-digitais", label: "Servicos Digitais", detail: "Operacoes sob demanda", to: "/categoria/servicos-digitais" },
+  { id: "cursos-treinamentos", label: "Cursos e Treinamentos", detail: "Conteudos e formacoes", to: "/categoria/cursos-treinamentos" },
+  { id: "contas-digitais", label: "Contas Digitais", detail: "Acessos e perfis", to: "/categoria/contas-digitais" }
 ];
 
 export function CategoryDropdown() {

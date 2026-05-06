@@ -42,6 +42,7 @@ class MercadoPagoWebhookServiceTest {
                     "real",
                     "test-token",
                     SECRET,
+                    true,
                     "https://api.mercadopago.com",
                     "https://thepiratemax.test/api/webhooks/mercadopago",
                     30,

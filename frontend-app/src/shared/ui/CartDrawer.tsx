@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import { apiClient } from "../api/client";
 import { useCart } from "../cart/CartContext";
+import { getProductImageUrl } from "../catalog/catalogData";
 import { formatCurrency } from "../lib/format";
 import { useSession } from "../session/SessionContext";
 
@@ -60,7 +62,9 @@ export function CartDrawer() {
             <span className="eyebrow">checkout</span>
             <h3>Seu carrinho</h3>
           </div>
-          <button type="button" className="text-button" onClick={closeCart}>Fechar</button>
+          <button type="button" className="cart-close-button" onClick={closeCart} aria-label="Fechar carrinho">
+            <X size={24} />
+          </button>
         </header>
 
         <div className="drawer-body">
@@ -72,9 +76,12 @@ export function CartDrawer() {
           ) : (
             grouped.map((item) => (
               <article key={item.id} className="drawer-row">
-                <div>
-                  <strong>{item.name}</strong>
-                  <span>{item.sku}</span>
+                <div className="drawer-item-thumb">
+                  {getProductImageUrl(item) ? <img src={getProductImageUrl(item) || ""} alt="" loading="lazy" /> : null}
+                </div>
+                <div className="drawer-item-copy">
+                  <strong>{formatCartProductName(item.name)}</strong>
+                  <span>{item.provider}</span>
                 </div>
                 <div className="drawer-row-actions">
                   <strong>{formatCurrency(item.priceCents)}</strong>
@@ -99,6 +106,10 @@ export function CartDrawer() {
       </aside>
     </>
   );
+}
+
+function formatCartProductName(name: string) {
+  return name.replace(/\s*TPM-[A-Z0-9-]+$/i, "").trim();
 }
 
 function createCheckoutIdempotencyKey() {

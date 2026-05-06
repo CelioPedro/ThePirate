@@ -7,6 +7,7 @@ public record MercadoPagoProperties(
         String gateway,
         String accessToken,
         String webhookSecret,
+        boolean webhookSignatureValidationEnabled,
         String baseUrl,
         String notificationUrl,
         int pixExpirationMinutes,

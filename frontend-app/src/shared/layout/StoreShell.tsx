@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Search, ShoppingBag, UserCircle2 } from "lucide-react";
 import { useCart } from "../cart/CartContext";
 import { useSession } from "../session/SessionContext";
@@ -10,14 +10,18 @@ export function StoreShell() {
   const { openCart, itemCount } = useCart();
   const { user, isDevFallback, isLive, refreshSession, lastError } = useSession();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [headerSearch, setHeaderSearch] = useState("");
+  const isAuthRoute = location.pathname === "/login" || location.pathname === "/cadastro";
 
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
   return (
-    <div className="app-shell">
+    <div className={isAuthRoute ? "app-shell auth-shell" : "app-shell"}>
+      {!isAuthRoute ? (
       <header className="topbar">
         <div className="container topbar-inner">
           <nav className="topbar-nav topbar-nav-left" aria-label="Navegacao principal">
@@ -42,9 +46,9 @@ export function StoreShell() {
             </div>
             <div id="site-menu" className={isMenuOpen ? "site-menu-popover open" : "site-menu-popover"}>
               <NavLink to="/catalogo" className="site-menu-link">Catalogo</NavLink>
-              <NavLink to="/catalogo#inteligencia-artificial" className="site-menu-link">Inteligencia Artificial</NavLink>
-              <NavLink to="/catalogo#streaming" className="site-menu-link">Streaming</NavLink>
-              <NavLink to="/catalogo#games" className="site-menu-link">Games</NavLink>
+              <NavLink to="/categoria/inteligencia-artificial" className="site-menu-link">Inteligencia Artificial</NavLink>
+              <NavLink to="/categoria/streaming" className="site-menu-link">Streaming</NavLink>
+              <NavLink to="/categoria/games" className="site-menu-link">Games</NavLink>
               <NavLink to="/pedidos" className="site-menu-link">Pedidos</NavLink>
               <NavLink to="/conta" className="site-menu-link">Conta</NavLink>
               {user?.role === "ADMIN" ? <NavLink to="/admin" className="site-menu-link">Admin</NavLink> : null}
@@ -56,10 +60,22 @@ export function StoreShell() {
           </Link>
 
           <div className="topbar-actions topbar-actions-right">
-            <div className="topbar-search">
+            <form
+              className="topbar-search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const term = headerSearch.trim();
+                navigate(term ? `/catalogo?busca=${encodeURIComponent(term)}` : "/catalogo");
+              }}
+            >
               <Search size={16} />
-              <input placeholder="Buscar produtos..." aria-label="Buscar produtos" />
-            </div>
+              <input
+                value={headerSearch}
+                onChange={(event) => setHeaderSearch(event.target.value)}
+                placeholder="Buscar produtos..."
+                aria-label="Buscar produtos"
+              />
+            </form>
             <Link to={user ? "/conta" : "/login"} className="header-icon-link" aria-label={user ? `Abrir conta de ${user.name}` : "Entrar"}>
               <UserCircle2 size={24} />
             </Link>
@@ -72,12 +88,13 @@ export function StoreShell() {
           </div>
         </div>
       </header>
+      ) : null}
 
-      <span
+      {!isAuthRoute ? <span
         className={isLive ? "connection-status-dot online" : "connection-status-dot offline"}
         aria-label={isLive ? "API conectada" : "API desconectada"}
         role="status"
-      />
+      /> : null}
 
       {isDevFallback && location.pathname !== "/login" && location.pathname !== "/cadastro" ? (
         <div className="env-banner">
@@ -89,7 +106,7 @@ export function StoreShell() {
         </div>
       ) : null}
 
-      {!isLive && lastError ? (
+      {!isAuthRoute && !isLive && lastError ? (
         <div className="offline-banner">
           <div className="container env-banner-inner">
             <strong>Conexao:</strong>
