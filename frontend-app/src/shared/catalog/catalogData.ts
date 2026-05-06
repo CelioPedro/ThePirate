@@ -139,6 +139,12 @@ export function getProductImageFallbackUrl(product: Product) {
   return matchedKey ? PRODUCT_IMAGE_BY_KEY[matchedKey] : null;
 }
 
+export function getProductImageFromText(value: string) {
+  const haystack = value.toLowerCase();
+  const matchedKey = Object.keys(PRODUCT_IMAGE_BY_KEY).find((key) => haystack.includes(key));
+  return matchedKey ? PRODUCT_IMAGE_BY_KEY[matchedKey] : null;
+}
+
 export function getProductSectionSlugs(product: Product) {
   const primarySlug = product.categorySlug || legacyCategorySlug(product.category);
   const slugs = new Set([primarySlug]);

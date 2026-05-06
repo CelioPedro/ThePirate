@@ -1,7 +1,8 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, Copy, Eye, EyeOff, PackageCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, CreditCard, Eye, EyeOff, PackageCheck, RefreshCw, ShieldCheck } from "lucide-react";
 import { apiClient } from "../shared/api/client";
+import { getProductImageFromText } from "../shared/catalog/catalogData";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
 import { useSession } from "../shared/session/SessionContext";
 import type { DeliveredCredential, DeliveredCredentialSecretResponse, DeliveredCredentialsResponse, OrderDetail } from "../shared/types";
@@ -178,11 +179,15 @@ export function OrderDetailPage() {
 
   return (
     <div className="order-detail-grid">
-      <section className="panel-card">
-        <Link to="/pedidos" className="text-button compact order-back-link">Voltar aos pedidos</Link>
-        <span className="eyebrow">pedido</span>
-        <div className="panel-header-inline">
-          <h1>{order?.id || orderId}</h1>
+      <section className="panel-card order-detail-main-card">
+        <div className="order-detail-topline">
+          <Link to="/pedidos" className="back-link order-back-link"><ArrowLeft size={16} /> Pedidos</Link>
+        </div>
+        <div className="order-detail-title-row">
+          <div>
+            <h1>Pedido {shortOrderId(order?.id || orderId)}</h1>
+            <span className="muted-code">{order?.id || orderId}</span>
+          </div>
           {order ? <span className={`status-pill ${statusTone(order.status)}`}>{labelStatus(order.status)}</span> : null}
         </div>
         {order ? (
@@ -196,15 +201,25 @@ export function OrderDetailPage() {
         ) : null}
         <div className="order-action-row">
           <button type="button" className="secondary-button compact" onClick={() => void refreshNow()} disabled={isRefreshing || isLoading}>
+            <RefreshCw size={15} />
             {isRefreshing ? "Atualizando..." : "Atualizar status"}
           </button>
           {shouldPoll ? <span className="live-refresh-indicator">Atualizacao automatica ativa</span> : null}
         </div>
         {error ? <div className="inline-error">{error}</div> : null}
-        <div className="detail-meta-list">
-          <span>Total {order ? formatCurrency(order.totalCents) : "-"}</span>
-          <span>Criado em {formatDate(order?.createdAt)}</span>
-          <span>Metodo {order?.paymentMethod || "PIX"}</span>
+        <div className="order-summary-grid">
+          <article>
+            <span>Total</span>
+            <strong>{order ? formatCurrency(order.totalCents) : "-"}</strong>
+          </article>
+          <article>
+            <span>Criado em</span>
+            <strong>{formatDate(order?.createdAt)}</strong>
+          </article>
+          <article>
+            <span>Metodo</span>
+            <strong>{order?.paymentMethod || "PIX"}</strong>
+          </article>
         </div>
         <div className="timeline-list">
           {steps.map((step) => (
@@ -219,6 +234,9 @@ export function OrderDetailPage() {
             <span className="eyebrow">itens</span>
             {order.items.map((item) => (
               <div key={item.id} className="order-item-line">
+                <div className="order-item-thumb">
+                  {getProductImageFromText(item.productName) ? <img src={getProductImageFromText(item.productName) || ""} alt="" loading="lazy" /> : null}
+                </div>
                 <div>
                   <strong>{item.productName}</strong>
                   <span>{item.quantity} unidade(s)</span>
@@ -231,8 +249,13 @@ export function OrderDetailPage() {
       </section>
 
       <section className={isDelivered ? "panel-card payment-card complete" : "panel-card payment-card"}>
-        <span className="eyebrow">pagamento</span>
-        <h2>{isDelivered ? "Pagamento aprovado" : "PIX atual"}</h2>
+        <div className="payment-card-head">
+          <div className="payment-icon"><CreditCard size={20} /></div>
+          <div>
+            <span className="eyebrow">pagamento</span>
+            <h2>{isDelivered ? "Pagamento aprovado" : "Pague com PIX"}</h2>
+          </div>
+        </div>
         {pixState.copyPaste ? (
           isDelivered ? (
             <div className="payment-complete-card">
@@ -246,13 +269,17 @@ export function OrderDetailPage() {
             </div>
           ) : (
             <div className="pix-card-v2">
-              <code>{pixState.copyPaste}</code>
               {isQrImage(pixState.qrCode) ? (
                 <img className="pix-qr-image" src={pixImageSrc(pixState.qrCode)} alt="QR Code PIX" />
               ) : null}
+              <div className="pix-copy-panel">
+                <span>Codigo copia e cola</span>
+                <code>{pixState.copyPaste}</code>
+              </div>
               <div className="pix-actions-row">
                 <span>Expira em {formatDate(pixState.expiresAt)}</span>
-                <button type="button" className="secondary-button compact" onClick={() => void copyPix(pixState.copyPaste, setError)}>
+                <button type="button" className="primary-button compact" onClick={() => void copyPix(pixState.copyPaste, setError)}>
+                  <Copy size={15} />
                   Copiar PIX
                 </button>
               </div>
@@ -273,8 +300,13 @@ export function OrderDetailPage() {
       </section>
 
       <section className="panel-card panel-card-wide">
-        <span className="eyebrow">credenciais</span>
-        <h2>Entrega</h2>
+        <div className="delivery-section-head">
+          <div className="payment-icon"><ShieldCheck size={20} /></div>
+          <div>
+            <span className="eyebrow">credenciais</span>
+            <h2>Entrega</h2>
+          </div>
+        </div>
         {isDelivered ? (
           <div className="delivery-complete-banner">
             <CheckCircle2 size={20} />
@@ -326,6 +358,10 @@ export function OrderDetailPage() {
       </section>
     </div>
   );
+}
+
+function shortOrderId(id: string) {
+  return id.slice(0, 8).toUpperCase();
 }
 
 function paymentHint(status?: string, canSimulateLocalPayment = false) {
