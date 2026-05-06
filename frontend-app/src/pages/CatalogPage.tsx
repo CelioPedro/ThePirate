@@ -359,6 +359,7 @@ function ScrollableRail({
 
 function ProductCard({ product, onAdd }: { product: Product; onAdd: (product: Product) => void }) {
   const imageUrl = getProductImageUrl(product);
+  const price = formatPriceParts(product.priceCents);
 
   return (
     <article className="product-card rail-product-card">
@@ -382,12 +383,13 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: (product: Pr
       <div className="product-body">
         <h3>{product.name}</h3>
         <p>{product.description}</p>
+        <div className="product-price">
+          <span>{price.currency}</span>
+          <strong>{price.amount}</strong>
+        </div>
         <div className="product-footer">
-          <div>
-            <strong>{formatCurrency(product.priceCents)}</strong>
-            <span>{product.categoryName || humanizeCategory(product.categorySlug || product.category)} | {formatDuration(product.durationDays)}</span>
-          </div>
-          <button type="button" className="secondary-button compact" onClick={() => onAdd(product)}>
+          <span className="product-card-meta">{formatCategoryChip(product)} • {formatDuration(product.durationDays)}</span>
+          <button type="button" className="product-add-button" onClick={() => onAdd(product)}>
             Adicionar
           </button>
         </div>
@@ -434,6 +436,32 @@ function getProductSectionSlugs(product: Product) {
   }
 
   return Array.from(slugs);
+}
+
+function formatPriceParts(priceCents: number) {
+  const formatted = formatCurrency(priceCents).replace(/\s/g, " ");
+  const [currency, ...amountParts] = formatted.split(" ");
+  return {
+    currency: currency || "R$",
+    amount: amountParts.join(" ") || formatted.replace(/^R\$\s?/, "")
+  };
+}
+
+function formatCategoryChip(product: Product) {
+  const label = product.categoryName || humanizeCategory(product.categorySlug || product.category);
+  const map: Record<string, string> = {
+    "Inteligencia Artificial": "IA",
+    "Inteligência Artificial": "IA",
+    "Assinaturas e Premium": "Premium",
+    "Softwares e Licencas": "Software",
+    "Softwares e Licenças": "Software",
+    "Redes Sociais": "Social",
+    "Servicos Digitais": "Digital",
+    "Serviços Digitais": "Digital",
+    "Cursos e Treinamentos": "Curso",
+    "Contas Digitais": "Conta"
+  };
+  return map[label] || label;
 }
 
 function getCategoryImageUrl(category: CatalogCategory) {

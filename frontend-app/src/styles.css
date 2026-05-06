@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap");
 
 :root {
   color-scheme: light;
@@ -38,7 +38,7 @@ html {
 
 body {
   margin: 0;
-  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  font-family: "Nunito", "Segoe UI", Inter, system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);
 }
@@ -412,7 +412,7 @@ select:focus-visible {
 .site-menu-link:hover,
 .site-menu-link:focus-visible,
 .site-menu-link.active {
-  background: rgba(21, 21, 21, 0.05);
+  background: rgba(255, 55, 0, 0.315);
 }
 
 .header-logo-slot {
@@ -830,7 +830,7 @@ select:focus-visible {
   align-items: baseline;
   justify-content: center;
   gap: 0.16em;
-  font-family: "Manrope", "Segoe UI", Inter, system-ui, sans-serif;
+  font-family: "Nunito", "Segoe UI", Inter, system-ui, sans-serif;
   font-size: clamp(56px, 7.8vw, 118px);
   font-weight: 800;
   line-height: 0.92;
@@ -857,7 +857,7 @@ select:focus-visible {
   content: "®";
   display: inline-block;
   color: #000;
-  font-family: "Manrope", "Segoe UI", Inter, system-ui, sans-serif;
+  font-family: "Nunito", "Segoe UI", Inter, system-ui, sans-serif;
   font-size: clamp(18px, 1.7vw, 28px);
   line-height: 1;
 }
@@ -1199,17 +1199,17 @@ select:focus-visible {
 
 .product-card {
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(21, 21, 21, 0.12);
   background: var(--surface);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: 0 14px 34px rgba(21, 21, 21, 0.07);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .product-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 79, 31, 0.34);
-  box-shadow: 0 22px 48px rgba(21, 21, 21, 0.12);
+  transform: translateY(-1px);
+  border-color: rgba(255, 79, 31, 0.22);
+  box-shadow: 0 18px 42px rgba(21, 21, 21, 0.09);
 }
 
 .product-visual {
@@ -1246,7 +1246,9 @@ select:focus-visible {
 }
 
 .product-body {
-  padding: 18px;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
 }
 
 .product-meta,
@@ -1301,21 +1303,25 @@ select:focus-visible {
 .product-body h3,
 .panel-card h2,
 .sidepanel-card h3 {
-  margin: 14px 0 8px;
+  margin: 0;
   font-size: 22px;
 }
 
 .rail-product-card .product-body h3 {
   font-size: 17px;
-  line-height: 1.2;
+  line-height: 1.18;
+  letter-spacing: 0;
+  font-weight: 700;
 }
 
 .rail-product-card .product-body p {
-  min-height: 3.1em;
+  min-height: 3em;
+  margin: 0;
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  font-size: 13px;
 }
 
 .product-body p,
@@ -1332,15 +1338,59 @@ select:focus-visible {
 
 .product-footer {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-top: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
 }
 
-.product-footer strong {
-  display: block;
-  font-size: 22px;
+.product-price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: #000;
+}
+
+.product-price span {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.product-price strong {
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: 0;
+  font-weight: 800;
+}
+
+.product-card-meta {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.product-add-button {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid rgba(112, 107, 99, 0.58);
+  border-radius: 9px;
+  background: transparent;
+  color: #5f5a52;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.product-add-button:hover,
+.product-add-button:focus-visible {
+  border-color: rgba(255, 79, 31, 0.78);
+  color: var(--accent);
+  background: rgba(255, 79, 31, 0.035);
+  transform: translateY(-1px);
 }
 
 .catalog-sidepanel,
