@@ -139,7 +139,14 @@ export function CatalogPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [recentlyAddedProductId, setRecentlyAddedProductId] = useState<string | null>(null);
   const search = searchParams.get("busca") || "";
+
+  function addProductToCart(product: Product) {
+    addItem(product);
+    setRecentlyAddedProductId(product.id);
+    window.setTimeout(() => setRecentlyAddedProductId((current) => current === product.id ? null : current), 1400);
+  }
 
   useEffect(() => {
     async function load() {
@@ -250,7 +257,8 @@ export function CatalogPage() {
             <CatalogProductSection
               key={section.id}
               section={section}
-              onAdd={addItem}
+              onAdd={addProductToCart}
+              recentlyAddedProductId={recentlyAddedProductId}
             />
           ))
         ) : (
@@ -264,7 +272,15 @@ export function CatalogPage() {
   );
 }
 
-function CatalogProductSection({ section, onAdd }: { section: CatalogSection; onAdd: (product: Product) => void }) {
+function CatalogProductSection({
+  section,
+  onAdd,
+  recentlyAddedProductId
+}: {
+  section: CatalogSection;
+  onAdd: (product: Product) => void;
+  recentlyAddedProductId: string | null;
+}) {
   return (
     <section className="catalog-product-section" id={section.id}>
       <div className="section-heading">
@@ -277,7 +293,12 @@ function CatalogProductSection({ section, onAdd }: { section: CatalogSection; on
       {section.products.length > 0 ? (
         <ScrollableRail className="product-rail" label={`Navegar produtos de ${section.title}`}>
           {section.products.map((product) => (
-            <ProductCard key={product.id} product={product} onAdd={onAdd} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAdd={onAdd}
+              isRecentlyAdded={recentlyAddedProductId === product.id}
+            />
           ))}
         </ScrollableRail>
       ) : (
@@ -359,7 +380,15 @@ function ScrollableRail({
   );
 }
 
-function ProductCard({ product, onAdd }: { product: Product; onAdd: (product: Product) => void }) {
+function ProductCard({
+  product,
+  onAdd,
+  isRecentlyAdded
+}: {
+  product: Product;
+  onAdd: (product: Product) => void;
+  isRecentlyAdded: boolean;
+}) {
   const imageUrl = getProductImageUrl(product);
   const price = formatPriceParts(product.priceCents);
 
@@ -393,8 +422,12 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: (product: Pr
         </div>
         <div className="product-footer">
           <span className="product-card-meta">{formatCategoryChip(product)}{" \u2022 "}{formatDuration(product.durationDays)}</span>
-          <button type="button" className="product-add-button" onClick={() => onAdd(product)}>
-            Adicionar
+          <button
+            type="button"
+            className={isRecentlyAdded ? "product-add-button added" : "product-add-button"}
+            onClick={() => onAdd(product)}
+          >
+            {isRecentlyAdded ? "Adicionado" : "Adicionar"}
           </button>
         </div>
       </div>

@@ -68,9 +68,17 @@ export function CategoryPage() {
         />
       </label>
 
-      {isLoading ? <div className="empty-state-panel">Carregando produtos...</div> : null}
+      {isLoading ? (
+        <div className="empty-state-panel">
+          <strong>Carregando produtos</strong>
+          <p>Estamos buscando os itens desta categoria.</p>
+        </div>
+      ) : null}
       {!isLoading && filteredProducts.length === 0 ? (
-        <div className="empty-state-panel">Nenhum produto nesta categoria por enquanto.</div>
+        <div className="empty-state-panel">
+          <strong>Nenhum produto nesta categoria</strong>
+          <p>Novos itens podem entrar em breve. Enquanto isso, explore outras categorias do catalogo.</p>
+        </div>
       ) : null}
 
       <section className="category-product-grid">

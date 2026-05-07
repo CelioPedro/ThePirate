@@ -128,7 +128,12 @@ export function OrdersPage() {
           <span className="orders-count">{filteredOrders.length} de {orders.length}</span>
         </div>
         {error ? <div className="inline-error">{error}</div> : null}
-        {isLoading ? <div className="empty-state-panel">Carregando pedidos...</div> : null}
+        {isLoading ? (
+          <div className="empty-state-panel">
+            <strong>Carregando pedidos</strong>
+            <p>Estamos buscando seu historico de compras e entregas.</p>
+          </div>
+        ) : null}
         {!isLoading && orders.length === 0 ? (
           <div className="empty-state-panel">
             <strong>Nenhum pedido ainda</strong>

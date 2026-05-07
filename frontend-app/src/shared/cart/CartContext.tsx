@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Product } from "../types";
 
 interface CartContextValue {
@@ -10,14 +10,20 @@ interface CartContextValue {
   closeCart: () => void;
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
+  decrementItem: (productId: string) => void;
   clear: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
+const CART_STORAGE_KEY = "tpm-cart-items";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<Product[]>([]);
+  const [items, setItems] = useState<Product[]>(() => readStoredCartItems());
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
 
   const value = useMemo<CartContextValue>(() => ({
     items,
@@ -35,6 +41,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setIsOpen(true);
     },
     removeItem(productId) {
+      setItems((current) => current.filter((item) => item.id !== productId));
+    },
+    decrementItem(productId) {
       setItems((current) => {
         const index = current.findIndex((item) => item.id === productId);
         if (index < 0) return current;
@@ -48,6 +57,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }), [isOpen, items]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+}
+
+function readStoredCartItems() {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed as Product[] : [];
+  } catch {
+    return [];
+  }
 }
 
 export function useCart() {

@@ -116,7 +116,7 @@ export function StoreShell() {
         </div>
       ) : null}
 
-      <main className="page-main">
+      <main className="page-main" key={location.pathname}>
         <Outlet />
       </main>
 

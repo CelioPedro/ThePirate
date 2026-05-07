@@ -1,15 +1,20 @@
-import { Activity, Boxes, ShieldCheck } from "lucide-react";
+import { Activity, Boxes, LogOut, ShieldCheck, UserCircle2 } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
+import { useSession } from "../session/SessionContext";
 
 export function AdminShell() {
+  const { logout, user } = useSession();
+
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
-        <Link to="/admin" className="brand-mark admin-brand">
-          <div className="brand-badge">TPM</div>
+        <Link to="/admin" className="admin-brand">
+          <span className="admin-brand-logo" aria-hidden="true">
+            <img src="/brand/ThePirateMaxLogo.png" alt="" />
+          </span>
           <div>
             <strong>The Pirate Max</strong>
-            <span>operacao</span>
+            <span>central de operacao</span>
           </div>
         </Link>
 
@@ -22,11 +27,29 @@ export function AdminShell() {
             <ShieldCheck size={16} />
             Pedidos cliente
           </NavLink>
+          <NavLink to="/conta" className={adminNavClass}>
+            <UserCircle2 size={16} />
+            Perfil
+          </NavLink>
           <NavLink to="/catalogo" className={adminNavClass}>
             <Boxes size={16} />
-            Voltar ao catalogo
+            Catalogo
           </NavLink>
         </nav>
+
+        <div className="admin-sidebar-footer">
+          <div className="admin-profile-card">
+            <UserCircle2 size={18} />
+            <div>
+              <strong>{user?.name || "Operador TPM"}</strong>
+              <span>{user?.email || "Sessao administrativa"}</span>
+            </div>
+          </div>
+          <button type="button" className="admin-logout-button" onClick={logout}>
+            <LogOut size={16} />
+            Sair
+          </button>
+        </div>
       </aside>
       <main className="admin-main">
         <Outlet />

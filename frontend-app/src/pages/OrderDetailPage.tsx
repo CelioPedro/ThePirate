@@ -26,6 +26,7 @@ export function OrderDetailPage() {
   const [error, setError] = useState("");
   const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
   const [credentialSecrets, setCredentialSecrets] = useState<Record<string, DeliveredCredentialSecretResponse>>({});
+  const [copiedAction, setCopiedAction] = useState<string | null>(null);
   const [pixState, setPixState] = useState<PixState>({
     qrCode: (location.state as { pixQrCode?: string | null } | null)?.pixQrCode,
     copyPaste: (location.state as { pixCopyPaste?: string } | null)?.pixCopyPaste,
@@ -161,6 +162,7 @@ export function OrderDetailPage() {
     try {
       const secret = await loadCredentialSecret(credential.orderItemId);
       await navigator.clipboard.writeText(secret[field]);
+      markCopied(`${credential.orderItemId}-${field}`, setCopiedAction);
     } catch {
       setError(`Nao foi possivel copiar ${field === "login" ? "o login" : "a senha"} automaticamente.`);
     }
@@ -278,9 +280,13 @@ export function OrderDetailPage() {
               </div>
               <div className="pix-actions-row">
                 <span>Expira em {formatDate(pixState.expiresAt)}</span>
-                <button type="button" className="primary-button compact" onClick={() => void copyPix(pixState.copyPaste, setError)}>
+                <button
+                  type="button"
+                  className={copiedAction === "pix" ? "primary-button compact copied" : "primary-button compact"}
+                  onClick={() => void copyPix(pixState.copyPaste, setError, setCopiedAction)}
+                >
                   <Copy size={15} />
-                  Copiar PIX
+                  {copiedAction === "pix" ? "Copiado" : "Copiar PIX"}
                 </button>
               </div>
               {canSimulateLocalPayment ? (
@@ -335,15 +341,15 @@ export function OrderDetailPage() {
                 <span>Login</span>
                 <div className="credential-copy-row">
                   <code>{credentialDisplayValue(credential, credentialSecrets[credential.orderItemId], revealedCredentials, "login")}</code>
-                  <button type="button" className="icon-only-button" aria-label="Copiar login" onClick={() => void copyCredentialValue(credential, "login")} disabled={!credential.secretAvailable}>
-                    <Copy size={15} />
+                  <button type="button" className="icon-only-button credential-copy-button" aria-label="Copiar login" onClick={() => void copyCredentialValue(credential, "login")} disabled={!credential.secretAvailable}>
+                    {copiedAction === `${credential.orderItemId}-login` ? <CheckCircle2 size={15} /> : <Copy size={15} />}
                   </button>
                 </div>
                 <span>Senha</span>
                 <div className="credential-copy-row">
                   <code>{credentialDisplayValue(credential, credentialSecrets[credential.orderItemId], revealedCredentials, "password")}</code>
-                  <button type="button" className="icon-only-button" aria-label="Copiar senha" onClick={() => void copyCredentialValue(credential, "password")} disabled={!credential.secretAvailable}>
-                    <Copy size={15} />
+                  <button type="button" className="icon-only-button credential-copy-button" aria-label="Copiar senha" onClick={() => void copyCredentialValue(credential, "password")} disabled={!credential.secretAvailable}>
+                    {copiedAction === `${credential.orderItemId}-password` ? <CheckCircle2 size={15} /> : <Copy size={15} />}
                   </button>
                 </div>
               </article>
@@ -437,12 +443,22 @@ function pixImageSrc(value?: string | null) {
   return `data:image/png;base64,${value}`;
 }
 
-async function copyPix(value: string | undefined, setError: Dispatch<SetStateAction<string>>) {
+async function copyPix(
+  value: string | undefined,
+  setError: Dispatch<SetStateAction<string>>,
+  setCopiedAction: Dispatch<SetStateAction<string | null>>
+) {
   if (!value) return;
   try {
     await navigator.clipboard.writeText(value);
     setError("");
+    markCopied("pix", setCopiedAction);
   } catch {
     setError("Nao foi possivel copiar o PIX automaticamente.");
   }
+}
+
+function markCopied(action: string, setCopiedAction: Dispatch<SetStateAction<string | null>>) {
+  setCopiedAction(action);
+  window.setTimeout(() => setCopiedAction((current) => current === action ? null : current), 1600);
 }

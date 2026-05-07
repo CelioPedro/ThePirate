@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../shared/api/client";
+import { getProductImageUrl } from "../shared/catalog/catalogData";
 import { formatCurrency, formatDate, humanizeCategory, labelStatus, statusTone } from "../shared/lib/format";
 import { useSession } from "../shared/session/SessionContext";
 import type { AdminCredentialResponse, AdminOrderDiagnostics, AdminOrderSummary, AdminProduct, CatalogCategory, InventoryItem, Product } from "../shared/types";
@@ -432,11 +433,14 @@ export function AdminDashboardPage() {
                   setProductForm(toProductForm(product, categories));
                 }}
               >
-                <div>
+                <span className="product-admin-thumb" aria-hidden="true">
+                  <img src={getProductImageUrl(product) || "/brand/ThePirateMaxLogo.png"} alt="" loading="lazy" />
+                </span>
+                <div className="product-admin-copy">
                   <strong>{product.name}</strong>
                   <span>{product.sku} | {product.categoryName || humanizeCategory(product.categorySlug || product.category)}</span>
                 </div>
-                <div>
+                <div className="product-admin-meta">
                   <span className={`status-pill ${productStatusTone(product.status)}`}>{productStatusLabel(product.status)}</span>
                   <small>{formatCurrency(product.priceCents)} | {formatProductDuration(product.durationDays)} | {product.availableStock ?? 0} em estoque</small>
                 </div>

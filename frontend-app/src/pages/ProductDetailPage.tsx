@@ -16,6 +16,7 @@ export function ProductDetailPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [wasAdded, setWasAdded] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -55,7 +56,14 @@ export function ProductDetailPage() {
   }
 
   if (isLoading) {
-    return <div className="page-section product-detail-page"><div className="empty-state-panel">Carregando produto...</div></div>;
+    return (
+      <div className="page-section product-detail-page">
+        <div className="empty-state-panel">
+          <strong>Carregando produto</strong>
+          <p>Estamos preparando os detalhes e disponibilidade.</p>
+        </div>
+      </div>
+    );
   }
 
   if (loadError || !product) {
@@ -72,6 +80,13 @@ export function ProductDetailPage() {
 
   const imageUrl = getProductImageUrl(product);
 
+  function addProductToCart() {
+    if (!product) return;
+    addItem(product);
+    setWasAdded(true);
+    window.setTimeout(() => setWasAdded(false), 1400);
+  }
+
   return (
     <div className="page-section product-detail-page">
       <Link to="/catalogo" className="back-link"><ArrowLeft size={16} /> Catalogo</Link>
@@ -87,11 +102,15 @@ export function ProductDetailPage() {
           <strong className="product-detail-price">{formatCurrency(product.priceCents)}</strong>
 
           <div className="product-detail-actions">
-            <button type="button" className="primary-button" onClick={() => addItem(product)}>
-              <ShoppingBag size={18} /> Comprar agora
+            <button type="button" className="primary-button" onClick={addProductToCart}>
+              <ShoppingBag size={18} /> {wasAdded ? "Adicionado" : "Comprar agora"}
             </button>
-            <button type="button" className="product-add-button" onClick={() => addItem(product)}>
-              Adicionar ao carrinho
+            <button
+              type="button"
+              className={wasAdded ? "product-add-button added" : "product-add-button"}
+              onClick={addProductToCart}
+            >
+              {wasAdded ? "Adicionado" : "Adicionar ao carrinho"}
             </button>
           </div>
 
