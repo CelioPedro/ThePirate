@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: the-pirate-max-backend
+    runtime: java
+    plan: free
+    buildCommand: mvn -f backend/pom.xml -DskipTests package
+    startCommand: java -jar backend/target/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=production
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: AUTH_JWT_SECRET
+        generateValue: true
+      - key: CREDENTIAL_ENCRYPTION_SECRET
+        generateValue: true
+      - key: CREDENTIAL_ENCRYPTION_KEY_VERSION
+        value: prod-aesgcm-v1
+      - key: CORS_ALLOWED_ORIGIN_PATTERNS
+        sync: false
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADO_PAGO_WEBHOOK_SECRET
+        sync: false
+      - key: MERCADO_PAGO_NOTIFICATION_URL
+        sync: false
+      - key: MERCADO_PAGO_PIX_EXPIRATION_MINUTES
+        value: "30"
+      - key: REDIS_HOST
+        value: localhost
+      - key: REDIS_PORT
+        value: "6379"

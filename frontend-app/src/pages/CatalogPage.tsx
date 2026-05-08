@@ -248,6 +248,7 @@ export function CatalogPage() {
           <div className="empty-state-panel">
             <strong>Catalogo indisponivel</strong>
             <p>{loadError}</p>
+            <button type="button" className="secondary-button compact" onClick={() => window.location.reload()}>Tentar novamente</button>
           </div>
         ) : null}
         {isLoading ? (
@@ -265,6 +266,7 @@ export function CatalogPage() {
           <div className="empty-state-panel">
             <strong>Nenhum produto encontrado</strong>
             <p>Tente buscar por outro termo ou limpar o campo de busca.</p>
+            <button type="button" className="secondary-button compact" onClick={() => setSearchParams({})}>Limpar busca</button>
           </div>
         )}
       </section>
@@ -410,7 +412,7 @@ function ProductCard({
               event.currentTarget.style.display = "none";
             }}
           />
-        ) : null}
+        ) : <ProductImageFallback product={product} />}
         </Link>
       </div>
       <div className="product-body">
@@ -432,6 +434,15 @@ function ProductCard({
         </div>
       </div>
     </article>
+  );
+}
+
+function ProductImageFallback({ product }: { product: Product }) {
+  const label = formatCategoryChip(product);
+  return (
+    <span className="product-image-fallback" aria-hidden="true">
+      <span>{label.slice(0, 2).toUpperCase()}</span>
+    </span>
   );
 }
 

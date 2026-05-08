@@ -69,27 +69,39 @@ export function CategoryPage() {
       </label>
 
       {isLoading ? (
-        <div className="empty-state-panel">
-          <strong>Carregando produtos</strong>
-          <p>Estamos buscando os itens desta categoria.</p>
-        </div>
+        <CategorySkeletonGrid />
       ) : null}
       {!isLoading && filteredProducts.length === 0 ? (
         <div className="empty-state-panel">
           <strong>Nenhum produto nesta categoria</strong>
           <p>Novos itens podem entrar em breve. Enquanto isso, explore outras categorias do catalogo.</p>
+          <Link to="/catalogo" className="secondary-button compact">Ver catalogo completo</Link>
         </div>
       ) : null}
 
       <section className="category-product-grid">
         {filteredProducts.map((product) => (
           <Link key={product.id} to={`/produto/${product.slug}`} className="category-product-card">
-            {getProductImageUrl(product) ? <img src={getProductImageUrl(product) || ""} alt="" /> : null}
+            {getProductImageUrl(product) ? <img src={getProductImageUrl(product) || ""} alt="" /> : <span className="product-image-fallback small">{product.name.slice(0, 2).toUpperCase()}</span>}
             <strong>{product.name}</strong>
             <span>{formatCurrency(product.priceCents)}</span>
           </Link>
         ))}
       </section>
     </div>
+  );
+}
+
+function CategorySkeletonGrid() {
+  return (
+    <section className="category-product-grid" aria-label="Carregando produtos">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="category-product-card skeleton-category-card">
+          <span className="skeleton-media" />
+          <span className="skeleton-line medium" />
+          <span className="skeleton-line short" />
+        </div>
+      ))}
+    </section>
   );
 }

@@ -65,10 +65,12 @@ public class MercadoPagoWebhookService {
         String providerStatus = textValue(payload.path("data"), "status");
         JsonNode providerPayload = payload;
 
-        logger.info("event=mercado_pago_webhook_received eventType={} queryDataId={} bodyDataId={} hasRequestId={} hasSignature={} gateway={}",
+        logger.info("event=mercado_pago_webhook_received eventType={} queryDataId={} bodyDataId={} externalReferencePresent={} providerStatus={} hasRequestId={} hasSignature={} gateway={}",
                 eventType,
                 queryDataId,
                 bodyDataId,
+                externalReference != null,
+                providerStatus,
                 requestId != null && !requestId.isBlank(),
                 signatureHeader != null && !signatureHeader.isBlank(),
                 mercadoPagoProperties.gateway());
@@ -79,11 +81,17 @@ public class MercadoPagoWebhookService {
             throw new InvalidRequestException("INVALID_WEBHOOK", "Development webhook payload is not accepted with real Mercado Pago gateway");
         }
 
-        if (providerEventId != null && (externalReference == null || providerStatus == null) && mercadoPagoProperties.usesRealGateway()) {
+        if (providerEventId != null && isPaymentEvent(eventType) && mercadoPagoProperties.usesRealGateway()) {
+            providerPayload = fetchProviderPayment(providerEventId);
+            externalReference = firstNonBlank(externalReference, textValue(providerPayload, "external_reference"));
+            providerStatus = firstNonBlank(providerStatus, textValue(providerPayload, "status"));
+            logProviderPaymentWebhook(eventType, providerEventId, providerPayload);
+        } else if (providerEventId != null && shouldFetchProviderOrder(eventType, providerStatus, externalReference) && mercadoPagoProperties.usesRealGateway()) {
             providerPayload = fetchProviderOrder(providerEventId);
             externalReference = firstNonBlank(externalReference, textValue(providerPayload, "external_reference"));
             JsonNode paymentNode = firstPayment(providerPayload);
             providerStatus = firstNonBlank(providerStatus, textValue(paymentNode, "status"));
+            logProviderOrderWebhook(eventType, providerEventId, providerPayload, paymentNode);
         }
 
         if (providerEventId == null || externalReference == null || providerStatus == null) {
@@ -148,6 +156,17 @@ public class MercadoPagoWebhookService {
 
     private boolean isApproved(String providerStatus) {
         return "approved".equalsIgnoreCase(providerStatus) || "processed".equalsIgnoreCase(providerStatus);
+    }
+
+    private boolean shouldFetchProviderOrder(String eventType, String providerStatus, String externalReference) {
+        if (externalReference == null || providerStatus == null) {
+            return true;
+        }
+        return "order.failed".equalsIgnoreCase(eventType) || "failed".equalsIgnoreCase(providerStatus);
+    }
+
+    private boolean isPaymentEvent(String eventType) {
+        return eventType != null && eventType.toLowerCase(Locale.ROOT).startsWith("payment");
     }
 
     private boolean validateSignature(String providerEventId, String queryDataId, String requestId, String signatureHeader) {
@@ -267,6 +286,66 @@ public class MercadoPagoWebhookService {
                     providerEventId, exception.getMessage());
             throw new InvalidRequestException("MERCADO_PAGO_UNAVAILABLE", "Mercado Pago could not be reached while processing webhook");
         }
+    }
+
+    private JsonNode fetchProviderPayment(String providerEventId) {
+        if (mercadoPagoProperties.accessToken() == null || mercadoPagoProperties.accessToken().isBlank()) {
+            throw new InvalidRequestException("MERCADO_PAGO_NOT_CONFIGURED", "Mercado Pago access token is required to process real webhooks");
+        }
+
+        try {
+            JsonNode response = RestClient.builder()
+                    .baseUrl(mercadoPagoProperties.baseUrl())
+                    .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + mercadoPagoProperties.accessToken())
+                    .build()
+                    .get()
+                    .uri("/v1/payments/{id}", providerEventId)
+                    .retrieve()
+                    .body(JsonNode.class);
+            if (response == null) {
+                throw new InvalidRequestException("MERCADO_PAGO_EMPTY_RESPONSE", "Mercado Pago returned an empty payment response");
+            }
+            return response;
+        } catch (RestClientResponseException exception) {
+            logger.warn("event=mercado_pago_payment_webhook_lookup_failed providerEventId={} statusCode={} body={}",
+                    providerEventId, exception.getStatusCode().value(), exception.getResponseBodyAsString());
+            throw new InvalidRequestException("MERCADO_PAGO_WEBHOOK_LOOKUP_FAILED", "Could not fetch Mercado Pago payment for webhook");
+        } catch (RestClientException exception) {
+            logger.warn("event=mercado_pago_payment_webhook_lookup_unavailable providerEventId={} message={}",
+                    providerEventId, exception.getMessage());
+            throw new InvalidRequestException("MERCADO_PAGO_UNAVAILABLE", "Mercado Pago could not be reached while processing payment webhook");
+        }
+    }
+
+    private void logProviderOrderWebhook(String eventType, String providerEventId, JsonNode providerPayload, JsonNode paymentNode) {
+        String orderStatus = textValue(providerPayload, "status");
+        String orderStatusDetail = textValue(providerPayload, "status_detail");
+        String paymentStatus = textValue(paymentNode, "status");
+        String paymentStatusDetail = textValue(paymentNode, "status_detail");
+        String externalReference = textValue(providerPayload, "external_reference");
+        String paymentMethodId = textValue(paymentNode.path("payment_method"), "id");
+        String paymentMethodType = textValue(paymentNode.path("payment_method"), "type");
+
+        logger.info("event=mercado_pago_webhook_order_fetched eventType={} providerEventId={} externalReference={} orderStatus={} orderStatusDetail={} paymentStatus={} paymentStatusDetail={} paymentMethodId={} paymentMethodType={}",
+                eventType,
+                providerEventId,
+                externalReference,
+                orderStatus,
+                orderStatusDetail,
+                paymentStatus,
+                paymentStatusDetail,
+                paymentMethodId,
+                paymentMethodType);
+    }
+
+    private void logProviderPaymentWebhook(String eventType, String providerEventId, JsonNode providerPayload) {
+        logger.info("event=mercado_pago_webhook_payment_fetched eventType={} providerEventId={} externalReference={} paymentStatus={} paymentStatusDetail={} paymentMethodId={}",
+                eventType,
+                providerEventId,
+                textValue(providerPayload, "external_reference"),
+                textValue(providerPayload, "status"),
+                textValue(providerPayload, "status_detail"),
+                textValue(providerPayload, "payment_method_id"));
     }
 
     private JsonNode firstPayment(JsonNode response) {

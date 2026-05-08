@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { ArrowLeft, ShieldCheck, ShoppingBag, Zap } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, Headphones, ShieldCheck, ShoppingBag, Zap } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { useCart } from "../shared/cart/CartContext";
 import { formatCategoryLabel, getProductImageUrl, getProductSectionSlugs } from "../shared/catalog/catalogData";
@@ -58,10 +58,7 @@ export function ProductDetailPage() {
   if (isLoading) {
     return (
       <div className="page-section product-detail-page">
-        <div className="empty-state-panel">
-          <strong>Carregando produto</strong>
-          <p>Estamos preparando os detalhes e disponibilidade.</p>
-        </div>
+        <ProductDetailSkeleton />
       </div>
     );
   }
@@ -93,12 +90,16 @@ export function ProductDetailPage() {
 
       <section className="product-detail-hero">
         <div className="product-detail-media">
-          {imageUrl ? <img src={imageUrl} alt={product.name} /> : null}
+          {imageUrl ? <img src={imageUrl} alt={product.name} /> : <ProductImageFallback name={product.name} />}
         </div>
         <div className="product-detail-info">
           <span className="product-detail-kicker">{formatCategoryLabel(product)}{" \u2022 "}{formatDuration(product.durationDays)}</span>
           <h1>{product.name}</h1>
           <p>{product.description}</p>
+          <div className="product-detail-availability" role="status">
+            <CheckCircle2 size={17} />
+            <span>{(product.availableStock ?? 0) > 0 ? "Disponivel para entrega digital" : "Disponibilidade sob confirmacao"}</span>
+          </div>
           <strong className="product-detail-price">{formatCurrency(product.priceCents)}</strong>
 
           <div className="product-detail-actions">
@@ -117,19 +118,31 @@ export function ProductDetailPage() {
           <div className="trust-strip">
             <span><Zap size={16} /> Entrega digital</span>
             <span><ShieldCheck size={16} /> Pagamento PIX</span>
-            <span>Suporte apos compra</span>
+            <span><Headphones size={16} /> Suporte apos compra</span>
           </div>
         </div>
       </section>
 
       <section className="product-detail-grid">
         <article>
+          <Clock3 size={19} />
           <h2>Detalhes</h2>
           <p>{product.fulfillmentNotes || "A entrega e feita digitalmente apos confirmacao do pagamento."}</p>
         </article>
         <article>
+          <ShieldCheck size={19} />
           <h2>Como funciona</h2>
           <p>Adicione ao carrinho, finalize com PIX e acompanhe o status do pedido na sua conta.</p>
+        </article>
+        <article>
+          <Zap size={19} />
+          <h2>Entrega</h2>
+          <p>Depois da aprovacao, suas credenciais ficam vinculadas ao pedido para consulta posterior.</p>
+        </article>
+        <article>
+          <Headphones size={19} />
+          <h2>Suporte</h2>
+          <p>Se algo nao funcionar como esperado, o historico do pedido ajuda a resolver com mais rapidez.</p>
         </article>
       </section>
 
@@ -149,6 +162,33 @@ export function ProductDetailPage() {
           </div>
         </section>
       ) : null}
+    </div>
+  );
+}
+
+function ProductDetailSkeleton() {
+  return (
+    <section className="product-detail-hero product-detail-skeleton" aria-label="Carregando produto">
+      <div className="product-detail-media skeleton-block" />
+      <div className="product-detail-info">
+        <span className="skeleton-line short" />
+        <span className="skeleton-line title" />
+        <span className="skeleton-line" />
+        <span className="skeleton-line medium" />
+        <span className="skeleton-line price" />
+        <div className="product-detail-actions">
+          <span className="skeleton-button" />
+          <span className="skeleton-button secondary" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProductImageFallback({ name }: { name: string }) {
+  return (
+    <div className="product-image-fallback" aria-label={name}>
+      <span>{name.slice(0, 2).toUpperCase()}</span>
     </div>
   );
 }

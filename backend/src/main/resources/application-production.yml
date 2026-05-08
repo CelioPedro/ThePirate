@@ -16,6 +16,10 @@ spring:
       password: ${REDIS_PASSWORD:}
       repositories:
         enabled: false
+management:
+  health:
+    redis:
+      enabled: false
 app:
   auth:
     enabled: true
@@ -43,5 +47,5 @@ app:
       base-url: ${MERCADO_PAGO_BASE_URL:https://api.mercadopago.com}
       notification-url: ${MERCADO_PAGO_NOTIFICATION_URL}
       pix-expiration-minutes: ${MERCADO_PAGO_PIX_EXPIRATION_MINUTES:30}
-      payer-email: ${MERCADO_PAGO_PAYER_EMAIL:}
-      payer-first-name: ${MERCADO_PAGO_PAYER_FIRST_NAME:}
+      payer-email: ""
+      payer-first-name: ""

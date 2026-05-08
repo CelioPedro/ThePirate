@@ -19,9 +19,10 @@ import type {
 
 const API_BASE_KEY = "tpm-app-api-base";
 const TOKEN_KEY = "tpm-app-auth-token";
+const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 export function getStoredApiBase() {
-  return localStorage.getItem(API_BASE_KEY) || "http://localhost:8080";
+  return localStorage.getItem(API_BASE_KEY) || DEFAULT_API_BASE;
 }
 
 export function storeApiBase(value: string) {

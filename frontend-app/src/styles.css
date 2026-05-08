@@ -168,6 +168,7 @@ select:focus-visible {
 }
 
 .topbar-search {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -177,6 +178,104 @@ select:focus-visible {
   border-radius: 7px;
   border: 1px solid var(--text);
   background: transparent;
+}
+
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 35;
+  width: min(420px, calc(100vw - 32px));
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(21, 21, 21, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 55px rgba(21, 21, 21, 0.14);
+  backdrop-filter: blur(14px);
+  animation: suggestionIn 0.18s ease both;
+}
+
+.search-suggestion-group {
+  display: grid;
+  gap: 6px;
+}
+
+.search-suggestion-group > span {
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.search-suggestion-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 7px;
+  border-radius: 12px;
+  color: var(--text);
+}
+
+.search-suggestion-item:hover,
+.search-suggestion-item:focus-visible {
+  background: var(--surface-soft);
+}
+
+.search-suggestion-item > span:last-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.search-suggestion-item strong,
+.search-suggestion-item small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-suggestion-item small {
+  color: var(--muted);
+}
+
+.search-suggestion-thumb {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #111;
+  color: #fff;
+  font-weight: 900;
+}
+
+.search-suggestion-thumb.category {
+  background: var(--surface-soft);
+  color: var(--accent);
+}
+
+.search-suggestion-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.search-suggestion-submit {
+  min-height: 38px;
+  border: 1px solid rgba(255, 79, 31, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 79, 31, 0.06);
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .topbar-search input,
@@ -491,6 +590,15 @@ select:focus-visible {
 
 .category-dropdown {
   position: relative;
+}
+
+.category-dropdown::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: -10px;
+  right: -10px;
+  height: 14px;
 }
 
 .category-trigger {
@@ -1472,6 +1580,28 @@ select:focus-visible {
   object-fit: cover;
 }
 
+.product-image-fallback {
+  width: 100%;
+  min-height: 100%;
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 55% 40%, rgba(255, 79, 31, 0.32), transparent 24%),
+    #111;
+  color: #fff;
+  font-size: clamp(34px, 5vw, 72px);
+  font-weight: 900;
+}
+
+.product-image-fallback.small {
+  min-height: 0;
+  aspect-ratio: 3 / 2;
+  border-radius: 8px;
+  font-size: 28px;
+}
+
 .product-detail-info {
   display: grid;
   gap: 14px;
@@ -1507,6 +1637,19 @@ select:focus-visible {
   line-height: 1;
 }
 
+.product-detail-availability {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: #0f6f45;
+  background: rgba(25, 185, 111, 0.1);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .product-detail-actions,
 .trust-strip {
   display: flex;
@@ -1538,6 +1681,11 @@ select:focus-visible {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.82);
   box-shadow: 0 0 0 1px rgba(21, 21, 21, 0.055) inset;
+}
+
+.product-detail-grid article > svg {
+  margin-bottom: 10px;
+  color: var(--accent);
 }
 
 .product-detail-grid h2 {
@@ -1798,6 +1946,28 @@ select:focus-visible {
   background: #0f0f0f;
   display: grid;
   gap: 14px;
+}
+
+.checkout-step-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.checkout-step-strip span {
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.checkout-step-strip span.active {
+  color: #fff;
+  background: rgba(255, 79, 31, 0.18);
 }
 
 .drawer-body {
@@ -2235,6 +2405,72 @@ select:focus-visible {
 .order-card-head > div {
   display: grid;
   gap: 6px;
+}
+
+.order-card-items-preview {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(222, 217, 207, 0.74);
+  border-radius: 14px;
+  background: rgba(248, 246, 241, 0.58);
+}
+
+.order-card-item-preview {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.order-card-item-preview div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.order-card-item-preview strong,
+.order-card-item-preview span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-card-item-preview strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.order-card-item-preview span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.order-card-item-thumb {
+  display: block;
+  width: 50px;
+  height: 50px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #111;
+}
+
+.order-card-item-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.order-card-more-items {
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .order-detail-grid {
@@ -3879,6 +4115,20 @@ button.account-action-card {
   flex-wrap: wrap;
 }
 
+.admin-list-skeleton {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-skeleton-row {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
 .danger-text {
   color: #a23a3a !important;
   font-weight: 700;
@@ -3955,9 +4205,84 @@ button.account-action-card {
   animation: shimmer 1.4s infinite;
 }
 
+.skeleton-block,
+.skeleton-media,
+.skeleton-line,
+.skeleton-button,
+.skeleton-category-card {
+  background:
+    linear-gradient(90deg, #ede8df 25%, #fbfaf7 37%, #ede8df 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-block,
+.skeleton-media {
+  min-height: 220px;
+  border-radius: 18px;
+}
+
+.skeleton-media {
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 3 / 2;
+  border-radius: 8px;
+}
+
+.skeleton-line {
+  display: block;
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+}
+
+.skeleton-line.short {
+  width: 34%;
+}
+
+.skeleton-line.medium {
+  width: 64%;
+}
+
+.skeleton-line.title {
+  width: min(520px, 90%);
+  height: 42px;
+}
+
+.skeleton-line.price {
+  width: 180px;
+  height: 38px;
+}
+
+.skeleton-button {
+  width: 160px;
+  height: 46px;
+  display: inline-block;
+  border-radius: 999px;
+}
+
+.skeleton-button.secondary {
+  width: 190px;
+}
+
+.skeleton-order-card {
+  pointer-events: none;
+}
+
 @keyframes shimmer {
   0% { background-position: 100% 0; }
   100% { background-position: 0 0; }
+}
+
+@keyframes suggestionIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4019,6 +4344,12 @@ button.account-action-card {
   .topbar-search {
     order: 4;
     width: min(420px, 100%);
+  }
+
+  .search-suggestions {
+    left: 0;
+    right: auto;
+    width: min(100%, calc(100vw - 32px));
   }
 
   .topbar-actions {
@@ -4083,6 +4414,12 @@ button.account-action-card {
   .topbar-nav,
   .topbar-search,
   .topbar-actions {
+    width: 100%;
+  }
+
+  .search-suggestions {
+    left: 0;
+    right: auto;
     width: 100%;
   }
 

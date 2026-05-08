@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, Clock3, PackageCheck, RefreshCw } from "lucide-react";
 import { apiClient } from "../shared/api/client";
+import { getProductImageFromText } from "../shared/catalog/catalogData";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
 import { useSession } from "../shared/session/SessionContext";
 import type { OrderDetail } from "../shared/types";
@@ -129,10 +130,7 @@ export function OrdersPage() {
         </div>
         {error ? <div className="inline-error">{error}</div> : null}
         {isLoading ? (
-          <div className="empty-state-panel">
-            <strong>Carregando pedidos</strong>
-            <p>Estamos buscando seu historico de compras e entregas.</p>
-          </div>
+          <OrdersSkeleton />
         ) : null}
         {!isLoading && orders.length === 0 ? (
           <div className="empty-state-panel">
@@ -145,6 +143,7 @@ export function OrdersPage() {
           <div className="empty-state-panel">
             <strong>Nenhum pedido nesse filtro</strong>
             <p>Altere o filtro para ver outros status do seu historico.</p>
+            <button type="button" className="secondary-button compact" onClick={() => setStatusFilter("ALL")}>Ver todos</button>
           </div>
         ) : null}
         <div className="orders-list">
@@ -163,6 +162,22 @@ export function OrdersPage() {
                 <span>Criado em {formatDate(order.createdAt)}</span>
                 <span>{statusContext(order)}</span>
               </div>
+              {order.items.length ? (
+                <div className="order-card-items-preview">
+                  {order.items.slice(0, 3).map((item) => (
+                    <div key={item.id} className="order-card-item-preview">
+                      <span className="order-card-item-thumb" aria-hidden="true">
+                        <img src={getProductImageFromText(item.productName) || "/brand/ThePirateMaxLogo.png"} alt="" loading="lazy" />
+                      </span>
+                      <div>
+                        <strong>{item.productName}</strong>
+                        <span>{item.quantity} unidade(s) | {formatCurrency(item.totalPriceCents)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {order.items.length > 3 ? <span className="order-card-more-items">+{order.items.length - 3} item(ns)</span> : null}
+                </div>
+              ) : null}
               <div className="order-card-footer">
                 <span>{order.paymentMethod || "PIX"}</span>
                 <Link to={`/pedidos/${order.id}`} className={order.status === "DELIVERED" ? "primary-button compact" : "secondary-button compact"}>
@@ -173,6 +188,28 @@ export function OrdersPage() {
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function OrdersSkeleton() {
+  return (
+    <div className="orders-list" aria-label="Carregando pedidos">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <article key={index} className="order-card-v2 skeleton-order-card">
+          <span className="skeleton-line short" />
+          <span className="skeleton-line title" />
+          <div className="order-card-items-preview">
+            <div className="order-card-item-preview">
+              <span className="order-card-item-thumb skeleton-block" />
+              <div>
+                <span className="skeleton-line medium" />
+                <span className="skeleton-line short" />
+              </div>
+            </div>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }

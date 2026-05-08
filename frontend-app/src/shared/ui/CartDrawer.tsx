@@ -115,11 +115,17 @@ export function CartDrawer() {
         </div>
 
         <footer className="drawer-footer">
+          <div className="checkout-step-strip" aria-label="Etapas do checkout">
+            <span className={grouped.length > 0 ? "active" : ""}>Carrinho</span>
+            <span className={user ? "active" : ""}>Conta</span>
+            <span>PIX</span>
+            <span>Entrega</span>
+          </div>
           <div className="drawer-total">
             <span>Total</span>
             <strong>{formatCurrency(totalCents)}</strong>
           </div>
-          {!user ? <p className="helper-text">Voce fara login antes de concluir o pedido.</p> : null}
+          {!user ? <p className="helper-text">Voce fara login antes de concluir o pedido.</p> : <p className="helper-text">O PIX sera gerado na proxima etapa e o pedido ficara salvo na sua conta.</p>}
           {checkoutError ? <p className="form-error">{checkoutError}</p> : null}
           <button type="button" className="primary-button" onClick={handleCheckout} disabled={grouped.length === 0 || isSubmitting}>
             {isSubmitting ? "Gerando pedido..." : "Finalizar compra"}

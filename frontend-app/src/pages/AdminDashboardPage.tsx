@@ -613,8 +613,13 @@ export function AdminDashboardPage() {
             </label>
           </div>
           <div className="orders-list compact">
-            {isLoading ? <div className="empty-state-panel">Carregando pedidos...</div> : null}
-            {!isLoading && filteredOrders.length === 0 ? <div className="empty-state-panel">Nenhum pedido nesse filtro.</div> : null}
+            {isLoading ? <AdminListSkeleton label="Carregando pedidos" /> : null}
+            {!isLoading && filteredOrders.length === 0 ? (
+              <div className="empty-state-panel">
+                <strong>Nenhum pedido nesse filtro</strong>
+                <p>Ajuste a busca ou o status para encontrar outros pedidos.</p>
+              </div>
+            ) : null}
             {filteredOrders.map((order) => (
               <article key={order.orderId} className={order.orderId === selectedOrderId ? "admin-order-row selected" : "admin-order-row"}>
                 <button
@@ -707,7 +712,10 @@ export function AdminDashboardPage() {
               </div>
             </div>
           ) : (
-            <div className="empty-state-panel">Diagnostico indisponivel para o pedido selecionado.</div>
+            <div className="empty-state-panel">
+              <strong>Diagnostico indisponivel</strong>
+              <p>Selecione um pedido na fila operacional para abrir pagamento, entrega e credenciais.</p>
+            </div>
           )}
         </div>
       </section>
@@ -823,8 +831,13 @@ export function AdminDashboardPage() {
           </label>
         </div>
         <div className="credential-admin-list">
-          {isLoadingCredentials ? <div className="empty-state-panel">Carregando credenciais...</div> : null}
-          {!isLoadingCredentials && filteredCredentials.length === 0 ? <div className="empty-state-panel">Nenhuma credencial nesse filtro.</div> : null}
+          {isLoadingCredentials ? <AdminListSkeleton label="Carregando credenciais" /> : null}
+          {!isLoadingCredentials && filteredCredentials.length === 0 ? (
+            <div className="empty-state-panel">
+              <strong>Nenhuma credencial nesse filtro</strong>
+              <p>Troque o produto, status ou busca para revisar outros acessos em estoque.</p>
+            </div>
+          ) : null}
           {filteredCredentials.map((credential) => (
             <article key={credential.credentialId} className="credential-admin-row">
               <div>
@@ -866,6 +879,20 @@ export function AdminDashboardPage() {
       </section>
       </>
       ) : null}
+    </div>
+  );
+}
+
+function AdminListSkeleton({ label }: { label: string }) {
+  return (
+    <div className="admin-list-skeleton" aria-label={label}>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="admin-skeleton-row">
+          <span className="skeleton-line medium" />
+          <span className="skeleton-line" />
+          <span className="skeleton-line short" />
+        </div>
+      ))}
     </div>
   );
 }

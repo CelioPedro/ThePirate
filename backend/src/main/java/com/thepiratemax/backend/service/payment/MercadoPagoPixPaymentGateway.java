@@ -10,7 +10,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,10 +49,11 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
 
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(properties.pixExpirationMinutes());
         Map<String, Object> request = buildRequest(order, expiresAt);
+        logPixRequest(order, request);
 
         try {
             JsonNode response = restClient.post()
-                    .uri("/v1/orders")
+                    .uri("/v1/payments")
                     .header("X-Idempotency-Key", order.getExternalReference())
                     .body(request)
                     .retrieve()
@@ -63,31 +63,23 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
                 throw new InvalidRequestException("MERCADO_PAGO_EMPTY_RESPONSE", "Mercado Pago returned an empty response");
             }
 
-            String providerId = firstText(response, "id", "order_id");
-            JsonNode payment = firstPayment(response);
-            String paymentId = firstText(payment, "id", "payment_id");
-            String providerStatus = firstText(payment, "status", "status_detail");
-            JsonNode transactionData = payment.path("payment_method");
-            JsonNode paymentMethodData = transactionData.path("data");
-            if (!paymentMethodData.isMissingNode() && !paymentMethodData.isNull() && paymentMethodData.isObject()) {
-                transactionData = paymentMethodData;
-            }
-            if (transactionData.isMissingNode() || transactionData.isNull()) {
-                transactionData = payment.path("transaction_data");
-            }
-
+            String paymentId = firstText(response, "id");
+            String providerStatus = firstText(response, "status", "status_detail");
+            JsonNode transactionData = response.path("point_of_interaction").path("transaction_data");
             String qrCode = firstText(transactionData, "qr_code_base64", "qr_code");
             String copyPaste = firstText(transactionData, "qr_code", "ticket_url");
 
             if (copyPaste == null || copyPaste.isBlank()) {
+                logger.warn("event=mercado_pago_pix_missing_copy_paste orderId={} externalReference={} providerPaymentId={} status={} statusDetail={} response={}",
+                        order.getId(), order.getExternalReference(), paymentId, providerStatus, firstText(response, "status_detail"), response);
                 throw new InvalidRequestException("MERCADO_PAGO_PIX_NOT_RETURNED", "Mercado Pago response did not include Pix copy-and-paste data");
             }
 
-            logger.info("event=mercado_pago_pix_created orderId={} externalReference={} providerOrderId={} providerPaymentId={} status={}",
-                    order.getId(), order.getExternalReference(), providerId, paymentId, providerStatus);
+            logger.info("event=mercado_pago_pix_created orderId={} externalReference={} providerPaymentId={} status={} statusDetail={}",
+                    order.getId(), order.getExternalReference(), paymentId, providerStatus, firstText(response, "status_detail"));
 
             return new PixPaymentDetails(
-                    paymentId != null ? paymentId : providerId,
+                    paymentId,
                     qrCode,
                     copyPaste,
                     expiresAt,
@@ -108,23 +100,15 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
     }
 
     private Map<String, Object> buildRequest(OrderEntity order, OffsetDateTime expiresAt) {
-        Map<String, Object> paymentMethod = new LinkedHashMap<>();
-        paymentMethod.put("id", "pix");
-        paymentMethod.put("type", "bank_transfer");
-
-        Map<String, Object> payment = new LinkedHashMap<>();
-        payment.put("amount", money(order.getTotalCents()));
-        payment.put("payment_method", paymentMethod);
-
-        Map<String, Object> transactions = new LinkedHashMap<>();
-        transactions.put("payments", List.of(payment));
-
         Map<String, Object> request = new LinkedHashMap<>();
-        request.put("type", "online");
+        request.put("transaction_amount", moneyAsNumber(order.getTotalCents()));
+        request.put("description", "The Pirate Max " + order.getExternalReference());
+        request.put("payment_method_id", "pix");
         request.put("external_reference", order.getExternalReference());
-        request.put("total_amount", money(order.getTotalCents()));
         request.put("payer", buildPayer(order));
-        request.put("transactions", transactions);
+        if (properties.notificationUrl() != null && !properties.notificationUrl().isBlank()) {
+            request.put("notification_url", properties.notificationUrl().trim());
+        }
 
         return request;
     }
@@ -132,18 +116,33 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
     private Map<String, Object> buildPayer(OrderEntity order) {
         String configuredEmail = properties.payerEmail();
         String email = configuredEmail != null && !configuredEmail.isBlank()
-                ? configuredEmail
+                ? configuredEmail.trim()
                 : order.getUser().getEmail();
 
         String configuredFirstName = properties.payerFirstName();
         String firstName = configuredFirstName != null && !configuredFirstName.isBlank()
-                ? configuredFirstName
+                ? configuredFirstName.trim()
                 : firstNameFrom(order.getUser().getName());
 
         Map<String, Object> payer = new LinkedHashMap<>();
         payer.put("email", email);
         payer.put("first_name", firstName);
         return payer;
+    }
+
+    private void logPixRequest(OrderEntity order, Map<String, Object> request) {
+        Object payer = request.get("payer");
+        String payerEmail = null;
+        String payerFirstName = null;
+        if (payer instanceof Map<?, ?> payerMap) {
+            Object email = payerMap.get("email");
+            Object firstName = payerMap.get("first_name");
+            payerEmail = email != null ? email.toString() : null;
+            payerFirstName = firstName != null ? firstName.toString() : null;
+        }
+
+        logger.info("event=mercado_pago_pix_request orderId={} externalReference={} totalAmount={} payerEmail={} payerFirstName={}",
+                order.getId(), order.getExternalReference(), request.get("transaction_amount"), payerEmail, payerFirstName);
     }
 
     private String firstNameFrom(String name) {
@@ -153,16 +152,8 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
         return name.trim().split("\\s+")[0];
     }
 
-    private String money(long cents) {
-        return BigDecimal.valueOf(cents, 2).setScale(2, RoundingMode.HALF_UP).toPlainString();
-    }
-
-    private JsonNode firstPayment(JsonNode response) {
-        JsonNode payments = response.path("transactions").path("payments");
-        if (payments.isArray() && !payments.isEmpty()) {
-            return payments.get(0);
-        }
-        return response.path("payment");
+    private BigDecimal moneyAsNumber(long cents) {
+        return BigDecimal.valueOf(cents, 2).setScale(2, RoundingMode.HALF_UP);
     }
 
     private String firstText(JsonNode node, String... fields) {
@@ -177,4 +168,5 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
         }
         return null;
     }
+
 }
