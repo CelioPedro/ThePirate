@@ -4457,20 +4457,22 @@ button.account-action-card {
   }
 
   .catalog-intro {
-    align-items: flex-start;
-    flex-direction: column;
-    margin-top: 14px;
+    min-height: 190px;
+    gap: 14px;
+    align-content: center;
+    align-items: center;
+    margin: 4px 0 26px;
   }
 
   .catalog-intro h1 {
     flex-wrap: wrap;
     row-gap: 4px;
-    font-size: 38px;
+    font-size: 34px;
   }
 
   .catalog-intro-actions {
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
   }
 
   .section-heading {
