@@ -513,13 +513,14 @@ function formatCategoryChip(product: Product) {
 }
 
 function getCategoryImageUrl(category: CatalogCategory) {
-  return category.imageUrl || CATEGORY_IMAGE_BY_SLUG[category.slug] || null;
+  return normalizeLocalCatalogImageUrl(category.imageUrl) || CATEGORY_IMAGE_BY_SLUG[category.slug] || null;
 }
 
 function getProductImageUrl(product: Product) {
   const fallbackImageUrl = getProductImageFallbackUrl(product);
-  if (product.imageUrl && !isGeneratedPlaceholderImage(product.imageUrl)) {
-    return product.imageUrl;
+  const productImageUrl = normalizeLocalCatalogImageUrl(product.imageUrl);
+  if (productImageUrl && !isGeneratedPlaceholderImage(productImageUrl)) {
+    return productImageUrl;
   }
   return fallbackImageUrl;
 }
@@ -540,6 +541,12 @@ function getProductImageFallbackUrl(product: Product) {
 
 function isGeneratedPlaceholderImage(imageUrl: string) {
   return imageUrl.includes("/catalog/products/league-of-legends.webp");
+}
+
+function normalizeLocalCatalogImageUrl(imageUrl?: string | null) {
+  if (!imageUrl) return null;
+  if (!imageUrl.startsWith("/catalog/")) return imageUrl;
+  return imageUrl.replace(/\.png($|\?)/i, ".webp$1");
 }
 
 function legacyCategorySlug(category: string) {
