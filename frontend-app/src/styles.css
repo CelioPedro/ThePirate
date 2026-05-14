@@ -4526,14 +4526,22 @@ button.account-action-card {
   }
 
   .auth-page {
+    min-height: 100vh;
     padding: 18px;
+    align-items: center;
   }
 
   .login-card-shell {
-    width: 100%;
+    width: min(100%, 420px);
     min-height: 0;
-    padding: 22px;
+    padding: 24px 22px;
     border-radius: 22px;
+  }
+
+  .login-card-shell::before {
+    box-shadow:
+      0 20px 54px rgba(21, 21, 21, 0.08),
+      0 0 0 1px rgba(21, 21, 21, 0.035) inset;
   }
 
   .login-brand-lockup {
@@ -4546,7 +4554,7 @@ button.account-action-card {
   }
 
   .login-heading {
-    margin-top: 28px;
+    margin-top: 24px;
   }
 
   .login-heading h1 {
@@ -4555,8 +4563,7 @@ button.account-action-card {
 
   .login-visual-panel,
   .login-visual-fallback {
-    min-height: 250px;
-    border-radius: 18px;
+    display: none;
   }
 
   .product-detail-hero {
