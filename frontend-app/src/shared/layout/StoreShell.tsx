@@ -181,15 +181,17 @@ export function StoreShell() {
                 </div>
               ) : null}
             </form>
-            <Link to={user ? "/conta" : "/login"} className="header-icon-link" aria-label={user ? `Abrir conta de ${user.name}` : "Entrar"}>
-              <UserCircle2 size={24} />
-            </Link>
-            <button type="button" className="header-bag-button" onClick={openCart} aria-label="Abrir carrinho">
-              <span className="header-bag-icon">
-                <ShoppingBag size={25} />
-                <strong>{itemCount}</strong>
-              </span>
-            </button>
+            <div className="topbar-icon-actions">
+              <Link to={user ? "/conta" : "/login"} className="header-icon-link" aria-label={user ? `Abrir conta de ${user.name}` : "Entrar"}>
+                <UserCircle2 size={24} />
+              </Link>
+              <button type="button" className="header-bag-button" onClick={openCart} aria-label="Abrir carrinho">
+                <span className="header-bag-icon">
+                  <ShoppingBag size={25} />
+                  <strong>{itemCount}</strong>
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
