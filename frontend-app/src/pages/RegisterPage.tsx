@@ -35,7 +35,7 @@ export function RegisterPage() {
       <section className="login-card-shell register-card-shell" aria-labelledby="register-title">
         <div className="login-form-panel">
           <Link to="/" className="login-brand-lockup" aria-label="The Pirate Max">
-            <img src="/brand/ThePirateMaxLogo.png" alt="" />
+            <img src="/brand/ThePirateMaxLogo.webp" alt="" />
             <strong>The Pirate Max</strong>
           </Link>
 
@@ -113,13 +113,13 @@ export function RegisterPage() {
         <div className="login-visual-panel">
           {hasHeroImage ? (
             <img
-              src="/auth/register-hero.png"
+              src="/auth/register-hero.webp"
               alt="The Pirate Max"
               onError={() => setHasHeroImage(false)}
             />
           ) : (
             <div className="login-visual-fallback">
-              <img src="/brand/ThePirateMaxLogo.png" alt="" />
+              <img src="/brand/ThePirateMaxLogo.webp" alt="" />
               <strong>Bem-vindo a bordo</strong>
               <span>Imagem da pagina de cadastro</span>
             </div>

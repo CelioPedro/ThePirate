@@ -434,7 +434,7 @@ export function AdminDashboardPage() {
                 }}
               >
                 <span className="product-admin-thumb" aria-hidden="true">
-                  <img src={getProductImageUrl(product) || "/brand/ThePirateMaxLogo.png"} alt="" loading="lazy" />
+                  <img src={getProductImageUrl(product) || "/brand/ThePirateMaxLogo.webp"} alt="" loading="lazy" />
                 </span>
                 <div className="product-admin-copy">
                   <strong>{product.name}</strong>

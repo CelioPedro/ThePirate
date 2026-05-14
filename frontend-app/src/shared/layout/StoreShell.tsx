@@ -111,7 +111,7 @@ export function StoreShell() {
           </nav>
 
           <Link to="/" className="header-logo-slot" aria-label="The Pirate Max">
-            <img src="/brand/ThePirateMaxLogo.png" alt="The Pirate Max" />
+            <img src="/brand/ThePirateMaxLogo.webp" alt="The Pirate Max" />
           </Link>
 
           <div className="topbar-actions topbar-actions-right">

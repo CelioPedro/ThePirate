@@ -167,7 +167,7 @@ export function OrdersPage() {
                   {order.items.slice(0, 3).map((item) => (
                     <div key={item.id} className="order-card-item-preview">
                       <span className="order-card-item-thumb" aria-hidden="true">
-                        <img src={getProductImageFromText(item.productName) || "/brand/ThePirateMaxLogo.png"} alt="" loading="lazy" />
+                        <img src={getProductImageFromText(item.productName) || "/brand/ThePirateMaxLogo.webp"} alt="" loading="lazy" />
                       </span>
                       <div>
                         <strong>{item.productName}</strong>
