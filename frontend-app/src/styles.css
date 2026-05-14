@@ -1714,11 +1714,13 @@ select:focus-visible {
 .related-product-card,
 .category-product-card {
   display: grid;
+  grid-template-rows: auto minmax(2.5em, auto) auto;
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
+  min-width: 0;
 }
 
 .related-product-card img,
@@ -1733,6 +1735,21 @@ select:focus-visible {
 .category-product-card span {
   color: var(--muted);
   font-size: 13px;
+}
+
+.related-product-card strong,
+.category-product-card strong {
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.18;
+}
+
+.related-product-card span,
+.category-product-card span {
+  align-self: end;
 }
 
 .category-hero {
