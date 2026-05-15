@@ -1173,6 +1173,18 @@ select:focus-visible {
   transition: background 160ms ease, color 160ms ease, opacity 160ms ease, transform 160ms ease;
 }
 
+.rail-nav svg {
+  display: block;
+}
+
+.rail-nav-prev svg {
+  transform: translateX(1px);
+}
+
+.rail-nav-next svg {
+  transform: translateX(-1px);
+}
+
 .rail-frame:hover .rail-nav:not(:disabled),
 .rail-frame:focus-within .rail-nav:not(:disabled) {
   opacity: 1;
