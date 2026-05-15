@@ -4505,6 +4505,10 @@ button.account-action-card {
     grid-auto-columns: minmax(246px, 82vw);
   }
 
+  .rail-frame-default .rail-nav {
+    top: calc(max(246px, 82vw) / 3);
+  }
+
   .rail-nav {
     width: 32px;
     height: 32px;
