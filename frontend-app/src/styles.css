@@ -1187,11 +1187,11 @@ select:focus-visible {
 }
 
 .rail-nav-prev::before {
-  transform: translateX(2px) rotate(-135deg);
+  transform: translateX(1px) rotate(-135deg);
 }
 
 .rail-nav-next::before {
-  transform: translateX(-2px) rotate(45deg);
+  transform: translateX(-1px) rotate(45deg);
 }
 
 .rail-frame:hover .rail-nav:not(:disabled),
