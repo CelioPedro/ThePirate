@@ -1174,15 +1174,24 @@ select:focus-visible {
 }
 
 .rail-nav svg {
+  display: none;
+}
+
+.rail-nav::before {
+  content: "";
   display: block;
+  width: 9px;
+  height: 9px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
 }
 
-.rail-nav-prev svg {
-  transform: translateX(1px);
+.rail-nav-prev::before {
+  transform: translateX(2px) rotate(-135deg);
 }
 
-.rail-nav-next svg {
-  transform: translateX(-1px);
+.rail-nav-next::before {
+  transform: translateX(-2px) rotate(45deg);
 }
 
 .rail-frame:hover .rail-nav:not(:disabled),
