@@ -1179,19 +1179,23 @@ select:focus-visible {
 
 .rail-nav::before {
   content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
   display: block;
   width: 9px;
   height: 9px;
   border-top: 2px solid currentColor;
   border-right: 2px solid currentColor;
+  transform-origin: center;
 }
 
 .rail-nav-prev::before {
-  transform: translateX(1px) rotate(-135deg);
+  transform: translate(-42%, -50%) rotate(-135deg);
 }
 
 .rail-nav-next::before {
-  transform: translateX(-1px) rotate(45deg);
+  transform: translate(-58%, -50%) rotate(45deg);
 }
 
 .rail-frame:hover .rail-nav:not(:disabled),
