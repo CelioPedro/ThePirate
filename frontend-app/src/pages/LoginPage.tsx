@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useSession } from "../shared/session/SessionContext";
+import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [hasHeroImage, setHasHeroImage] = useState(true);
+  useDocumentTitle("Entrar");
 
   const nextPath = (location.state as { next?: string } | null)?.next || "/conta";
 
@@ -43,7 +45,7 @@ export function LoginPage() {
             <p>Acesse sua conta e continue explorando.</p>
           </div>
 
-          {isDevFallback ? <div className="inline-banner">Sessao dev local detectada. Entrar aqui substitui a sessao automatica.</div> : null}
+          {import.meta.env.DEV && isDevFallback ? <div className="inline-banner">Sessao dev local detectada. Entrar aqui substitui a sessao automatica.</div> : null}
 
           <form className="auth-form-card login-form-card" onSubmit={handleSubmit}>
             <label className="login-input-field">
@@ -77,29 +79,33 @@ export function LoginPage() {
               </button>
             </label>
 
-            {error ? <div className="error-text">{error}</div> : null}
+            {error ? <div className="error-text" role="alert">{error}</div> : null}
 
             <button type="submit" className="login-submit-button" disabled={isSubmitting}>
               {isSubmitting ? "Entrando..." : "Entrar"}
             </button>
           </form>
 
-          <button type="button" className="forgot-password-button" onClick={() => setError("Recuperacao de senha em breve.")}>
-            Esqueci minha senha
-          </button>
+          {import.meta.env.DEV ? (
+            <>
+              <button type="button" className="forgot-password-button" onClick={() => setError("Recuperacao de senha em breve.")}>
+                Esqueci minha senha
+              </button>
 
-          <div className="login-divider"><span>Ou continuar com</span></div>
+              <div className="login-divider"><span>Ou continuar com</span></div>
 
-          <div className="social-login-stack">
-            <button type="button" onClick={() => setError("Login com Google em breve.")}>
-              <GoogleIcon />
-              Entrar com Google
-            </button>
-            <button type="button" onClick={() => setError("Login com Facebook em breve.")}>
-              <FacebookIcon />
-              Entrar com Facebook
-            </button>
-          </div>
+              <div className="social-login-stack">
+                <button type="button" onClick={() => setError("Login com Google em breve.")}>
+                  <GoogleIcon />
+                  Entrar com Google
+                </button>
+                <button type="button" onClick={() => setError("Login com Facebook em breve.")}>
+                  <FacebookIcon />
+                  Entrar com Facebook
+                </button>
+              </div>
+            </>
+          ) : null}
 
           <p className="helper-text login-helper">Ainda nao tem uma conta? <Link to="/cadastro">Criar conta</Link></p>
         </div>

@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, CreditCard, KeyRound, LogOut, PackageCheck, ShieldCheck, Server, Sparkles, UserRound } from "lucide-react";
 import { humanizeRole } from "../shared/lib/format";
+import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
 
 export function AccountPage() {
   const { user, logout, apiBase, setApiBase, isDevFallback } = useSession();
+  const showEnvironmentPanel = import.meta.env.DEV;
+  useDocumentTitle("Minha conta");
 
   return (
     <div className="account-page">
@@ -35,7 +38,7 @@ export function AccountPage() {
               </div>
             </div>
 
-            {isDevFallback ? <div className="inline-banner">Sessao local automatica do backend. Para validar login real, use a tela de acesso.</div> : null}
+            {import.meta.env.DEV && isDevFallback ? <div className="inline-banner">Sessao local automatica do backend. Para validar login real, use a tela de acesso.</div> : null}
 
             <div className="account-action-grid">
               <Link to="/pedidos" className="account-action-card">
@@ -97,23 +100,25 @@ export function AccountPage() {
         )}
       </section>
 
-      <section className="account-side-panel">
-        <div className="account-side-head">
-          <div className="account-side-icon"><Server size={20} /></div>
-          <div>
-            <span className="eyebrow">status</span>
-            <h2>Ambiente</h2>
+      {showEnvironmentPanel ? (
+        <section className="account-side-panel">
+          <div className="account-side-head">
+            <div className="account-side-icon"><Server size={20} /></div>
+            <div>
+              <span className="eyebrow">status</span>
+              <h2>Ambiente</h2>
+            </div>
           </div>
-        </div>
-        <div className="account-status-row">
-          <span className="status-dot live" />
-          <span>Backend conectado</span>
-        </div>
-        <label className="account-input-field">
-          <span>URL da API</span>
-          <input defaultValue={apiBase} onBlur={(event) => void setApiBase(event.target.value.trim())} />
-        </label>
-      </section>
+          <div className="account-status-row">
+            <span className="status-dot live" />
+            <span>Backend conectado</span>
+          </div>
+          <label className="account-input-field">
+            <span>URL da API</span>
+            <input defaultValue={apiBase} onBlur={(event) => void setApiBase(event.target.value.trim())} />
+          </label>
+        </section>
+      ) : null}
     </div>
   );
 }

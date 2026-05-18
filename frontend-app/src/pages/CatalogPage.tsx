@@ -4,6 +4,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { useCart } from "../shared/cart/CartContext";
 import { formatCurrency, humanizeCategory } from "../shared/lib/format";
+import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
 import type { CatalogCategory, InventoryItem, Product } from "../shared/types";
 
@@ -141,6 +142,7 @@ export function CatalogPage() {
   const [loadError, setLoadError] = useState("");
   const [recentlyAddedProductId, setRecentlyAddedProductId] = useState<string | null>(null);
   const search = searchParams.get("busca") || "";
+  useDocumentTitle("Catalogo");
 
   function addProductToCart(product: Product) {
     addItem(product);
@@ -148,30 +150,30 @@ export function CatalogPage() {
     window.setTimeout(() => setRecentlyAddedProductId((current) => current === product.id ? null : current), 1400);
   }
 
-  useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      setLoadError("");
-      try {
-        const [productsResponse, inventoryResponse, categoriesResponse] = await Promise.all([
-          apiClient.getProducts(apiBase),
-          apiClient.getInventory(apiBase),
-          apiClient.getCategories(apiBase).catch(() => FALLBACK_CATEGORIES)
-        ]);
-        setProducts(productsResponse);
-        setInventory(inventoryResponse);
-        setCategories(categoriesResponse.length > 0 ? categoriesResponse : FALLBACK_CATEGORIES);
-      } catch {
-        setProducts([]);
-        setInventory([]);
-        setCategories(FALLBACK_CATEGORIES);
-        setLoadError("Nao foi possivel carregar o catalogo a partir do backend atual.");
-      } finally {
-        setIsLoading(false);
-      }
+  async function loadCatalog() {
+    setIsLoading(true);
+    setLoadError("");
+    try {
+      const [productsResponse, inventoryResponse, categoriesResponse] = await Promise.all([
+        apiClient.getProducts(apiBase),
+        apiClient.getInventory(apiBase),
+        apiClient.getCategories(apiBase).catch(() => FALLBACK_CATEGORIES)
+      ]);
+      setProducts(productsResponse);
+      setInventory(inventoryResponse);
+      setCategories(categoriesResponse.length > 0 ? categoriesResponse : FALLBACK_CATEGORIES);
+    } catch {
+      setProducts([]);
+      setInventory([]);
+      setCategories(FALLBACK_CATEGORIES);
+      setLoadError("Nao foi possivel carregar o catalogo a partir do backend atual.");
+    } finally {
+      setIsLoading(false);
     }
+  }
 
-    void load();
+  useEffect(() => {
+    void loadCatalog();
   }, [apiBase]);
 
   const mergedProducts = useMemo(() => products.map((product) => {
@@ -248,7 +250,7 @@ export function CatalogPage() {
           <div className="empty-state-panel">
             <strong>Catalogo indisponivel</strong>
             <p>{loadError}</p>
-            <button type="button" className="secondary-button compact" onClick={() => window.location.reload()}>Tentar novamente</button>
+            <button type="button" className="secondary-button compact" onClick={() => void loadCatalog()}>Tentar novamente</button>
           </div>
         ) : null}
         {isLoading ? (

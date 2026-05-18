@@ -4,7 +4,9 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, CreditCard, Eye, EyeOff, 
 import { apiClient } from "../shared/api/client";
 import { getProductImageFromText } from "../shared/catalog/catalogData";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
+import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
+import { SafeImage } from "../shared/ui/SafeImage";
 import type { DeliveredCredential, DeliveredCredentialSecretResponse, DeliveredCredentialsResponse, OrderDetail } from "../shared/types";
 
 interface PixState {
@@ -33,6 +35,7 @@ export function OrderDetailPage() {
     expiresAt: (location.state as { pixExpiresAt?: string } | null)?.pixExpiresAt,
     externalReference: (location.state as { externalReference?: string } | null)?.externalReference
   });
+  useDocumentTitle(order ? `Pedido ${shortOrderId(order.id)}` : "Pedido");
 
   const loadOrderState = useCallback(async (silent = false) => {
     if (!user) return;
@@ -208,7 +211,7 @@ export function OrderDetailPage() {
           </button>
           {shouldPoll ? <span className="live-refresh-indicator">Atualizacao automatica ativa</span> : null}
         </div>
-        {error ? <div className="inline-error">{error}</div> : null}
+        {error ? <div className="inline-error" role="alert">{error}</div> : null}
         <div className="order-summary-grid">
           <article>
             <span>Total</span>
@@ -237,7 +240,12 @@ export function OrderDetailPage() {
             {order.items.map((item) => (
               <div key={item.id} className="order-item-line">
                 <div className="order-item-thumb">
-                  {getProductImageFromText(item.productName) ? <img src={getProductImageFromText(item.productName) || ""} alt="" loading="lazy" /> : null}
+                  <SafeImage
+                    src={getProductImageFromText(item.productName)}
+                    alt=""
+                    fallback={<img src="/brand/ThePirateMaxLogo.webp" alt="" loading="lazy" />}
+                    loading="lazy"
+                  />
                 </div>
                 <div>
                   <strong>{item.productName}</strong>

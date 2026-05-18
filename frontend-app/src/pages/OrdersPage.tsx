@@ -4,7 +4,9 @@ import { CheckCircle2, Clock3, PackageCheck, RefreshCw } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { getProductImageFromText } from "../shared/catalog/catalogData";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
+import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
+import { SafeImage } from "../shared/ui/SafeImage";
 import type { OrderDetail } from "../shared/types";
 
 const STATUS_FILTERS = [
@@ -23,6 +25,7 @@ export function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  useDocumentTitle("Pedidos");
 
   const loadOrders = useCallback(async () => {
     if (!user) {
@@ -128,7 +131,7 @@ export function OrdersPage() {
           </div>
           <span className="orders-count">{filteredOrders.length} de {orders.length}</span>
         </div>
-        {error ? <div className="inline-error">{error}</div> : null}
+        {error ? <div className="inline-error" role="alert">{error}</div> : null}
         {isLoading ? (
           <OrdersSkeleton />
         ) : null}
@@ -167,7 +170,12 @@ export function OrdersPage() {
                   {order.items.slice(0, 3).map((item) => (
                     <div key={item.id} className="order-card-item-preview">
                       <span className="order-card-item-thumb" aria-hidden="true">
-                        <img src={getProductImageFromText(item.productName) || "/brand/ThePirateMaxLogo.webp"} alt="" loading="lazy" />
+                        <SafeImage
+                          src={getProductImageFromText(item.productName)}
+                          alt=""
+                          fallback={<img src="/brand/ThePirateMaxLogo.webp" alt="" loading="lazy" />}
+                          loading="lazy"
+                        />
                       </span>
                       <div>
                         <strong>{item.productName}</strong>

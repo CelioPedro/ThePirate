@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../shared/api/client";
 import { getProductImageUrl } from "../shared/catalog/catalogData";
 import { formatCurrency, formatDate, humanizeCategory, labelStatus, statusTone } from "../shared/lib/format";
+import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
+import { SafeImage } from "../shared/ui/SafeImage";
 import type { AdminCredentialResponse, AdminOrderDiagnostics, AdminOrderSummary, AdminProduct, CatalogCategory, InventoryItem, Product } from "../shared/types";
 
 const EMPTY_CREDENTIAL_FORM = {
@@ -51,6 +53,7 @@ export function AdminDashboardPage() {
   const [orderSearch, setOrderSearch] = useState("");
   const [credentialProductFilter, setCredentialProductFilter] = useState("");
   const [credentialStatusFilter, setCredentialStatusFilter] = useState("AVAILABLE");
+  useDocumentTitle("Painel administrativo");
   const [credentialSearch, setCredentialSearch] = useState("");
   const [revealedCredentialIds, setRevealedCredentialIds] = useState<Set<string>>(new Set());
   const [credentialSecrets, setCredentialSecrets] = useState<Record<string, { login: string; password: string }>>({});
@@ -434,7 +437,12 @@ export function AdminDashboardPage() {
                 }}
               >
                 <span className="product-admin-thumb" aria-hidden="true">
-                  <img src={getProductImageUrl(product) || "/brand/ThePirateMaxLogo.webp"} alt="" loading="lazy" />
+                  <SafeImage
+                    src={getProductImageUrl(product)}
+                    alt=""
+                    fallback={<img src="/brand/ThePirateMaxLogo.webp" alt="" loading="lazy" />}
+                    loading="lazy"
+                  />
                 </span>
                 <div className="product-admin-copy">
                   <strong>{product.name}</strong>

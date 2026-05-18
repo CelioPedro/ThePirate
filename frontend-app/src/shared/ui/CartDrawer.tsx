@@ -6,6 +6,7 @@ import { useCart } from "../cart/CartContext";
 import { getProductImageUrl } from "../catalog/catalogData";
 import { formatCurrency } from "../lib/format";
 import { useSession } from "../session/SessionContext";
+import { SafeImage } from "./SafeImage";
 import type { Product } from "../types";
 
 interface CartLine {
@@ -65,7 +66,7 @@ export function CartDrawer() {
   return (
     <>
       <div className={`drawer-backdrop ${isOpen ? "visible" : ""}`} onClick={closeCart} />
-      <aside className={`cart-drawer ${isOpen ? "open" : ""}`} aria-label="Carrinho">
+      <aside className={`cart-drawer ${isOpen ? "open" : ""}`} aria-label="Carrinho" role="dialog" aria-modal="true">
         <header className="drawer-header">
           <div>
             <span className="eyebrow">checkout</span>
@@ -89,7 +90,12 @@ export function CartDrawer() {
                 className={line.product.id === latestItemId ? "drawer-row newly-added" : "drawer-row"}
               >
                 <div className="drawer-item-thumb">
-                  {getProductImageUrl(line.product) ? <img src={getProductImageUrl(line.product) || ""} alt="" loading="lazy" /> : null}
+                  <SafeImage
+                    src={getProductImageUrl(line.product)}
+                    alt=""
+                    fallback={<span className="product-image-fallback small">{line.product.name.slice(0, 2).toUpperCase()}</span>}
+                    loading="lazy"
+                  />
                 </div>
                 <div className="drawer-item-copy">
                   <strong>{formatCartProductName(line.product.name)}</strong>
@@ -126,7 +132,7 @@ export function CartDrawer() {
             <strong>{formatCurrency(totalCents)}</strong>
           </div>
           {!user ? <p className="helper-text">Voce fara login antes de concluir o pedido.</p> : <p className="helper-text">O PIX sera gerado na proxima etapa e o pedido ficara salvo na sua conta.</p>}
-          {checkoutError ? <p className="form-error">{checkoutError}</p> : null}
+          {checkoutError ? <p className="form-error" role="alert">{checkoutError}</p> : null}
           <button type="button" className="primary-button" onClick={handleCheckout} disabled={grouped.length === 0 || isSubmitting}>
             {isSubmitting ? "Gerando pedido..." : "Finalizar compra"}
           </button>

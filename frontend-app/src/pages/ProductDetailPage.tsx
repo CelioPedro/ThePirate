@@ -5,7 +5,9 @@ import { apiClient } from "../shared/api/client";
 import { useCart } from "../shared/cart/CartContext";
 import { formatCategoryLabel, getProductImageUrl, getProductSectionSlugs } from "../shared/catalog/catalogData";
 import { formatCurrency } from "../shared/lib/format";
+import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
+import { SafeImage } from "../shared/ui/SafeImage";
 import type { InventoryItem, Product } from "../shared/types";
 
 export function ProductDetailPage() {
@@ -50,6 +52,7 @@ export function ProductDetailPage() {
         .filter((item) => item.id !== product.id && getProductSectionSlugs(item).some((sectionSlug) => getProductSectionSlugs(product).includes(sectionSlug)))
         .slice(0, 4)
     : [];
+  useDocumentTitle(product?.name || "Produto");
 
   if (!isLoading && !loadError && !product) {
     return <Navigate to="/catalogo" replace />;
@@ -90,7 +93,11 @@ export function ProductDetailPage() {
 
       <section className="product-detail-hero">
         <div className="product-detail-media">
-          {imageUrl ? <img src={imageUrl} alt={product.name} /> : <ProductImageFallback name={product.name} />}
+          <SafeImage
+            src={imageUrl}
+            alt={product.name}
+            fallback={<ProductImageFallback name={product.name} />}
+          />
         </div>
         <div className="product-detail-info">
           <span className="product-detail-kicker">{formatCategoryLabel(product)}{" \u2022 "}{formatDuration(product.durationDays)}</span>
@@ -154,7 +161,12 @@ export function ProductDetailPage() {
           <div className="related-product-grid">
             {relatedProducts.map((related) => (
               <Link key={related.id} to={`/produto/${related.slug}`} className="related-product-card">
-                {getProductImageUrl(related) ? <img src={getProductImageUrl(related) || ""} alt="" /> : null}
+                <SafeImage
+                  src={getProductImageUrl(related)}
+                  alt=""
+                  fallback={<span className="product-image-fallback small">{related.name.slice(0, 2).toUpperCase()}</span>}
+                  loading="lazy"
+                />
                 <strong>{related.name}</strong>
                 <span>{formatCurrency(related.priceCents)}</span>
               </Link>

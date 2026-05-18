@@ -7,6 +7,7 @@ import { FALLBACK_CATEGORIES, getCategoryImageUrl, getProductImageUrl } from "..
 import { useSession } from "../session/SessionContext";
 import { CartDrawer } from "../ui/CartDrawer";
 import { CategoryDropdown } from "../ui/CategoryDropdown";
+import { SafeImage } from "../ui/SafeImage";
 import type { CatalogCategory, Product } from "../types";
 
 export function StoreShell() {
@@ -149,7 +150,12 @@ export function StoreShell() {
                       {quickSearch.products.map((product) => (
                         <Link key={product.id} to={`/produto/${product.slug}`} className="search-suggestion-item" role="option">
                           <span className="search-suggestion-thumb" aria-hidden="true">
-                            {getProductImageUrl(product) ? <img src={getProductImageUrl(product) || ""} alt="" loading="lazy" /> : <span>{product.name.slice(0, 2)}</span>}
+                            <SafeImage
+                              src={getProductImageUrl(product)}
+                              alt=""
+                              fallback={<span>{product.name.slice(0, 2)}</span>}
+                              loading="lazy"
+                            />
                           </span>
                           <span>
                             <strong>{product.name}</strong>
@@ -165,7 +171,12 @@ export function StoreShell() {
                       {quickSearch.categories.map((category) => (
                         <Link key={category.id} to={`/categoria/${category.slug}`} className="search-suggestion-item" role="option">
                           <span className="search-suggestion-thumb category" aria-hidden="true">
-                            {getCategoryImageUrl(category) ? <img src={getCategoryImageUrl(category) || ""} alt="" loading="lazy" /> : <span>{category.name.slice(0, 2)}</span>}
+                            <SafeImage
+                              src={getCategoryImageUrl(category)}
+                              alt=""
+                              fallback={<span>{category.name.slice(0, 2)}</span>}
+                              loading="lazy"
+                            />
                           </span>
                           <span>
                             <strong>{category.name}</strong>
@@ -197,13 +208,13 @@ export function StoreShell() {
       </header>
       ) : null}
 
-      {!isAuthRoute ? <span
+      {import.meta.env.DEV && !isAuthRoute ? <span
         className={isLive ? "connection-status-dot online" : "connection-status-dot offline"}
         aria-label={isLive ? "API conectada" : "API desconectada"}
         role="status"
       /> : null}
 
-      {isDevFallback && location.pathname !== "/login" && location.pathname !== "/cadastro" ? (
+      {import.meta.env.DEV && isDevFallback && location.pathname !== "/login" && location.pathname !== "/cadastro" ? (
         <div className="env-banner">
           <div className="container env-banner-inner">
             <strong>Ambiente local:</strong>

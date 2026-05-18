@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { useSession } from "../shared/session/SessionContext";
+import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [hasHeroImage, setHasHeroImage] = useState(true);
+  useDocumentTitle("Criar conta");
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -87,25 +89,29 @@ export function RegisterPage() {
               </button>
             </label>
 
-            {error ? <div className="error-text">{error}</div> : null}
+            {error ? <div className="error-text" role="alert">{error}</div> : null}
 
             <button type="submit" className="login-submit-button" disabled={isSubmitting}>
               {isSubmitting ? "Criando conta..." : "Criar conta"}
             </button>
           </form>
 
-          <div className="login-divider"><span>Ou criar com</span></div>
+          {import.meta.env.DEV ? (
+            <>
+              <div className="login-divider"><span>Ou criar com</span></div>
 
-          <div className="social-login-stack">
-            <button type="button" onClick={() => setError("Cadastro com Google em breve.")}>
-              <GoogleIcon />
-              Criar com Google
-            </button>
-            <button type="button" onClick={() => setError("Cadastro com Facebook em breve.")}>
-              <FacebookIcon />
-              Criar com Facebook
-            </button>
-          </div>
+              <div className="social-login-stack">
+                <button type="button" onClick={() => setError("Cadastro com Google em breve.")}>
+                  <GoogleIcon />
+                  Criar com Google
+                </button>
+                <button type="button" onClick={() => setError("Cadastro com Facebook em breve.")}>
+                  <FacebookIcon />
+                  Criar com Facebook
+                </button>
+              </div>
+            </>
+          ) : null}
 
           <p className="helper-text login-helper">Ja tem uma conta? <Link to="/login">Entrar</Link></p>
         </div>

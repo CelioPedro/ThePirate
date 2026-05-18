@@ -4,7 +4,9 @@ import { Search } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { getCategoryImageUrl, getProductImageUrl, getProductSectionSlugs, FALLBACK_CATEGORIES } from "../shared/catalog/catalogData";
 import { formatCurrency } from "../shared/lib/format";
+import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
+import { SafeImage } from "../shared/ui/SafeImage";
 import type { CatalogCategory, Product } from "../shared/types";
 
 export function CategoryPage() {
@@ -14,24 +16,30 @@ export function CategoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CatalogCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const search = searchParams.get("busca") || "";
 
-  useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      try {
-        const [productsResponse, categoriesResponse] = await Promise.all([
-          apiClient.getProducts(apiBase),
-          apiClient.getCategories(apiBase).catch(() => FALLBACK_CATEGORIES)
-        ]);
-        setProducts(productsResponse);
-        setCategories(categoriesResponse.length > 0 ? categoriesResponse : FALLBACK_CATEGORIES);
-      } finally {
-        setIsLoading(false);
-      }
+  async function loadCategory() {
+    setIsLoading(true);
+    setLoadError("");
+    try {
+      const [productsResponse, categoriesResponse] = await Promise.all([
+        apiClient.getProducts(apiBase),
+        apiClient.getCategories(apiBase).catch(() => FALLBACK_CATEGORIES)
+      ]);
+      setProducts(productsResponse);
+      setCategories(categoriesResponse.length > 0 ? categoriesResponse : FALLBACK_CATEGORIES);
+    } catch {
+      setProducts([]);
+      setCategories(FALLBACK_CATEGORIES);
+      setLoadError("Nao foi possivel carregar esta categoria agora.");
+    } finally {
+      setIsLoading(false);
     }
+  }
 
-    void load();
+  useEffect(() => {
+    void loadCategory();
   }, [apiBase]);
 
   const category = (categories.length > 0 ? categories : FALLBACK_CATEGORIES).find((item) => item.slug === slug);
@@ -41,6 +49,8 @@ export function CategoryPage() {
       .filter((product) => getProductSectionSlugs(product).includes(slug))
       .filter((product) => !term || `${product.name} ${product.description} ${product.provider}`.toLowerCase().includes(term));
   }, [products, search, slug]);
+
+  useDocumentTitle(category?.name || "Categoria");
 
   if (!isLoading && !category) {
     return <Navigate to="/catalogo" replace />;
@@ -54,7 +64,13 @@ export function CategoryPage() {
           <h1>{category?.name || "Categoria"}</h1>
           <p>{category?.description || "Produtos digitais selecionados."}</p>
         </div>
-        {category && getCategoryImageUrl(category) ? <img src={getCategoryImageUrl(category) || ""} alt="" /> : null}
+        {category ? (
+          <SafeImage
+            src={getCategoryImageUrl(category)}
+            alt=""
+            fallback={null}
+          />
+        ) : null}
       </section>
 
       <label className="catalog-search-field category-search">
@@ -71,7 +87,14 @@ export function CategoryPage() {
       {isLoading ? (
         <CategorySkeletonGrid />
       ) : null}
-      {!isLoading && filteredProducts.length === 0 ? (
+      {!isLoading && loadError ? (
+        <div className="empty-state-panel">
+          <strong>Categoria indisponivel</strong>
+          <p>{loadError}</p>
+          <button type="button" className="secondary-button compact" onClick={() => void loadCategory()}>Tentar novamente</button>
+        </div>
+      ) : null}
+      {!isLoading && !loadError && filteredProducts.length === 0 ? (
         <div className="empty-state-panel">
           <strong>Nenhum produto nesta categoria</strong>
           <p>Novos itens podem entrar em breve. Enquanto isso, explore outras categorias do catalogo.</p>
@@ -82,7 +105,12 @@ export function CategoryPage() {
       <section className="category-product-grid">
         {filteredProducts.map((product) => (
           <Link key={product.id} to={`/produto/${product.slug}`} className="category-product-card">
-            {getProductImageUrl(product) ? <img src={getProductImageUrl(product) || ""} alt="" /> : <span className="product-image-fallback small">{product.name.slice(0, 2).toUpperCase()}</span>}
+            <SafeImage
+              src={getProductImageUrl(product)}
+              alt=""
+              fallback={<span className="product-image-fallback small">{product.name.slice(0, 2).toUpperCase()}</span>}
+              loading="lazy"
+            />
             <strong>{product.name}</strong>
             <span>{formatCurrency(product.priceCents)}</span>
           </Link>
