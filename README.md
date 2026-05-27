@@ -1,6 +1,9 @@
 <div align="center">
 
-# The Pirate Max
+<h1>
+  <img src="frontend-app/public/brand/ThePirateMaxLogo.webp" alt="The Pirate Max logo" width="44" align="center">
+  The Pirate Max
+</h1>
 
 ### Marketplace digital full stack com entrega automatizada de credenciais
 
