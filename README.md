@@ -1,7 +1,7 @@
 <div align="center">
 
 <h1>
-  <img src="frontend-app/public/brand/ThePirateMaxLogo.webp" alt="The Pirate Max logo" width="44" align="center">
+  <img src="docs/assets/the-pirate-logo-circle.png" alt="The Pirate Max logo" width="44" align="center">
   The Pirate Max
 </h1>
 
