@@ -25,7 +25,9 @@ The Pirate Max demonstra uma operacao realista de venda de produtos digitais: ca
   <img alt="MVP status" src="https://img.shields.io/badge/Status-MVP%20tecnico%20em%20validacao-f59e0b?style=flat-square">
 </p>
 
-![The Pirate Max portfolio preview placeholder](https://placehold.co/1400x720/0f172a/f8fafc?text=The+Pirate+Max+%7C+Marketplace+Digital+Full+Stack)
+![The Pirate Max responsive web preview](docs/assets/preview%20web.png)
+
+![The Pirate Max login preview](docs/assets/preview%20login.png)
 
 </div>
 
