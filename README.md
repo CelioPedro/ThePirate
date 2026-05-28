@@ -7,6 +7,8 @@
 
 ### Marketplace digital full stack com entrega automatizada de credenciais
 
+![The Pirate Max responsive web preview](docs/assets/preview%20web.png)
+
 The Pirate Max demonstra uma operacao realista de venda de produtos digitais: catalogo, autenticacao, carrinho, pedidos, painel administrativo, estoque de credenciais, backend em producao e deploy com HTTPS.
 
 <p>
@@ -25,7 +27,7 @@ The Pirate Max demonstra uma operacao realista de venda de produtos digitais: ca
   <img alt="MVP status" src="https://img.shields.io/badge/Status-MVP%20tecnico%20em%20validacao-f59e0b?style=flat-square">
 </p>
 
-![The Pirate Max responsive web preview](docs/assets/preview%20web.png)
+
 
 ![The Pirate Max login preview](docs/assets/preview%20login.png)
 
