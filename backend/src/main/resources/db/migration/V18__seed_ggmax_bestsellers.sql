@@ -22,4 +22,16 @@ insert into products (
 
 -- INTELIGENCIA ARTIFICIAL
 (gen_random_uuid(), 'TPM-MIDJOURNEY-PRO-001', 'Midjourney Pro - Mensal', 'Acesso compartilhado ao gerador de imagens mais famoso. Gere sem limites.', 'ACTIVE', 3500, 'BRL', 'MANUAL', false, now(), now(), 'midjourney-pro-mensal', 'ASSINATURA', (select id from catalog_categories where slug = 'inteligencia-artificial'), 'MIDJOURNEY', 'BR', 30, 'Você receberá o link do painel compartilhado após confirmação.'),
-(gen_random_uuid(), 'TPM-CHATGPT-PLUS-002', 'ChatGPT Plus - Mensal (Compartilhado)', 'Conta com acesso ao GPT-4 e plugins. Opção mais econômica que pagar em dólar.', 'ACTIVE', 2500, 'BRL', 'MANUAL', false, now(), now(), 'chatgpt-plus-compartilhado', 'ASSINATURA', (select id from catalog_categories where slug = 'inteligencia-artificial'), 'OPENAI', 'BR', 30, 'Credenciais de acesso à conta Plus enviadas manualmente.');
+(gen_random_uuid(), 'TPM-CHATGPT-PLUS-002', 'ChatGPT Plus - Mensal (Compartilhado)', 'Conta com acesso ao GPT-4 e plugins. Opção mais econômica que pagar em dólar.', 'ACTIVE', 2500, 'BRL', 'MANUAL', false, now(), now(), 'chatgpt-plus-compartilhado', 'ASSINATURA', (select id from catalog_categories where slug = 'inteligencia-artificial'), 'OPENAI', 'BR', 30, 'Credenciais de acesso à conta Plus enviadas manualmente.')
+on conflict (sku) do update set
+    name = excluded.name,
+    description = excluded.description,
+    status = excluded.status,
+    price_cents = excluded.price_cents,
+    delivery_type = excluded.delivery_type,
+    requires_stock = excluded.requires_stock,
+    slug = excluded.slug,
+    category = excluded.category,
+    category_id = excluded.category_id,
+    provider = excluded.provider,
+    updated_at = now();
