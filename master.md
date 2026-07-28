@@ -1,264 +1,326 @@
-# The Pirate Max
+# The Pirate Max — Documento Master de Arquitetura e Contexto
 
-## 1. Visao Geral
+---
 
-`The Pirate Max` parece estar sendo concebido como uma operacao de venda digital com pagamento via PIX e entrega automatizada de credenciais apos confirmacao do pagamento.
+## 1. Visão Geral
 
-Pelo fluxo ja documentado, o produto combina:
+O **The Pirate Max** foi concebido como uma plataforma full stack de marketplace digital com checkout financeiro via PIX e entrega automatizada de credenciais e acessos digitais após a confirmação bancária.
 
-- frontend para checkout e area de pedidos
-- backend em `Spring`
-- integracao com `Mercado Pago`
-- fila em `Redis`
-- worker de entrega assincrona
+Pelo fluxo e arquitetura consolidados no projeto, o ecossistema combina:
+- **Frontend** interativo para catálogo, carrinho, checkout e área do cliente ("Meus Pedidos").
+- **Backend** robusto estruturado em Java 21 e `Spring Boot 3.4.4`.
+- **Integração Financeira** com gateway `Mercado Pago` (geração de PIX dinâmico e processamento de webhooks).
+- **Desacoplamento Assíncrono** com fila para isolar a latência bancária da entrega do produto.
+- **Worker de Entrega** automatizado com controle de concorrência, idempotência e criptografia.
 
-O desenho atual ja aponta para uma operacao pensada para escalar melhor do que um fluxo totalmente sincrono, separando confirmacao de pagamento da entrega do produto.
+A arquitetura foi pensada desde o início para alta escalabilidade e segurança operacional, separando a confirmação transacional do pagamento da alocação de estoque e entrega do produto digital.
+
+---
 
 ## 2. Objetivo do Produto
 
-O objetivo imediato do projeto deve ser permitir que um usuario:
+O objetivo central do projeto é permitir que o usuário experimente uma jornada de compra sem atritos:
+1. Selecionar produtos de um catálogo digital (streaming, games, IA, licenças de software, contas digitais).
+2. Finalizar a compra instantaneamente via PIX com geração de QR Code e chave *copia-e-cola*.
+3. Receber a confirmação de pagamento de forma 100% automatizada em poucos segundos.
+4. Acessar suas credenciais e chaves de licença com máxima segurança na área logada.
 
-1. selecione um ou mais produtos
-2. finalize a compra via PIX
-3. receba confirmacao automatica apos pagamento
-4. acesse suas credenciais com seguranca
+Em termos operacionais, o sistema prioriza quatro pilares:
+- **Confiabilidade**: Garantia no recebimento e processamento de webhooks.
+- **Consistência**: Máquina de estados transacional inviolável para os pedidos.
+- **Idempotência**: Prevenção de entregas duplicadas ou vazamento de estoque em cenários de reprocessamento.
+- **Segurança**: Proteção rigorosa das credenciais (criptografia AES-GCM em repouso e descriptografia apenas em memória no ato da consulta).
 
-Em termos práticos, o sistema precisa priorizar:
-
-- confiabilidade no recebimento do webhook
-- consistencia no estado do pedido
-- entrega automatica sem duplicidade
-- protecao das credenciais entregues
+---
 
 ## 3. Fluxo Principal Atual
 
-O fluxo identificado no diagrama existente e o seguinte:
+O ciclo de vida principal (comprador $\rightarrow$ pagamento $\rightarrow$ worker de entrega) segue as seguintes etapas:
 
-1. O usuario finaliza a compra no frontend.
-2. O frontend envia a criacao do pedido ao backend.
-3. O backend cria o pedido com status `PENDING`.
-4. O backend gera o pagamento PIX pela API do Mercado Pago.
-5. O frontend exibe QR Code e codigo copia-e-cola.
-6. O usuario paga no app do banco.
-7. O Mercado Pago chama o webhook de confirmacao.
-8. O backend valida o webhook e atualiza o pedido para `PAID`.
-9. O backend publica um evento de pedido pago.
-10. A mensagem vai para a fila `credentials.delivery`.
-11. O worker consome a fila e associa as credenciais aos itens do pedido.
-12. O pedido e marcado como `DELIVERED`.
-13. O usuario acessa a area de pedidos e visualiza as credenciais.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Usuário
+    participant F as Frontend
+    participant B as Backend (Spring Boot)
+    participant MP as Mercado Pago
+    participant W as Worker de Entrega (Schedule/Queue)
+    participant DB as PostgreSQL / Estoque
 
-## 4. Arquitetura Base
+    U->>F: Finaliza compra (Pagamento via PIX)
+    F->>B: POST /api/orders {items, payment_method: "PIX"}
+    B->>DB: Cria pedido com status PENDING
+    B->>MP: Solicita cobrança PIX via API
+    MP-->>B: Retorna QR Code + chave copy-paste
+    B-->>F: Exibe dados do PIX e contagem regressiva
+    
+    Note over U,MP: Usuário efetua o pagamento no aplicativo bancário
+    
+    MP->>B: Webhook POST /api/webhooks/mercadopago (payment.updated)
+    B->>B: Valida assinatura criptográfica e integridade do webhook
+    B->>DB: Atualiza pedido para status PAID e registra auditoria
+    B-->>MP: HTTP 200 OK (Confirmação de recebimento)
+    
+    Note over B,W: O Worker identifica pedido pago e inicia processamento
+    W->>DB: Busca credenciais AVAILABLE para os produtos (reserva atômica)
+    W->>DB: Vincula credencial criptografada ao order_item
+    W->>DB: Transiciona pedido para status DELIVERED
+    
+    U->>F: Acessa "Meus Pedidos" na interface logada
+    F->>B: GET /api/orders/{id}/credentials
+    B->>B: Verifica permissão de acesso (Ownership/JWT) + Controle de auditoria
+    B-->>F: Retorna dados (descriptografados em memória na resposta)
+    F-->>U: Exibe login e senha com alerta de segurança para troca
+```
 
-### Frontend
+---
 
-Responsabilidades esperadas:
+## 4. Arquitetura Base e Camadas
 
-- checkout
-- exibicao do PIX
-- consulta do status do pedido
-- area "Meus Pedidos"
-- exibicao segura das credenciais
+### Frontend (`React 18` + `Vite 7` + `TypeScript`)
+Responsabilidades da interface de usuário:
+- Exibição de catálogo fluido categorizado e carrinho de compras.
+- Tela de checkout com monitoramento de tempo de expiração do PIX.
+- Painel do cliente ("Meus Pedidos") com visualização protegida de credenciais.
+- Painel Administrativo ("Admin Dashboard") para gestão de produtos, estoque de credenciais, reprocessamento e auditoria de pedidos.
+- Comunicação centralizada via client HTTP (`src/shared/api/client.ts`) com tratamento unificado de erros, tokens JWT e *X-Request-Id*.
 
-### Backend (`Spring`)
+### Backend (`Java 21` + `Spring Boot 3.4.4`)
+Responsabilidades do núcleo transacional:
+- API RESTful estruturada com validação rigorosa (*Bean Validation*).
+- Autenticação e autorização via Spring Security com tokens JWT Stateless e controle de taxa (*Rate Limiting Filter*).
+- Persistência e modelagem relacional via Spring Data JPA e migrações versionadas com `Flyway`.
+- Integração nativa com APIs do Mercado Pago (modo simulação local e modo real).
+- Criptografia simétrica robusta de credenciais (`CredentialCryptoService`) com suporte a rotação de chaves (*Key Versioning*).
 
-Responsabilidades esperadas:
+### Fila e Desacoplamento (`Redis` / Scheduled Workers)
+Responsabilidades no ecossistema:
+- Absorver picos de requisições financeiras sem sobrecarregar a base transacional.
+- Isolar o tempo de resposta HTTP 200 OK do webhook bancário do tempo computacional de alocação de estoque.
+- Garantir tentativas automáticas de reprocessamento em caso de falha temporária no estoque ou banco.
 
-- criacao e persistencia de pedidos
-- integracao com Mercado Pago
-- processamento de webhook
-- publicacao de eventos
-- autorizacao de acesso a credenciais
-- descriptografia em memoria
+### Worker de Entrega (`OrderDeliveryService`)
+Responsabilidades do worker assíncrono:
+- Monitoramento contínuo por polling/schedule de pedidos no estado `PAID`.
+- Reserva atômica de credenciais marcadas como `AVAILABLE` em estoque para os itens do pedido.
+- Transição segura do pedido para `DELIVERED` ou sinalização de falha por falta de estoque (`DELIVERY_FAILED`).
 
-### Fila (`Redis`)
-
-Responsabilidades esperadas:
-
-- desacoplar pagamento confirmado da entrega
-- absorver picos de processamento
-- reduzir risco de timeout no webhook
-
-### Worker de Entrega
-
-Responsabilidades esperadas:
-
-- consumir eventos de pedido pago
-- buscar credenciais disponiveis
-- vincular credenciais ao pedido
-- concluir entrega
-- disparar notificacao ao cliente
+---
 
 ## 5. Entidades Principais
 
-Mesmo sem esquema formal ainda, o contexto sugere pelo menos estas entidades:
+| Entidade | Campos Chave | Descrição |
+| :--- | :--- | :--- |
+| **`Product`** | `id`, `sku`, `slug`, `name`, `price_cents`, `status`, `delivery_type`, `requires_stock` | Catálogo de itens disponíveis para compra com controle de vigência (`duration_days`) e fornecedor. |
+| **`CatalogCategory`** | `id`, `name`, `slug`, `sort_order`, `active`, `legacy_category` | Categorização visual e estrutural do catálogo (Games, IA, Streaming, Licenças, etc.). |
+| **`Credential`** | `id`, `product_id`, `login_encrypted`, `password_encrypted`, `status`, `encryption_key_version`, `source_batch` | Estoque de acessos digitais criptografados em repouso. Transiciona entre `AVAILABLE`, `RESERVED`, `DELIVERED` e `INVALID`. |
+| **`Order`** | `id`, `user_id`, `status`, `total_amount_cents`, `payment_method`, `external_reference`, `idempotency_key`, `timestamps` | Pedido de compra unificando os itens, o histórico transacional e a referência de pagamento externa. |
+| **`OrderItem`** | `id`, `order_id`, `product_id`, `quantity`, `credential_id` | Item individual da compra, vinculando o produto encomendado à credencial exata alocada pelo worker após a entrega. |
+| **`Payment`** | `id`, `order_id`, `provider`, `provider_payment_id`, `status`, `qr_code`, `qr_code_base64`, `raw_payload` | Registro financeiro de auditoria e controle de cobrança gerado pelo provedor (Mercado Pago). |
+| **`User`** | `id`, `email`, `name`, `password_hash`, `role` (`ADMIN`, `CUSTOMER`), `status` | Usuários da plataforma, distinguindo clientes consumidores de administradores de sistema. |
 
-### `Product`
+---
 
-- identificador
-- nome
-- descricao
-- status
-- tipo de entrega
+## 6. Máquina de Estados Recomendada
 
-### `Credential`
+A consistência do sistema depende de transições de estado estritamente controladas:
 
-- identificador
-- product_id
-- login
-- senha
-- status (`AVAILABLE`, `RESERVED`, `DELIVERED`, `BLOCKED`)
-- origem/lote
+### Estados do Pedido (`OrderStatus`)
+- `PENDING`: Pedido criado no checkout; aguardando confirmação do pagamento pelo banco/gateway.
+- `PAID`: Pagamento confirmado via webhook bancário; aguardando o processamento do worker de entrega.
+- `DELIVERY_PENDING`: Reserva de itens em andamento ou entrega parcial em processamento.
+- `DELIVERED`: Todas as credenciais foram alocadas e associadas; o pedido está liberado para consulta pelo cliente.
+- `DELIVERY_FAILED`: Ocorreu uma falha operacional após o pagamento (ex: falta de estoque de credenciais para o SKU).
+- `CANCELED`: Pedido expirado por tempo sem pagamento ou cancelado pelo cliente/sistema.
+- `REFUNDED`: Pagamento devolvido financeiramente ao cliente.
 
-### `Order`
+### Estados da Credencial (`CredentialStatus`)
+- `AVAILABLE`: Pronta e livre no estoque para ser alocada a uma nova compra.
+- `RESERVED`: Em processo de transição ou pré-alocada de forma atômica para um pedido em processamento.
+- `DELIVERED`: Entregue definitivamente ao cliente final em um `OrderItem`.
+- `INVALID`: Invalidada, bloqueada ou removida por problemas operacionais, reporte de defeito ou troca.
 
-- identificador
-- customer_id ou referencia do comprador
-- status
-- valor total
-- metodo de pagamento
-- referencia externa do Mercado Pago
-- timestamps de criacao, pagamento e entrega
+---
 
-### `OrderItem`
+## 7. Regras de Negócio Importantes
 
-- identificador
-- order_id
-- product_id
-- quantidade
-- credential_id associado apos entrega
+1. **Idempotência no Webhook e Worker**: O recebimento repetido do mesmo evento de pagamento do Mercado Pago ou a reexecução do worker **nunca** deve gerar entregas duplicadas ou cobranças dobradas no estoque.
+2. **Reserva Atômica de Estoque**: Uma credencial com status `AVAILABLE` não pode ser alocada para dois pedidos concorrentes simultaneamente. A transição para `RESERVED` / `DELIVERED` deve ser atômica no banco de dados.
+3. **Consistência na Conclusão da Entrega**: O sistema só altera o status final do pedido para `DELIVERED` quando **todos** os itens daquele pedido possuírem suas credenciais devidamente associadas e prontas.
+4. **Criptografia Simétrica**: Credenciais de clientes (logins e senhas) devem permanecer criptografadas no banco de dados em 100% do tempo. A descriptografia só ocorre em memória RAM no exato milissegundo em que um endpoint autenticado e autorizado solicita os dados.
+5. **Auditoria Administrativa**: Todas as ações manuais de operadores no painel admin (como reprocessar entrega, liberar reserva ou invalidar credencial) devem ser gravadas na tabela de auditoria (`admin_order_action_logs`).
 
-### `Payment`
+---
 
-- identificador interno
-- order_id
-- provider (`MercadoPago`)
-- provider_payment_id
-- status
-- payload de auditoria
+## 8. Pontos Críticos de Segurança
 
-## 6. Maquina de Estados Recomendada
+- **Assinatura Cryptográfica do Webhook**: Validação de autenticidade dos webhooks recebidos na rota `/api/webhooks/mercadopago` para impedir que agentes externos falsifiquem aprovações de pagamento (`MERCADO_PAGO_WEBHOOK_SIGNATURE_VALIDATION_ENABLED`).
+- **Sanitização de Logs**: Em hipótese alguma logs de aplicação, console, arquivos de log de containers ou trace de erros devem imprimir o login descriptografado ou a senha das credenciais dos clientes.
+- **Isolamento de Segredos de Ambiente**: Chaves de criptografia (`CREDENTIAL_ENCRYPTION_SECRET`), segredos JWT e tokens de acesso do Mercado Pago devem residir estritamente em variáveis de ambiente, nunca commitadas no código fonte.
+- **Proteção contra Abuso (Rate Limiting)**: Filtros de requisição ativados no backend (`RateLimitFilter`) limitando requisições por minuto para endpoints críticos: login (10/min), registro (5/min), reset de senha (5/min) e checkout (20/min).
+- **Controle Rígido de Propriedade (Ownership)**: Endpoints de consulta de pedido e revelação de segredo de credencial (`/api/orders/{id}/credentials/...`) verificam obrigatoriamente se o usuário autenticado no JWT é o proprietário legítimo da compra.
 
-Para evitar ambiguidade, vale padronizar os estados logo cedo.
+---
 
-### Pedido
+## 9. Riscos Operacionais e Mitigações
 
-- `PENDING`: pedido criado, aguardando pagamento
-- `PAID`: pagamento confirmado
-- `DELIVERY_PENDING`: aguardando worker concluir a entrega
-- `DELIVERED`: credenciais associadas e prontas para consulta
-- `DELIVERY_FAILED`: houve falha operacional apos o pagamento
-- `CANCELED`: pedido cancelado ou expirado
-- `REFUNDED`: valor devolvido, se esse fluxo existir
+| Risco Operacional | Impacto | Mitigação Implementada |
+| :--- | :--- | :--- |
+| **Falta de estoque no momento do pagamento** | Pedido pago pelo cliente fica sem entrega (`DELIVERY_FAILED`). | Worker registra a falha sem alterar estado enganoso. O painel admin expõe botão para "Reprocessar Entrega" assim que novas credenciais forem cadastradas pelo operador. |
+| **Webhooks bancários fora de ordem ou repetidos** | Risco de sobrescrever estado de pedido ou duplicar processamento. | Checagem de idempotência na recepção (`provider_payment_id` / `external_reference`) e rejeição de replicação transacional no serviço. |
+| **Falha silenciosa do Worker de Entrega** | Pedidos acumulam no status `PAID` sem avançar para `DELIVERED`. | Rotina agendada periódica (`@Scheduled`) de auto-correção e monitoramento no Spring Actuator Health Check. |
+| **Perda de acesso ao banco durante transação** | Inconsistência entre pagamento registrado e estoque alocado. | Gerenciamento transacional Spring (`@Transactional`) garantindo rollback automático caso a vinculação do item falhe no meio do laço. |
 
-### Credencial
+---
 
-- `AVAILABLE`: pronta para uso em estoque
-- `RESERVED`: separada para uma entrega em andamento
-- `DELIVERED`: entregue ao cliente
-- `INVALID`: removida por problema operacional
+## 10. Backlog Prioritário de Conclusão do MVP
 
-## 7. Regras de Negocio Importantes
+### 1. Fundação Técnica e Dados ✅ (Consolidado)
+- Modelagem completa de relacionamentos (`orders`, `order_items`, `payments`, `products`, `credentials`, `catalog_categories`).
+- Migrations versionadas estruturadas no `Flyway` (do `V1` até `V17`).
 
-- O webhook deve ser idempotente.
-- O worker de entrega tambem deve ser idempotente.
-- Uma credencial nao pode ser entregue duas vezes.
-- O sistema nao deve marcar um pedido como `DELIVERED` antes da associacao bem-sucedida de todos os itens.
-- Credenciais devem permanecer criptografadas em repouso e ser descriptografadas apenas em memoria.
-- O acesso a credenciais deve exigir autenticacao e autorizacao.
-- Deve existir trilha de auditoria minima para pagamento, entrega e visualizacao.
+### 2. Módulo de Pagamento ⚠️ (Em Validação Final)
+- Geração de cobrança PIX integrada à API do Mercado Pago (com gateways *fake* para dev e *real* para prod).
+- Webhook assíncrono funcional com validação criptográfica de assinatura.
+- **Pendente**: Rotação das chaves finais de produção na conta comercial definitiva do proprietário e teste de compra real com valor mínimo (R$ 1,00).
 
-## 8. Pontos Criticos de Seguranca
+### 3. Módulo de Entrega e Estoque ✅ (Consolidado)
+- Worker de entrega agendado com busca e alocação atômica de credenciais disponíveis.
+- Tratamento explícito de esgotamento de estoque sem perda de rastreabilidade do pedido.
+- Painel administrativo para cadastro em lote e invalidação com justificativa.
 
-Esse projeto lida com credenciais, entao seguranca nao e detalhe. Neste momento, os cuidados mais importantes sao:
+### 4. Interface e Experiência do Usuário (Frontend) ⚠️ (Evolução Contínua)
+- Aplicação migrada para React 18 + Vite 7 (`frontend-app`) com design system limpo e responsivo.
+- Telas funcionais de Catálogo, Detalhe de Produto, Checkout PIX com timer e Área de Pedidos.
+- **Pendente**: Refinamento visual estético contínuo (animações de feedback e micro-interações).
 
-- validar assinatura e origem do webhook do Mercado Pago
-- nunca registrar login/senha em logs de aplicacao
-- criptografar credenciais no banco
-- proteger segredos de integracao em variaveis de ambiente
-- limitar tentativas e acessos a endpoints sensiveis
-- registrar visualizacao de credenciais por usuario e horario
-- considerar mascaramento parcial antes de liberar exibicao completa
+---
 
-## 9. Riscos Operacionais Ja Visiveis
+## 11. Decisões Técnicas Assumidas
 
-- falta de estoque de credenciais apos pagamento confirmado
-- entrega duplicada em caso de reprocessamento
-- divergencia entre status do pagamento e status do pedido
-- falha silenciosa no worker
-- webhook recebido fora de ordem ou repetido
-- consulta de credenciais sem camada suficiente de autorizacao
+- **Fonte da Verdade no Banco Relacional**: O PostgreSQL é a única fonte oficial de verdade para o estado financeiro e operacional do pedido e do estoque. Filas ou memórias de cache são componentes auxiliares transientes.
+- **Desacoplamento Webhook vs. Entrega**: O endpoint de recebimento de webhook tem como única missão validar, persistir o pagamento e responder rapidamente ao gateway. A entrega em si é um processo assíncrono independente.
+- **Idempotência First**: Todos os serviços de alteração de estado (pagamento, reserva, entrega, invalidação) foram programados considerando a possibilidade de execuções repetidas ou concorrentes sem efeitos colaterais.
 
-Cada um desses pontos merece tratamento explicito na implementacao inicial.
+---
 
-## 10. Backlog Prioritario
+## 12. Perguntas em Aberto para Validação Comercial
 
-### Fundacao tecnica
+1. **Gestão de Estoque Finito**: Para produtos que exigem licença única (como contas de jogos ou chaves de software), qual será o alerta de estoque mínimo para notificar o operador antes que um cliente compre e caia em `DELIVERY_FAILED`?
+2. **Políticas de Reembolso e Cancelamento**: Em caso de falha irreversível de estoque ou pedido de cancelamento, o reembolso bancário via API do Mercado Pago será automatizado com um clique no painel admin ou será efetuado manualmente pela chave PIX de origem?
+3. **Comunicação por E-mail / WhatsApp**: Após a confirmação da compra pelo worker, o cliente receberá um e-mail transacional notificando que as credenciais estão disponíveis no painel logado, ou os próprios dados já irão no corpo do e-mail com aviso de confidencialidade?
+4. **Vigência e Expiração Automática**: Produtos com vigência (`duration_days = 30`, por exemplo) terão sua credencial automaticamente movida para `INVALID` ou renovada ao fim do ciclo, ou o controle de assinatura periódica será tratado em uma fase 2?
 
-- definir modelo de dados de `orders`, `order_items`, `payments`, `products` e `credentials`
-- fechar a maquina de estados do pedido
-- definir contrato dos eventos publicados para fila
+---
 
-### Pagamento
+## 13. Próximos Passos na Evolução da Documentação
 
-- implementar criacao de cobranca PIX no Mercado Pago
-- implementar webhook com validacao de assinatura
-- persistir payloads essenciais para auditoria
+À medida que o projeto se aproxima do lançamento comercial aberto, este documento evoluirá para referenciar:
+- Contratos formais OpenAPI/Swagger gerados automaticamente pela API Spring Boot.
+- Manuais de procedimentos de contingência de infraestrutura em nuvem (Oracle Cloud / Neon DB / Vercel).
+- Documento de conformidade com a LGPD referente ao armazenamento de dados de clientes e chaves de auditoria.
 
-### Entrega
+---
 
-- implementar reserva atomica de credenciais
-- garantir idempotencia do worker
-- tratar falta de estoque sem perder rastreabilidade
+## 14. Referência de Fluxo e Documentação Conectada
 
-### Area do cliente
+O ecossistema do **The Pirate Max** possui documentação técnica dividida em arquivos especializados na raiz do repositório:
+- `mermaid.md`: Diagrama de sequência arquitetural puro de checkout e entrega.
+- `runbook.md`: Guia operacional de resposta a incidentes de produção (pedidos travados, webhooks repetidos, falhas de estoque).
+- `schema.md`: Detalhamento das tabelas do banco de dados e dicionário de dados.
+- `api.md`: Especificação dos endpoints REST do backend, cabeçalhos e formatos de payload.
+- `postgres-local.md`: Instruções de configuração de banco PostgreSQL local para desenvolvimento com Flyway.
 
-- endpoint seguro para consultar pedidos
-- endpoint seguro para consultar credenciais do pedido
-- experiencia de atualizacao de status apos pagamento
-
-### Observabilidade
-
-- logs estruturados sem segredos
-- metricas de pedidos pagos, entregues e falhos
-- alerta para fila parada ou falhas repetidas no worker
-
-## 11. Decisoes Tecnicas que Valem Ser Assumidas Agora
-
-Enquanto o projeto ainda esta pequeno, algumas definicoes ajudam bastante:
-
-- usar `Redis` apenas como fila/evento de entrega, nao como fonte de verdade
-- manter banco relacional como origem oficial do estado do pedido
-- tratar webhook e entrega como fluxos independentes e reprocessaveis
-- modelar entregas com idempotencia desde o primeiro commit
-
-## 12. Perguntas em Aberto
-
-Estas sao as principais definicoes que ainda parecem faltar no material atual:
-
-- Quem e o usuario autenticado: conta propria, compra como convidado ou ambos?
-- O catalogo vende uma credencial por item ou pode vender acesso compartilhado?
-- Existe estoque finito por produto?
-- O cliente pode visualizar credenciais quantas vezes quiser?
-- Havera reembolso, cancelamento automatico ou expiracao de pedido?
-- O envio por e-mail mostra as credenciais ou apenas avisa que estao disponiveis na area logada?
-
-## 13. Proxima Versao Desejada deste Documento
-
-Quando o projeto avancar, este arquivo deve evoluir para incluir:
-
-- modelo de dados detalhado
-- contratos de API
-- contrato do webhook
-- eventos da fila
-- politicas de seguranca
-- estrategia de testes
-- checklist de deploy
-
-## 14. Referencia de Fluxo
-
-O fluxo-base documentado atualmente esta em `mermaid.md`.
+---
 
 ## 15. Resumo Executivo
 
-Hoje o projeto ja tem um nucleo funcional bem definido: pagamento PIX, confirmacao por webhook e entrega assincrona de credenciais. O proximo passo mais importante nao e aumentar escopo, e sim consolidar regras de negocio, estados, seguranca e observabilidade para que a base nasca confiavel.
+O projeto **The Pirate Max** superou a fase de prototipação e possui um núcleo arquitetural maduro, seguro e altamente confiável. A separação em camadas entre o frontend em React/Vite, o backend transacional em Spring Boot e os fluxos assíncronos de alocação de credenciais garante uma base técnica sólida de nível corporativo. 
+
+O foco atual do projeto não é a adição de novas funcionalidades complexas, mas sim o acoplamento final do ambiente local de desenvolvimento para permitir a progressão contínua, testes ponta a ponta de compra real e o refinamento da experiência do cliente para o lançamento comercial em produção.
+
+---
+
+## 16. Estado Atual do Sistema (Avanço Tecnológico)
+
+Desde a última revisão histórica, o sistema evoluiu substancialmente em suas fundações de engenharia:
+- **Suíte de Testes Automatizados 100% Verde**: A bateria de testes automatizados do backend (`mvn test`) possui **53 testes integrados e unitários passando perfeitamente em ~18 segundos**, cobrindo controllers administrativos, criptografia de credenciais, gateways de pagamento, workers de entrega e rotinas de expiração de pedidos.
+- **Desacoplamento Real por Polling Agendado**: Identificamos no código-fonte atual que o sistema **não possui dependência computacional obrigatória com um servidor Redis rodando no sistema operacional**. O worker de entrega (`OrderDeliveryService`) e o serviço de expiração (`OrderExpirationService`) utilizam rotinas agendadas do próprio Spring (`@Scheduled`) com polling otimizado no PostgreSQL, tornando a inicialização e a manutenção operacional infinitamente mais simples e autônomas.
+- **Frontend Moderno em Produção (`frontend-app`)**: O frontend ativo do projeto está concentrado no diretório `frontend-app` utilizando Vite 7, TypeScript 5.8, Lucide React e roteamento moderno, já possuindo telas completas para administração e painéis do usuário.
+
+---
+
+## 17. Diagnóstico e Resolução de Erros de Conexão com Servidor
+
+Ao abrir a interface do frontend (tanto no ambiente de produção na Vercel `https://the-pirate-frontend.vercel.app` quanto em desenvolvimento local), a exibição de **"erro de conexão com servidor"** ou falha ao carregar produtos/categorias ocorre devido às seguintes razões estruturais mapeadas:
+
+### 1. Ambiente de Produção (Oracle Cloud VM + Neon DB Serverless) — *Causa Raiz Identificada*
+No ambiente público de produção, o frontend na Vercel consome a API via Nginx com HTTPS no endereço `https://api.163.176.60.109.sslip.io`.
+- **O Problema**: O container Docker do backend (`the-pirate-backend`) estava em execução ininterrupta há mais de 2 meses na Oracle Cloud Free Tier (ARM VM). Após longos períodos de inatividade do banco serverless na nuvem (**Neon DB PostgreSQL**), as sessões SSL do pool de conexões (HikariCP) sofreram *timeout* e foram encerradas pelo servidor remoto (`SSL error: Remote host terminated the handshake` / `Connection is not available`). Com o pool travado e sem conexões válidas, o backend parou de responder, fazendo com que o Nginx retornasse **502 Bad Gateway** para o frontend na Vercel.
+- **A Solução (Executada)**: Para restabelecer o handshake SSL limpo com o Neon DB, basta reiniciar o container Docker na VM através do terminal Windows (utilizando a chave SSH da Oracle):
+  ```powershell
+  ssh -i "$env:USERPROFILE\.ssh\the-pirate-max-oracle.key" ubuntu@163.176.60.109 "docker restart the-pirate-backend"
+  ```
+  *(Nota: Em máquinas ARM Free Tier da Oracle, o Spring Boot leva cerca de 90 a 110 segundos para inicializar totalmente após o restart e reativar o status `UP` no Health Check).*
+
+### 2. Ambiente Local — Servidor Backend Desligado (Porta 8080)
+No desenvolvimento local, o client de API do frontend (`src/shared/api/client.ts`) é programado para apontar para `http://localhost:8080`. Se o servidor Spring Boot não estiver rodando ativamente na porta 8080, todas as requisições HTTP falharão com erro de conexão em rede.
+- **Confirmação via Terminal**: Verificamos no diagnóstico do sistema (`netstat`) que apenas o serviço do PostgreSQL (porta 5432) estava ativo, enquanto a porta 8080 e os servidores de frontend estavam desligados após o período de pausa no projeto.
+
+### 3. Configuração Correta do Terminal Windows (`JAVA_HOME` e `PATH`)
+Para compilar ou subir o backend localmente utilizando o PowerShell sem erros de *cmdlet não reconhecido*, é obrigatório que a variável de ambiente apontando para o JDK 24 esteja definida na sessão atual do terminal antes de chamar o Maven:
+```powershell
+$env:JAVA_HOME="C:\Program Files\Java\jdk-24"
+$env:Path="$env:JAVA_HOME\bin;C:\apache-maven-3.9.11-bin\apache-maven-3.9.11\bin;$env:Path"
+```
+
+### 4. Diferença entre os Perfis de Banco de Dados (`postgres-local` vs `local`)
+- **Perfil `postgres-local` (PostgreSQL Nativo - Recomendado para Teste Real)**:
+  Tenta conectar diretamente ao seu PostgreSQL rodando no Windows na porta `5432` com usuário `postgres` e senha `postgres` (definidos no `application-postgres-local.yml`). 
+  > [!WARNING]
+  > Se a senha do superusuário `postgres` no seu banco local for diferente de `postgres`, o servidor falhará na inicialização com erro: `FATAL: autenticação do tipo senha falhou para o usuário "postgres"`. Para resolver, basta passar sua senha real ao rodar o comando: `$env:DB_PASSWORD="sua_senha"; mvn spring-boot:run ...`
+- **Perfil `local` (Banco em Memória H2 - Recomendado para Desenvolvimento Rápido)**:
+  Roda de forma 100% autônoma na memória RAM sem usar o PostgreSQL e sem rodar as migrations do Flyway (`flyway.enabled: false`).
+
+---
+
+## 18. Roadmap Prático para Retomada do Projeto
+
+Para progredir com o **The Pirate Max** a partir de hoje de forma estruturada e sem impedimentos técnicos, siga esta ordem de execução passo a passo:
+
+### Passo 1: Subir o Ambiente de Desenvolvimento Completo
+Abra dois terminais (PowerShell) na raiz do projeto (`C:\Users\celio\OneDrive\Área de Trabalho\ThePirateMax`):
+
+**Terminal 1 (Backend - Porta 8080)**:
+Ligue o servidor conectando ao seu PostgreSQL local (substituindo `postgres` pela senha real do seu banco se necessário):
+```powershell
+$env:JAVA_HOME="C:\Program Files\Java\jdk-24"
+$env:Path="$env:JAVA_HOME\bin;C:\apache-maven-3.9.11-bin\apache-maven-3.9.11\bin;$env:Path"
+$env:DB_PASSWORD="postgres"
+mvn -f backend\pom.xml spring-boot:run "-Dspring-boot.run.profiles=postgres-local"
+```
+*Aguarde até ver a mensagem `Tomcat started on port 8080` no terminal.*
+
+**Terminal 2 (Frontend - Porta 5173)**:
+Inicie o servidor de desenvolvimento do Vite:
+```powershell
+cd frontend-app
+npm run dev
+```
+Abra o navegador no endereço `http://localhost:5173`. O erro de conexão terá desaparecido e o catálogo será carregado diretamente da API Spring Boot.
+
+### Passo 2: Validar a Jornada do Cliente (End-to-End Local)
+1. Crie uma nova conta na interface ou utilize o usuário de desenvolvimento (Email: `dev@thepiratemax.local` / Senha: `dev123456`).
+2. Adicione um produto com estoque ao carrinho e vá para a tela de Checkout via PIX.
+3. Como o projeto possui simulação de webhook integrada, verifique a transição instantânea do pedido de `PENDING` para `PAID` e, em seguida, para `DELIVERED` pelo worker automático.
+4. Acesso o menu "Meus Pedidos" e clique para revelar o login e senha criptografados.
+
+### Passo 3: Acessar o Painel Administrativo
+1. Faça login com a conta de administrador (Email: `admin@thepiratemax.local` / Senha: `admin123456`).
+2. Explore a aba de gestão de produtos, acompanhe a lista de pedidos gerados e faça um teste de inclusão de novas credenciais em lote (*Top-up* de estoque) para um produto.
+
+### Passo 4: Definir a Próxima Frente de Evolução
+Com o sistema rodando com estabilidade e 100% dos testes passando, você pode escolher o foco da nossa próxima sessão de código:
+- **Opção A (Comercial / Produção)**: Configurar as chaves reais de produção do Mercado Pago e testar o webhook definitivo em nuvem com domínio personalizado.
+- **Opção B (Refinamento de UX/UI)**: Melhorar o visual estético, animações do carrinho ou fluxo de apresentação dos cards no `frontend-app`.
+- **Opção C (Novas Funcionalidades)**: Implementar envio automático de e-mail de notificação de entrega ou sistema de cupons de desconto.

@@ -25,7 +25,7 @@ Multi-vendedor, split de pagamento, repasse e onboarding de vendedores ficam for
 - Admin interno para produto, estoque, pedidos e diagnostico.
 - Autenticacao obrigatoria.
 - PostgreSQL persistente.
-- Redis para fila de entrega.
+- Entrega automatica por scanner agendado no MVP atual; Redis/fila duravel ficam como endurecimento posterior.
 - Flyway para schema.
 
 ### Fora do MVP de producao
@@ -119,20 +119,32 @@ $env:DB_PASSWORD="..."
 
 ### Redis
 
-```powershell
-$env:REDIS_HOST="..."
-$env:REDIS_PORT="6379"
-$env:REDIS_PASSWORD="..."
-```
+O codigo atual ainda nao usa fila Redis para entrega em producao. A entrega roda por scanner agendado no proprio backend. Redis passa a ser obrigatorio apenas quando a entrega migrar para worker/fila duravel.
 
 ### Autenticacao
 
 ```powershell
 $env:AUTH_JWT_SECRET="uma-chave-longa-e-secreta"
 $env:AUTH_JWT_EXPIRATION_HOURS="24"
+$env:AUTH_PASSWORD_RESET_EXPIRATION_MINUTES="30"
+$env:AUTH_PASSWORD_RESET_EXPOSE_TOKEN="false"
 ```
 
 Regra: `AUTH_JWT_SECRET` nao pode ser o valor local padrao do projeto.
+
+O backend ja possui endpoints de recuperacao de senha, mas em producao ainda e necessario plugar envio real de e-mail. O token nunca deve ser exposto na resposta em producao.
+
+### Rate limiting
+
+```powershell
+$env:RATE_LIMIT_ENABLED="true"
+$env:RATE_LIMIT_LOGIN_PER_MINUTE="10"
+$env:RATE_LIMIT_REGISTER_PER_MINUTE="5"
+$env:RATE_LIMIT_PASSWORD_RESET_PER_MINUTE="5"
+$env:RATE_LIMIT_CHECKOUT_PER_MINUTE="20"
+```
+
+O limitador atual e em memoria, suficiente para uma unica instancia inicial. Se o backend rodar com multiplas instancias, migrar para um armazenamento compartilhado.
 
 ### Primeiro admin real
 
@@ -263,6 +275,8 @@ Checklist:
 10. Confirmar que cliente ve credencial entregue.
 11. Confirmar que admin ve o pedido no painel.
 12. Confirmar que revelar/copiar credencial admin grava auditoria.
+13. Forcar um pagamento aprovado apos expiracao/cancelamento e confirmar que o pedido fica `PAYMENT_REVIEW`.
+14. Resolver `PAYMENT_REVIEW` pelo admin como entrega ou reembolso, sempre informando motivo.
 
 ## Consultas SQL uteis
 
@@ -306,23 +320,40 @@ order by a.accessed_at desc
 limit 50;
 ```
 
+Auditoria de decisoes admin em pedidos:
+
+```sql
+select log.created_by_admin_at, admin.email as admin_email, o.external_reference,
+       log.action, log.previous_status, log.new_status, log.reason
+from admin_order_action_logs log
+join users admin on admin.id = log.admin_user_id
+join orders o on o.id = log.order_id
+order by log.created_by_admin_at desc
+limit 50;
+```
+
 ## Bloqueadores antes de producao real
 
 - Definir dominio real.
 - Definir hospedagem do backend.
 - Definir hospedagem do frontend.
 - Definir banco PostgreSQL gerenciado ou servidor proprio.
-- Definir Redis gerenciado ou servidor proprio.
+- Tirar o backend de hospedagem com cold start antes de abrir venda real.
+- Definir se a primeira operacao aceita scanner agendado ou se a entrega sera migrada para fila duravel antes da abertura.
 - Configurar Mercado Pago em producao.
 - Configurar webhook HTTPS real.
 - Criar conta admin real com senha forte.
 - Desligar `INITIAL_ADMIN_ENABLED` depois da criacao do admin real.
 - Revisar textos legais minimos: termos, privacidade, politica de entrega e suporte.
+- Plugar envio real de e-mail para recuperacao de senha.
+- Definir estrategia de MFA para admin.
+- Plugar no frontend admin a rotina operacional para pedidos em `PAYMENT_REVIEW`, incluindo decisao de reembolso ou reentrega manual.
+- Manter a suite completa verde como gate obrigatorio antes de deploy.
 
 ## Ordem recomendada de execucao
 
 1. Escolher dominio e hospedagem.
-2. Provisionar PostgreSQL e Redis.
+2. Provisionar PostgreSQL e decidir se a entrega inicial segue por scanner ou por fila duravel.
 3. Subir backend com profile `production`.
 4. Rodar Flyway e validar tabelas.
 5. Criar admin real.

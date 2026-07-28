@@ -31,10 +31,36 @@ Fluxo esperado:
 4. backend cria pagamento PIX no Mercado Pago via Payments API
 5. frontend exibe QR Code/copia-e-cola
 6. Mercado Pago confirma pagamento por webhook HTTPS
-7. backend valida assinatura do webhook
+7. backend valida assinatura do webhook e confere o pagamento autoritativo no provedor
 8. pedido muda para `PAID`
-9. worker de entrega libera a credencial
+9. scanner agendado de entrega libera a credencial no MVP atual
 10. cliente visualiza a credencial na tela do pedido
+
+Excecao importante: se um pagamento aprovado chegar depois que o pedido ja expirou/cancelou, o backend nao libera credenciais automaticamente. O pedido entra em `PAYMENT_REVIEW` para decisao manual de suporte: reentrega controlada ou reembolso.
+
+A decisao operacional ja existe no backend:
+
+```text
+POST /api/admin/orders/{orderId}/resolve-payment-review
+```
+
+Body:
+
+```json
+{
+  "action": "DELIVER",
+  "reason": "Pagamento confirmado manualmente apos revisao"
+}
+```
+
+ou:
+
+```json
+{
+  "action": "REFUND",
+  "reason": "Pagamento aprovado depois da expiracao; cliente sera reembolsado"
+}
+```
 
 ## 3. Variaveis obrigatorias do backend
 
@@ -52,6 +78,8 @@ DB_USERNAME=...
 DB_PASSWORD=...
 
 AUTH_JWT_SECRET=...
+AUTH_PASSWORD_RESET_EXPIRATION_MINUTES=30
+AUTH_PASSWORD_RESET_EXPOSE_TOKEN=false
 CREDENTIAL_ENCRYPTION_SECRET=...
 CREDENTIAL_ENCRYPTION_KEY_VERSION=prod-aesgcm-v1
 
@@ -61,6 +89,12 @@ MERCADO_PAGO_NOTIFICATION_URL=https://api.seudominio.com/api/webhooks/mercadopag
 MERCADO_PAGO_PIX_EXPIRATION_MINUTES=30
 
 CORS_ALLOWED_ORIGIN_PATTERNS=https://seudominio.com
+
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_LOGIN_PER_MINUTE=10
+RATE_LIMIT_REGISTER_PER_MINUTE=5
+RATE_LIMIT_PASSWORD_RESET_PER_MINUTE=5
+RATE_LIMIT_CHECKOUT_PER_MINUTE=20
 ```
 
 Nao usar em producao:
@@ -169,6 +203,8 @@ Abrir para usuarios reais somente quando:
 
 - 3 compras produtivas controladas forem concluidas de ponta a ponta
 - 1 compra cancelada/expirada for validada sem entrega indevida
+- 1 pagamento aprovado depois da expiracao for validado como `PAYMENT_REVIEW`
+- `PAYMENT_REVIEW` for resolvido pelo admin como entrega manual ou reembolso, com log em `admin_order_action_logs`
 - reposicao de estoque pelo admin estiver funcionando
 - painel admin mostrar pedidos e diagnostico
 - logs permitirem rastrear pagamento e entrega pelo `externalReference`
@@ -178,6 +214,9 @@ Abrir para usuarios reais somente quando:
 - melhorar reconciliacao manual de pagamentos
 - tela admin de eventos/webhooks
 - alerta de estoque critico
+- fila duravel/worker separado para entrega
+- envio real de e-mail para recuperacao de senha e MFA admin
+- rate limiting distribuido se houver multiplas instancias
 - termos de uso e politica de reembolso
 - painel financeiro simples
 - base para multiplos vendedores
