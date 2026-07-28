@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.thepiratemax.backend.TestCatalogFactory;
 import com.thepiratemax.backend.domain.credential.CredentialEntity;
 import com.thepiratemax.backend.domain.credential.CredentialStatus;
 import com.thepiratemax.backend.domain.order.OrderEntity;
@@ -18,6 +19,7 @@ import com.thepiratemax.backend.domain.product.ProductProvider;
 import com.thepiratemax.backend.domain.product.ProductStatus;
 import com.thepiratemax.backend.domain.user.UserEntity;
 import com.thepiratemax.backend.domain.user.UserStatus;
+import com.thepiratemax.backend.repository.CatalogCategoryRepository;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.CredentialViewRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
@@ -48,6 +50,9 @@ class MercadoPagoWebhookControllerTest {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private CatalogCategoryRepository catalogCategoryRepository;
 
     @Autowired
     private CredentialRepository credentialRepository;
@@ -92,6 +97,7 @@ class MercadoPagoWebhookControllerTest {
         product.setName("Webhook Product");
         product.setDescription("Webhook test product");
         product.setCategory(ProductCategory.STREAMING);
+        product.setCatalogCategory(TestCatalogFactory.catalogCategory(catalogCategoryRepository, ProductCategory.STREAMING));
         product.setProvider(ProductProvider.NETFLIX);
         product.setStatus(ProductStatus.ACTIVE);
         product.setPriceCents(1990L);
@@ -177,7 +183,7 @@ class MercadoPagoWebhookControllerTest {
     }
 
     @Test
-    void keepsCanceledOrderCanceledWhenApprovalArrivesAfterExpiration() throws Exception {
+    void movesExpiredPaidOrderToPaymentReviewWhenApprovalArrivesAfterExpiration() throws Exception {
         order.setStatus(OrderStatus.CANCELED);
         order.setCanceledAt(java.time.OffsetDateTime.now().minusMinutes(1));
         order.setFailureReason("PIX_EXPIRED");
@@ -203,7 +209,7 @@ class MercadoPagoWebhookControllerTest {
         OrderEntity refreshedOrder = orderRepository.findById(order.getId()).orElseThrow();
         PaymentEntity payment = paymentRepository.findByOrder_ExternalReference(order.getExternalReference()).orElseThrow();
 
-        org.junit.jupiter.api.Assertions.assertEquals(OrderStatus.CANCELED, refreshedOrder.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals(OrderStatus.PAYMENT_REVIEW, refreshedOrder.getStatus());
         org.junit.jupiter.api.Assertions.assertEquals("APPROVED_AFTER_EXPIRATION", refreshedOrder.getFailureReason());
         org.junit.jupiter.api.Assertions.assertNotNull(refreshedOrder.getPaidAt());
         org.junit.jupiter.api.Assertions.assertEquals("approved", payment.getProviderStatus());

@@ -79,11 +79,14 @@ class MercadoPagoWebhookServiceTest {
     void rejectsRealWebhookWithInvalidSignature() throws Exception {
         String payload = """
                 {
-                  "action": "order.updated",
+                  "action": "payment.updated",
                   "data": {
                     "id": "ORDTST01ABC",
                     "status": "approved",
-                    "external_reference": "TPM-REF-001"
+                    "external_reference": "TPM-REF-001",
+                    "transaction_amount": 25.99,
+                    "currency_id": "BRL",
+                    "payment_method_id": "pix"
                   }
                 }
                 """;
@@ -103,11 +106,14 @@ class MercadoPagoWebhookServiceTest {
     void acceptsRealWebhookWithValidSignature() throws Exception {
         String payload = """
                 {
-                  "action": "order.updated",
+                  "action": "payment.updated",
                   "data": {
                     "id": "ORDTST01ABC",
                     "status": "approved",
-                    "external_reference": "TPM-REF-001"
+                    "external_reference": "TPM-REF-001",
+                    "transaction_amount": 25.99,
+                    "currency_id": "BRL",
+                    "payment_method_id": "pix"
                   }
                 }
                 """;

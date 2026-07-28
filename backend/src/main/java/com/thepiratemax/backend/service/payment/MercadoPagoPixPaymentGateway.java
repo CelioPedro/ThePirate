@@ -141,8 +141,10 @@ public class MercadoPagoPixPaymentGateway implements PixPaymentGateway {
             payerFirstName = firstName != null ? firstName.toString() : null;
         }
 
-        logger.info("event=mercado_pago_pix_request orderId={} externalReference={} totalAmount={} payerEmail={} payerFirstName={}",
-                order.getId(), order.getExternalReference(), request.get("transaction_amount"), payerEmail, payerFirstName);
+        logger.info("event=mercado_pago_pix_request orderId={} externalReference={} totalAmount={} payerEmailPresent={} payerFirstNamePresent={}",
+                order.getId(), order.getExternalReference(), request.get("transaction_amount"),
+                payerEmail != null && !payerEmail.isBlank(),
+                payerFirstName != null && !payerFirstName.isBlank());
     }
 
     private String firstNameFrom(String name) {

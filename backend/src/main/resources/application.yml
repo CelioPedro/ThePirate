@@ -48,6 +48,16 @@ app:
     jwt:
       secret: ${AUTH_JWT_SECRET:the-pirate-max-local-jwt-secret-2026-very-strong-key}
       expiration-hours: ${AUTH_JWT_EXPIRATION_HOURS:24}
+    password-reset:
+      expiration-minutes: ${AUTH_PASSWORD_RESET_EXPIRATION_MINUTES:30}
+      expose-token-in-response: ${AUTH_PASSWORD_RESET_EXPOSE_TOKEN:false}
+  security:
+    rate-limit:
+      enabled: ${RATE_LIMIT_ENABLED:true}
+      login-per-minute: ${RATE_LIMIT_LOGIN_PER_MINUTE:10}
+      register-per-minute: ${RATE_LIMIT_REGISTER_PER_MINUTE:5}
+      password-reset-per-minute: ${RATE_LIMIT_PASSWORD_RESET_PER_MINUTE:5}
+      checkout-per-minute: ${RATE_LIMIT_CHECKOUT_PER_MINUTE:20}
   dev:
     default-user-email: ${DEV_DEFAULT_USER_EMAIL:dev@thepiratemax.local}
   initial-admin:

@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.thepiratemax.backend.TestCatalogFactory;
 import com.thepiratemax.backend.domain.credential.CredentialEntity;
 import com.thepiratemax.backend.domain.credential.CredentialStatus;
 import com.thepiratemax.backend.domain.product.DeliveryType;
@@ -15,6 +16,7 @@ import com.thepiratemax.backend.domain.product.ProductProvider;
 import com.thepiratemax.backend.domain.product.ProductStatus;
 import com.thepiratemax.backend.domain.user.UserEntity;
 import com.thepiratemax.backend.domain.user.UserStatus;
+import com.thepiratemax.backend.repository.CatalogCategoryRepository;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
 import com.thepiratemax.backend.repository.OrderRepository;
@@ -40,6 +42,9 @@ class OrderControllerTest {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private CatalogCategoryRepository catalogCategoryRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -79,6 +84,7 @@ class OrderControllerTest {
         product.setName("Test Product");
         product.setDescription("Product for order creation test");
         product.setCategory(ProductCategory.STREAMING);
+        product.setCatalogCategory(TestCatalogFactory.catalogCategory(catalogCategoryRepository, ProductCategory.STREAMING));
         product.setProvider(ProductProvider.NETFLIX);
         product.setStatus(ProductStatus.ACTIVE);
         product.setPriceCents(2990L);

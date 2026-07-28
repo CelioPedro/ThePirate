@@ -17,8 +17,11 @@ public class OrderStateService {
                 order.setStatus(OrderStatus.PAID);
                 order.setFailureReason(null);
             }
-            case CANCELED -> order.setFailureReason("APPROVED_AFTER_EXPIRATION");
-            case PAID, DELIVERY_PENDING, DELIVERY_FAILED, DELIVERED, REFUNDED -> {
+            case CANCELED -> {
+                order.setStatus(OrderStatus.PAYMENT_REVIEW);
+                order.setFailureReason("APPROVED_AFTER_EXPIRATION");
+            }
+            case PAID, DELIVERY_PENDING, DELIVERY_FAILED, DELIVERED, PAYMENT_REVIEW, REFUNDED -> {
                 // Keep current state; payment confirmation is already represented elsewhere.
             }
         }

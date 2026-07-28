@@ -7,6 +7,8 @@ import com.thepiratemax.backend.config.DevUserProperties;
 import com.thepiratemax.backend.config.InitialAdminProperties;
 import com.thepiratemax.backend.config.JwtProperties;
 import com.thepiratemax.backend.config.MercadoPagoProperties;
+import com.thepiratemax.backend.config.PasswordResetProperties;
+import com.thepiratemax.backend.config.RateLimitProperties;
 import com.thepiratemax.backend.config.RedisQueueProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
@@ -24,7 +26,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         JwtProperties.class,
         CredentialEncryptionProperties.class,
         CorsProperties.class,
-        InitialAdminProperties.class
+        InitialAdminProperties.class,
+        PasswordResetProperties.class,
+        RateLimitProperties.class
 })
 public class ThePirateMaxApplication {
 

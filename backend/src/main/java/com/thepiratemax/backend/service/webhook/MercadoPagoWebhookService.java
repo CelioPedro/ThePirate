@@ -9,6 +9,8 @@ import com.thepiratemax.backend.repository.PaymentRepository;
 import com.thepiratemax.backend.repository.WebhookEventRepository;
 import com.thepiratemax.backend.service.exception.InvalidRequestException;
 import com.thepiratemax.backend.service.order.OrderStateService;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.OffsetDateTime;
@@ -64,6 +66,9 @@ public class MercadoPagoWebhookService {
         String externalReference = textValue(payload.path("data"), "external_reference");
         String providerStatus = textValue(payload.path("data"), "status");
         JsonNode providerPayload = payload;
+        if (isPaymentEvent(eventType) && hasAuthoritativePaymentFields(payload.path("data"))) {
+            providerPayload = payload.path("data");
+        }
 
         logger.info("event=mercado_pago_webhook_received eventType={} queryDataId={} bodyDataId={} externalReferencePresent={} providerStatus={} hasRequestId={} hasSignature={} gateway={}",
                 eventType,
@@ -81,7 +86,10 @@ public class MercadoPagoWebhookService {
             throw new InvalidRequestException("INVALID_WEBHOOK", "Development webhook payload is not accepted with real Mercado Pago gateway");
         }
 
-        if (providerEventId != null && isPaymentEvent(eventType) && mercadoPagoProperties.usesRealGateway()) {
+        if (providerEventId != null
+                && isPaymentEvent(eventType)
+                && mercadoPagoProperties.usesRealGateway()
+                && !hasAuthoritativePaymentFields(providerPayload)) {
             providerPayload = fetchProviderPayment(providerEventId);
             externalReference = firstNonBlank(externalReference, textValue(providerPayload, "external_reference"));
             providerStatus = firstNonBlank(providerStatus, textValue(providerPayload, "status"));
@@ -138,6 +146,8 @@ public class MercadoPagoWebhookService {
         payment.setProviderPayload(providerPayload.toString());
 
         if (isApproved(providerStatus) && payment.getPaidAt() == null) {
+            JsonNode approvedPaymentPayload = authoritativePaymentPayload(eventType, providerPayload, payment);
+            validateApprovedPayment(payment, approvedPaymentPayload);
             OffsetDateTime now = OffsetDateTime.now();
             payment.setPaidAt(now);
 
@@ -257,6 +267,67 @@ public class MercadoPagoWebhookService {
 
     private boolean shouldReprocessProcessedEvent(PaymentEntity payment, String providerStatus) {
         return isApproved(providerStatus) && payment.getPaidAt() == null;
+    }
+
+    private JsonNode authoritativePaymentPayload(String eventType, JsonNode providerPayload, PaymentEntity payment) {
+        if (!mercadoPagoProperties.usesRealGateway()) {
+            return providerPayload;
+        }
+        if (isPaymentEvent(eventType) && hasAuthoritativePaymentFields(providerPayload)) {
+            return providerPayload;
+        }
+        if (payment.getProviderPaymentId() == null || payment.getProviderPaymentId().isBlank()) {
+            throw new InvalidRequestException("INVALID_WEBHOOK", "Approved webhook is missing a local provider payment id");
+        }
+        return fetchProviderPayment(payment.getProviderPaymentId());
+    }
+
+    private boolean hasAuthoritativePaymentFields(JsonNode providerPayload) {
+        return textValue(providerPayload, "external_reference") != null
+                && textValue(providerPayload, "currency_id") != null
+                && textValue(providerPayload, "payment_method_id") != null
+                && !providerPayload.path("transaction_amount").isMissingNode()
+                && !providerPayload.path("transaction_amount").isNull();
+    }
+
+    private void validateApprovedPayment(PaymentEntity payment, JsonNode providerPayload) {
+        if (!mercadoPagoProperties.usesRealGateway()) {
+            return;
+        }
+
+        String externalReference = textValue(providerPayload, "external_reference");
+        String currency = textValue(providerPayload, "currency_id");
+        String paymentMethodId = textValue(providerPayload, "payment_method_id");
+        long amountCents = amountCents(providerPayload.path("transaction_amount"));
+
+        if (!payment.getOrder().getExternalReference().equals(externalReference)
+                || !payment.getCurrency().equals(currency)
+                || !"pix".equalsIgnoreCase(paymentMethodId)
+                || payment.getAmountCents() != amountCents) {
+            logger.warn("event=mercado_pago_payment_mismatch orderId={} externalReference={} expectedAmountCents={} actualAmountCents={} expectedCurrency={} actualCurrency={} paymentMethodId={}",
+                    payment.getOrder().getId(),
+                    payment.getOrder().getExternalReference(),
+                    payment.getAmountCents(),
+                    amountCents,
+                    payment.getCurrency(),
+                    currency,
+                    paymentMethodId);
+            throw new InvalidRequestException("INVALID_WEBHOOK_PAYMENT", "Mercado Pago payment does not match the order");
+        }
+    }
+
+    private long amountCents(JsonNode amountNode) {
+        if (amountNode == null || amountNode.isMissingNode() || amountNode.isNull()) {
+            return Long.MIN_VALUE;
+        }
+        try {
+            return amountNode.decimalValue()
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .movePointRight(2)
+                    .longValueExact();
+        } catch (ArithmeticException exception) {
+            return Long.MIN_VALUE;
+        }
     }
 
     private JsonNode fetchProviderOrder(String providerEventId) {
