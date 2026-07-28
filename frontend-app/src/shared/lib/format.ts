@@ -45,6 +45,7 @@ export function labelStatus(status: string) {
     DELIVERY_PENDING: "Em entrega",
     DELIVERED: "Entregue",
     DELIVERY_FAILED: "Falhou",
+    PAYMENT_REVIEW: "Revisao de pagamento",
     CANCELED: "Cancelado"
   };
   return map[status] || status;
@@ -53,6 +54,7 @@ export function labelStatus(status: string) {
 export function statusTone(status: string) {
   if (status === "DELIVERED") return "success";
   if (status === "PAID" || status === "DELIVERY_PENDING") return "info";
+  if (status === "PAYMENT_REVIEW") return "warning";
   if (status === "CANCELED" || status === "DELIVERY_FAILED") return "danger";
   return "warning";
 }

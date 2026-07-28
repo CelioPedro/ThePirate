@@ -94,7 +94,7 @@ export function OrderDetailPage() {
   }, [apiBase, order?.externalReference, pixState.copyPaste, pixState.externalReference]);
 
   const isDelivered = order?.status === "DELIVERED";
-  const hasIssue = order?.status === "CANCELED" || order?.status === "DELIVERY_FAILED";
+  const hasIssue = order?.status === "CANCELED" || order?.status === "DELIVERY_FAILED" || order?.status === "PAYMENT_REVIEW";
   const shouldPoll = Boolean(order && ["PENDING", "PAID", "DELIVERY_PENDING"].includes(order.status));
 
   useEffect(() => {
@@ -383,6 +383,7 @@ function paymentHint(status?: string, canSimulateLocalPayment = false) {
   if (status === "PAID" || status === "DELIVERY_PENDING") return "Pagamento confirmado. A entrega sera atualizada automaticamente.";
   if (status === "CANCELED") return "Pedido cancelado. Este PIX nao deve mais ser pago.";
   if (status === "DELIVERY_FAILED") return "Pagamento identificado, mas a entrega precisa de revisao operacional.";
+  if (status === "PAYMENT_REVIEW") return "Pagamento identificado apos a expiracao do pedido. O suporte precisa revisar antes de liberar ou reembolsar.";
   if (canSimulateLocalPayment) return "Aguardando pagamento PIX. Em ambiente local, use a simulacao para validar o fluxo.";
   return "Aguardando confirmacao do Mercado Pago. A tela sera atualizada automaticamente quando o webhook chegar.";
 }
@@ -392,12 +393,14 @@ function deliveryHint(status?: string) {
   if (status === "PAID" || status === "DELIVERY_PENDING") return "Pagamento aprovado. Estamos acompanhando o processamento da entrega.";
   if (status === "CANCELED") return "Pedido cancelado antes da entrega.";
   if (status === "DELIVERY_FAILED") return "A entrega falhou e precisa de reprocessamento operacional.";
+  if (status === "PAYMENT_REVIEW") return "Pagamento em revisao operacional. A credencial nao sera liberada automaticamente nesse estado.";
   return "Quando o pedido chegar a ENTREGUE, as credenciais aparecerao aqui.";
 }
 
 function orderStateTone(status: string) {
   if (status === "DELIVERED") return "success";
   if (status === "CANCELED" || status === "DELIVERY_FAILED") return "danger";
+  if (status === "PAYMENT_REVIEW") return "warning";
   if (status === "PAID" || status === "DELIVERY_PENDING") return "info";
   return "warning";
 }
@@ -409,6 +412,7 @@ function orderStateTitle(status: string) {
     DELIVERY_PENDING: "Entrega em processamento",
     DELIVERED: "Credenciais liberadas",
     DELIVERY_FAILED: "Entrega precisa de suporte",
+    PAYMENT_REVIEW: "Pagamento em revisao",
     CANCELED: "Pedido cancelado"
   };
   return map[status] || "Pedido em acompanhamento";
@@ -420,6 +424,7 @@ function orderStateDescription(status: string, failureReason?: string | null) {
   if (status === "DELIVERY_PENDING") return "A entrega foi colocada em processamento. Esta tela atualiza sozinha.";
   if (status === "DELIVERED") return "O pedido foi concluido. Revele e copie as credenciais abaixo quando precisar.";
   if (status === "DELIVERY_FAILED") return failureReason || "A entrega nao foi concluida automaticamente e precisa de acao operacional.";
+  if (status === "PAYMENT_REVIEW") return failureReason || "O pagamento chegou depois da expiracao. O suporte precisa decidir entre nova entrega manual ou reembolso.";
   if (status === "CANCELED") return "Este pedido nao esta mais valido. Nao pague um PIX vencido ou cancelado.";
   return "Acompanhe o estado do pedido por aqui.";
 }

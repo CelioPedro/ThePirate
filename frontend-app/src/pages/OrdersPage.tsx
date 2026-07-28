@@ -53,7 +53,7 @@ export function OrdersPage() {
 
   const filteredOrders = useMemo(() => {
     if (statusFilter === "ALL") return orders;
-    if (statusFilter === "ISSUES") return orders.filter((order) => ["CANCELED", "DELIVERY_FAILED"].includes(order.status));
+    if (statusFilter === "ISSUES") return orders.filter((order) => ["CANCELED", "DELIVERY_FAILED", "PAYMENT_REVIEW"].includes(order.status));
     if (statusFilter === "PAID") return orders.filter((order) => ["PAID", "DELIVERY_PENDING"].includes(order.status));
     return orders.filter((order) => order.status === statusFilter);
   }, [orders, statusFilter]);
@@ -240,6 +240,7 @@ function orderSubtitle(order: OrderDetail) {
 function statusContext(order: OrderDetail) {
   if (order.status === "DELIVERED") return `Entregue em ${formatDate(order.deliveredAt)}`;
   if (order.status === "PAID" || order.status === "DELIVERY_PENDING") return "Pagamento aprovado";
+  if (order.status === "PAYMENT_REVIEW") return "Pagamento em revisao";
   if (order.status === "CANCELED") return "Cancelado";
   if (order.status === "DELIVERY_FAILED") return "Precisa de suporte";
   return "Aguardando PIX";

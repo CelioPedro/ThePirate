@@ -616,6 +616,7 @@ export function AdminDashboardPage() {
                 <option value="DELIVERY_PENDING">Em entrega</option>
                 <option value="DELIVERED">Entregue</option>
                 <option value="DELIVERY_FAILED">Falhou</option>
+                <option value="PAYMENT_REVIEW">Revisao de pagamento</option>
                 <option value="CANCELED">Cancelado</option>
               </select>
             </label>
