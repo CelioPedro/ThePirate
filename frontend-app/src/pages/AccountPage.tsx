@@ -19,13 +19,13 @@ export function AccountPage() {
               <div>
                 <span className="eyebrow">painel do cliente</span>
                 <h1>Minha conta</h1>
-                <p>Compras, pagamentos e acessos digitais reunidos em uma experiencia simples de acompanhar.</p>
+                <p>Compras, pagamentos e acessos digitais reunidos em uma experiência simples de acompanhar.</p>
               </div>
             </div>
 
             <div className="account-profile-card">
               <div>
-                <span className="account-label">Usuario</span>
+                <span className="account-label">Usuário</span>
                 <strong>{user.name}</strong>
               </div>
               <div>
@@ -38,7 +38,7 @@ export function AccountPage() {
               </div>
             </div>
 
-            {import.meta.env.DEV && isDevFallback ? <div className="inline-banner">Sessao local automatica do backend. Para validar login real, use a tela de acesso.</div> : null}
+            {import.meta.env.DEV && isDevFallback ? <div className="inline-banner">Sessão local automática do backend. Para validar login real, use a tela de acesso.</div> : null}
 
             <div className="account-action-grid">
               <Link to="/pedidos" className="account-action-card">
@@ -54,7 +54,7 @@ export function AccountPage() {
                   <ShieldCheck size={20} />
                   <span>
                     <strong>Painel admin</strong>
-                    <small>Operacao e estoque</small>
+                    <small>Operação e estoque</small>
                   </span>
                   <ArrowRight size={16} />
                 </Link>
@@ -63,7 +63,7 @@ export function AccountPage() {
                 <LogOut size={20} />
                 <span>
                   <strong>Sair</strong>
-                  <small>Encerrar sessao</small>
+                  <small>Encerrar sessão</small>
                 </span>
               </button>
             </div>
@@ -81,7 +81,7 @@ export function AccountPage() {
               </article>
               <article>
                 <Sparkles size={18} />
-                <strong>Catalogo premium</strong>
+                <strong>Catálogo premium</strong>
                 <span>Produtos digitais organizados por categoria e provedor.</span>
               </article>
             </div>

@@ -16,15 +16,15 @@ type CatalogSection = {
 };
 
 const FALLBACK_CATEGORIES: CatalogCategory[] = [
-  { id: "fallback-ia", name: "Inteligencia Artificial", slug: "inteligencia-artificial", description: "ChatGPT, Gemini e ferramentas", imageUrl: null, sortOrder: 10, active: true },
+  { id: "fallback-ia", name: "Inteligência Artificial", slug: "inteligencia-artificial", description: "ChatGPT, Gemini e ferramentas", imageUrl: null, sortOrder: 10, active: true },
   { id: "fallback-assinaturas", name: "Assinaturas e Premium", slug: "assinaturas-premium", description: "Softwares e acessos premium", imageUrl: null, sortOrder: 20, active: true },
   { id: "fallback-streaming", name: "Streaming", slug: "streaming", description: "Entretenimento digital", imageUrl: null, sortOrder: 30, active: true },
-  { id: "fallback-games", name: "Games", slug: "games", description: "Contas, creditos e jogos", imageUrl: null, sortOrder: 40, active: true },
-  { id: "fallback-gift-cards", name: "Gift Cards", slug: "gift-cards", description: "Cartoes digitais e creditos", imageUrl: null, sortOrder: 50, active: true },
-  { id: "fallback-softwares", name: "Softwares e Licencas", slug: "softwares-licencas", description: "Chaves e ferramentas", imageUrl: null, sortOrder: 60, active: true },
-  { id: "fallback-redes", name: "Redes Sociais", slug: "redes-sociais", description: "Servicos para plataformas sociais", imageUrl: null, sortOrder: 70, active: true },
-  { id: "fallback-servicos", name: "Servicos Digitais", slug: "servicos-digitais", description: "Operacoes digitais sob demanda", imageUrl: null, sortOrder: 80, active: true },
-  { id: "fallback-cursos", name: "Cursos e Treinamentos", slug: "cursos-treinamentos", description: "Conteudos e formacoes", imageUrl: null, sortOrder: 90, active: true },
+  { id: "fallback-games", name: "Games", slug: "games", description: "Contas, créditos e jogos", imageUrl: null, sortOrder: 40, active: true },
+  { id: "fallback-gift-cards", name: "Gift Cards", slug: "gift-cards", description: "Cartões digitais e créditos", imageUrl: null, sortOrder: 50, active: true },
+  { id: "fallback-softwares", name: "Softwares e Licenças", slug: "softwares-licencas", description: "Chaves e ferramentas", imageUrl: null, sortOrder: 60, active: true },
+  { id: "fallback-redes", name: "Redes Sociais", slug: "redes-sociais", description: "Serviços para plataformas sociais", imageUrl: null, sortOrder: 70, active: true },
+  { id: "fallback-servicos", name: "Serviços Digitais", slug: "servicos-digitais", description: "Operações digitais sob demanda", imageUrl: null, sortOrder: 80, active: true },
+  { id: "fallback-cursos", name: "Cursos e Treinamentos", slug: "cursos-treinamentos", description: "Conteúdos e formações", imageUrl: null, sortOrder: 90, active: true },
   { id: "fallback-contas", name: "Contas Digitais", slug: "contas-digitais", description: "Acessos e perfis digitais", imageUrl: null, sortOrder: 100, active: true }
 ];
 
@@ -142,7 +142,7 @@ export function CatalogPage() {
   const [loadError, setLoadError] = useState("");
   const [recentlyAddedProductId, setRecentlyAddedProductId] = useState<string | null>(null);
   const search = searchParams.get("busca") || "";
-  useDocumentTitle("Catalogo");
+  useDocumentTitle("Catálogo");
 
   function addProductToCart(product: Product) {
     addItem(product);
@@ -166,7 +166,7 @@ export function CatalogPage() {
       setProducts([]);
       setInventory([]);
       setCategories(FALLBACK_CATEGORIES);
-      setLoadError("Nao foi possivel carregar o catalogo a partir do backend atual.");
+      setLoadError("Não foi possível carregar o catálogo a partir do backend atual.");
     } finally {
       setIsLoading(false);
     }
@@ -204,14 +204,14 @@ export function CatalogPage() {
           <span aria-hidden="true">®</span>
         </div>
         <div className="catalog-intro-actions">
-          <p>Produtos digitais organizados por categoria, com PIX e entrega acompanhavel.</p>
+          <p>Produtos digitais organizados por categoria, com PIX e entrega acompanhável.</p>
         </div>
       </section>
 
       <section className="popular-categories" aria-label="Categorias populares">
         <div className="section-heading">
           <h2>Categorias populares</h2>
-          <a href="#catalog-sections">Ver catalogo <ArrowRight size={15} /></a>
+          <a href="#catalog-sections">Ver catálogo <ArrowRight size={15} /></a>
         </div>
         <ScrollableRail className="popular-category-rail" label="Navegar categorias populares" variant="category">
           {homeCategories.slice(0, 10).map((category) => {
@@ -240,7 +240,7 @@ export function CatalogPage() {
           value={search}
           onChange={(event) => setSearchParams(event.target.value ? { busca: event.target.value } : {})}
           placeholder="Buscar produto ou provedor"
-          aria-label="Buscar no catalogo"
+          aria-label="Buscar no catálogo"
         />
         </label>
       </section>
@@ -248,7 +248,7 @@ export function CatalogPage() {
       <section className="catalog-sections" id="catalog-sections">
         {!isLoading && loadError ? (
           <div className="empty-state-panel">
-            <strong>Catalogo indisponivel</strong>
+            <strong>Catálogo indisponível</strong>
             <p>{loadError}</p>
             <button type="button" className="secondary-button compact" onClick={() => void loadCatalog()}>Tentar novamente</button>
           </div>
@@ -561,5 +561,5 @@ function legacyCategorySlug(category: string) {
 }
 
 function formatDuration(durationDays: number) {
-  return durationDays === 0 ? "Vitalicio" : `${durationDays} dias`;
+  return durationDays === 0 ? "Vitalício" : `${durationDays} dias`;
 }

@@ -14,7 +14,7 @@ const STATUS_FILTERS = [
   { value: "PENDING", label: "Pendentes" },
   { value: "PAID", label: "Pagos" },
   { value: "DELIVERED", label: "Entregues" },
-  { value: "ISSUES", label: "Com atencao" }
+  { value: "ISSUES", label: "Com atenção" }
 ] as const;
 
 type StatusFilter = typeof STATUS_FILTERS[number]["value"];
@@ -41,7 +41,7 @@ export function OrdersPage() {
       const details = await Promise.all(summaries.map((summary) => apiClient.getOrder(summary.id, apiBase, token)));
       setOrders(details);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Nao foi possivel carregar seus pedidos.");
+      setError(requestError instanceof Error ? requestError.message : "Não foi possível carregar seus pedidos.");
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +71,7 @@ export function OrdersPage() {
         <section className="panel-card">
           <span className="eyebrow">pedidos</span>
           <h1>Entre para ver seus pedidos</h1>
-          <p>A area de pos-compra agora vive separada do catalogo, com foco em rastreabilidade e entrega.</p>
+          <p>A área de pós-compra agora vive separada do catálogo, com foco em rastreabilidade e entrega.</p>
           <Link to="/login" className="primary-button compact">Ir para login</Link>
         </section>
       </div>
@@ -138,14 +138,14 @@ export function OrdersPage() {
         {!isLoading && orders.length === 0 ? (
           <div className="empty-state-panel">
             <strong>Nenhum pedido ainda</strong>
-            <p>Seu historico vai aparecer aqui depois da primeira compra.</p>
-            <Link to="/" className="primary-button compact">Ver catalogo</Link>
+            <p>Seu histórico vai aparecer aqui depois da primeira compra.</p>
+            <Link to="/" className="primary-button compact">Ver catálogo</Link>
           </div>
         ) : null}
         {!isLoading && orders.length > 0 && filteredOrders.length === 0 ? (
           <div className="empty-state-panel">
             <strong>Nenhum pedido nesse filtro</strong>
-            <p>Altere o filtro para ver outros status do seu historico.</p>
+            <p>Altere o filtro para ver outros status do seu histórico.</p>
             <button type="button" className="secondary-button compact" onClick={() => setStatusFilter("ALL")}>Ver todos</button>
           </div>
         ) : null}
@@ -233,14 +233,14 @@ function orderTitle(order: OrderDetail) {
 }
 
 function orderSubtitle(order: OrderDetail) {
-  if (!order.items.length) return "Itens indisponiveis";
+  if (!order.items.length) return "Itens indisponíveis";
   return order.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ");
 }
 
 function statusContext(order: OrderDetail) {
   if (order.status === "DELIVERED") return `Entregue em ${formatDate(order.deliveredAt)}`;
   if (order.status === "PAID" || order.status === "DELIVERY_PENDING") return "Pagamento aprovado";
-  if (order.status === "PAYMENT_REVIEW") return "Pagamento em revisao";
+  if (order.status === "PAYMENT_REVIEW") return "Pagamento em revisão";
   if (order.status === "CANCELED") return "Cancelado";
   if (order.status === "DELIVERY_FAILED") return "Precisa de suporte";
   return "Aguardando PIX";

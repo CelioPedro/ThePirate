@@ -32,7 +32,7 @@ export function ProductDetailPage() {
         setProducts(productsResponse);
         setInventory(inventoryResponse);
       } catch {
-        setLoadError("Nao foi possivel carregar este produto agora.");
+        setLoadError("Não foi possível carregar este produto agora.");
       } finally {
         setIsLoading(false);
       }
@@ -70,9 +70,9 @@ export function ProductDetailPage() {
     return (
       <div className="page-section product-detail-page">
         <div className="empty-state-panel">
-          <strong>Produto indisponivel</strong>
-          <p>{loadError || "Nao encontramos esse produto."}</p>
-          <Link to="/catalogo" className="secondary-button compact">Voltar ao catalogo</Link>
+          <strong>Produto indisponível</strong>
+          <p>{loadError || "Não encontramos esse produto."}</p>
+          <Link to="/catalogo" className="secondary-button compact">Voltar ao catálogo</Link>
         </div>
       </div>
     );
@@ -89,7 +89,7 @@ export function ProductDetailPage() {
 
   return (
     <div className="page-section product-detail-page">
-      <Link to="/catalogo" className="back-link"><ArrowLeft size={16} /> Catalogo</Link>
+      <Link to="/catalogo" className="back-link"><ArrowLeft size={16} /> Catálogo</Link>
 
       <section className="product-detail-hero">
         <div className="product-detail-media">
@@ -105,7 +105,7 @@ export function ProductDetailPage() {
           <p>{product.description}</p>
           <div className="product-detail-availability" role="status">
             <CheckCircle2 size={17} />
-            <span>{(product.availableStock ?? 0) > 0 ? "Disponivel para entrega digital" : "Disponibilidade sob confirmacao"}</span>
+            <span>{(product.availableStock ?? 0) > 0 ? "Disponível para entrega digital" : "Disponibilidade sob confirmação"}</span>
           </div>
           <strong className="product-detail-price">{formatCurrency(product.priceCents)}</strong>
 
@@ -134,7 +134,7 @@ export function ProductDetailPage() {
         <article>
           <Clock3 size={19} />
           <h2>Detalhes</h2>
-          <p>{product.fulfillmentNotes || "A entrega e feita digitalmente apos confirmacao do pagamento."}</p>
+          <p>{product.fulfillmentNotes || "A entrega é feita digitalmente após confirmação do pagamento."}</p>
         </article>
         <article>
           <ShieldCheck size={19} />
@@ -144,12 +144,12 @@ export function ProductDetailPage() {
         <article>
           <Zap size={19} />
           <h2>Entrega</h2>
-          <p>Depois da aprovacao, suas credenciais ficam vinculadas ao pedido para consulta posterior.</p>
+          <p>Depois da aprovação, suas credenciais ficam vinculadas ao pedido para consulta posterior.</p>
         </article>
         <article>
           <Headphones size={19} />
           <h2>Suporte</h2>
-          <p>Se algo nao funcionar como esperado, o historico do pedido ajuda a resolver com mais rapidez.</p>
+          <p>Se algo não funcionar como esperado, o histórico do pedido ajuda a resolver com mais rapidez.</p>
         </article>
       </section>
 
@@ -206,5 +206,5 @@ function ProductImageFallback({ name }: { name: string }) {
 }
 
 function formatDuration(durationDays: number) {
-  return durationDays === 0 ? "Vitalicio" : `${durationDays} dias`;
+  return durationDays === 0 ? "Vitalício" : `${durationDays} dias`;
 }

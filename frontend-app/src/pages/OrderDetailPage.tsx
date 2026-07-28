@@ -63,7 +63,7 @@ export function OrderDetailPage() {
         setRevealedCredentials(new Set());
       }
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Nao foi possivel atualizar o pedido.");
+      setError(requestError instanceof Error ? requestError.message : "Não foi possível atualizar o pedido.");
     } finally {
       if (!silent) {
         setIsLoading(false);
@@ -125,7 +125,7 @@ export function OrderDetailPage() {
       await apiClient.simulatePayment(externalReference, apiBase);
       await loadOrderState(true);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Nao foi possivel simular o pagamento.");
+      setError(requestError instanceof Error ? requestError.message : "Não foi possível simular o pagamento.");
     } finally {
       setIsSimulating(false);
     }
@@ -156,7 +156,7 @@ export function OrderDetailPage() {
       await loadCredentialSecret(credential.orderItemId);
       setRevealedCredentials((current) => new Set(current).add(credential.orderItemId));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Nao foi possivel revelar a credencial.");
+      setError(requestError instanceof Error ? requestError.message : "Não foi possível revelar a credencial.");
     }
   }
 
@@ -167,7 +167,7 @@ export function OrderDetailPage() {
       await navigator.clipboard.writeText(secret[field]);
       markCopied(`${credential.orderItemId}-${field}`, setCopiedAction);
     } catch {
-      setError(`Nao foi possivel copiar ${field === "login" ? "o login" : "a senha"} automaticamente.`);
+      setError(`Não foi possível copiar ${field === "login" ? "o login" : "a senha"} automaticamente.`);
     }
   }
 
@@ -209,7 +209,7 @@ export function OrderDetailPage() {
             <RefreshCw size={15} />
             {isRefreshing ? "Atualizando..." : "Atualizar status"}
           </button>
-          {shouldPoll ? <span className="live-refresh-indicator">Atualizacao automatica ativa</span> : null}
+          {shouldPoll ? <span className="live-refresh-indicator">Atualização automática ativa</span> : null}
         </div>
         {error ? <div className="inline-error" role="alert">{error}</div> : null}
         <div className="order-summary-grid">
@@ -222,7 +222,7 @@ export function OrderDetailPage() {
             <strong>{formatDate(order?.createdAt)}</strong>
           </article>
           <article>
-            <span>Metodo</span>
+            <span>Método</span>
             <strong>{order?.paymentMethod || "PIX"}</strong>
           </article>
         </div>
@@ -274,7 +274,7 @@ export function OrderDetailPage() {
               </div>
               <div>
                 <strong>Pagamento confirmado via PIX</strong>
-                <p className="helper-text">Entrega concluida. As credenciais deste pedido ja estao liberadas abaixo.</p>
+                <p className="helper-text">Entrega concluída. As credenciais deste pedido já estão liberadas abaixo.</p>
               </div>
             </div>
           ) : (
@@ -283,7 +283,7 @@ export function OrderDetailPage() {
                 <img className="pix-qr-image" src={pixImageSrc(pixState.qrCode)} alt="QR Code PIX" />
               ) : null}
               <div className="pix-copy-panel">
-                <span>Codigo copia e cola</span>
+                <span>Código copia e cola</span>
                 <code>{pixState.copyPaste}</code>
               </div>
               <div className="pix-actions-row">
@@ -307,8 +307,8 @@ export function OrderDetailPage() {
           )
         ) : (
           <div className="empty-state-panel">
-            <strong>PIX nao capturado nesta sessao</strong>
-            <p>Se o pedido foi criado aqui, ele aparecera no estado da tela. Depois podemos enriquecer isso via endpoint dedicado.</p>
+            <strong>PIX não capturado nesta sessão</strong>
+            <p>Se o pedido foi criado aqui, ele aparecerá no estado da tela. Depois podemos enriquecer isso via endpoint dedicado.</p>
           </div>
         )}
       </section>
@@ -365,7 +365,7 @@ export function OrderDetailPage() {
           </div>
         ) : (
           <div className="empty-state-panel">
-            <strong>{order?.status === "DELIVERED" ? "Buscando credenciais" : "Entrega ainda nao disponivel"}</strong>
+            <strong>{order?.status === "DELIVERED" ? "Buscando credenciais" : "Entrega ainda não disponível"}</strong>
             <p>{deliveryHint(order?.status)}</p>
           </div>
         )}
@@ -379,22 +379,22 @@ function shortOrderId(id: string) {
 }
 
 function paymentHint(status?: string, canSimulateLocalPayment = false) {
-  if (status === "DELIVERED") return "Pagamento confirmado e entrega concluida.";
-  if (status === "PAID" || status === "DELIVERY_PENDING") return "Pagamento confirmado. A entrega sera atualizada automaticamente.";
-  if (status === "CANCELED") return "Pedido cancelado. Este PIX nao deve mais ser pago.";
-  if (status === "DELIVERY_FAILED") return "Pagamento identificado, mas a entrega precisa de revisao operacional.";
-  if (status === "PAYMENT_REVIEW") return "Pagamento identificado apos a expiracao do pedido. O suporte precisa revisar antes de liberar ou reembolsar.";
-  if (canSimulateLocalPayment) return "Aguardando pagamento PIX. Em ambiente local, use a simulacao para validar o fluxo.";
-  return "Aguardando confirmacao do Mercado Pago. A tela sera atualizada automaticamente quando o webhook chegar.";
+  if (status === "DELIVERED") return "Pagamento confirmado e entrega concluída.";
+  if (status === "PAID" || status === "DELIVERY_PENDING") return "Pagamento confirmado. A entrega será atualizada automaticamente.";
+  if (status === "CANCELED") return "Pedido cancelado. Este PIX não deve mais ser pago.";
+  if (status === "DELIVERY_FAILED") return "Pagamento identificado, mas a entrega precisa de revisão operacional.";
+  if (status === "PAYMENT_REVIEW") return "Pagamento identificado após a expiração do pedido. O suporte precisa revisar antes de liberar ou reembolsar.";
+  if (canSimulateLocalPayment) return "Aguardando pagamento PIX. Em ambiente local, use a simulação para validar o fluxo.";
+  return "Aguardando confirmação do Mercado Pago. A tela será atualizada automaticamente quando o webhook chegar.";
 }
 
 function deliveryHint(status?: string) {
-  if (status === "DELIVERED") return "O pedido foi entregue. Se as credenciais nao aparecerem em instantes, use Atualizar status.";
+  if (status === "DELIVERED") return "O pedido foi entregue. Se as credenciais não aparecerem em instantes, use Atualizar status.";
   if (status === "PAID" || status === "DELIVERY_PENDING") return "Pagamento aprovado. Estamos acompanhando o processamento da entrega.";
   if (status === "CANCELED") return "Pedido cancelado antes da entrega.";
   if (status === "DELIVERY_FAILED") return "A entrega falhou e precisa de reprocessamento operacional.";
-  if (status === "PAYMENT_REVIEW") return "Pagamento em revisao operacional. A credencial nao sera liberada automaticamente nesse estado.";
-  return "Quando o pedido chegar a ENTREGUE, as credenciais aparecerao aqui.";
+  if (status === "PAYMENT_REVIEW") return "Pagamento em revisão operacional. A credencial não será liberada automaticamente nesse estado.";
+  return "Quando o pedido chegar a ENTREGUE, as credenciais aparecerão aqui.";
 }
 
 function orderStateTone(status: string) {
@@ -412,20 +412,20 @@ function orderStateTitle(status: string) {
     DELIVERY_PENDING: "Entrega em processamento",
     DELIVERED: "Credenciais liberadas",
     DELIVERY_FAILED: "Entrega precisa de suporte",
-    PAYMENT_REVIEW: "Pagamento em revisao",
+    PAYMENT_REVIEW: "Pagamento em revisão",
     CANCELED: "Pedido cancelado"
   };
   return map[status] || "Pedido em acompanhamento";
 }
 
 function orderStateDescription(status: string, failureReason?: string | null) {
-  if (status === "PENDING") return "Pague usando o PIX desta tela. A confirmacao vem automaticamente pelo Mercado Pago.";
-  if (status === "PAID") return "Recebemos a confirmacao e estamos preparando a entrega.";
+  if (status === "PENDING") return "Pague usando o PIX desta tela. A confirmação vem automaticamente pelo Mercado Pago.";
+  if (status === "PAID") return "Recebemos a confirmação e estamos preparando a entrega.";
   if (status === "DELIVERY_PENDING") return "A entrega foi colocada em processamento. Esta tela atualiza sozinha.";
-  if (status === "DELIVERED") return "O pedido foi concluido. Revele e copie as credenciais abaixo quando precisar.";
-  if (status === "DELIVERY_FAILED") return failureReason || "A entrega nao foi concluida automaticamente e precisa de acao operacional.";
-  if (status === "PAYMENT_REVIEW") return failureReason || "O pagamento chegou depois da expiracao. O suporte precisa decidir entre nova entrega manual ou reembolso.";
-  if (status === "CANCELED") return "Este pedido nao esta mais valido. Nao pague um PIX vencido ou cancelado.";
+  if (status === "DELIVERED") return "O pedido foi concluído. Revele e copie as credenciais abaixo quando precisar.";
+  if (status === "DELIVERY_FAILED") return failureReason || "A entrega não foi concluída automaticamente e precisa de ação operacional.";
+  if (status === "PAYMENT_REVIEW") return failureReason || "O pagamento chegou depois da expiração. O suporte precisa decidir entre nova entrega manual ou reembolso.";
+  if (status === "CANCELED") return "Este pedido não está mais válido. Não pague um PIX vencido ou cancelado.";
   return "Acompanhe o estado do pedido por aqui.";
 }
 
@@ -435,7 +435,7 @@ function credentialDisplayValue(
   revealedCredentials: Set<string>,
   field: "login" | "password"
 ) {
-  if (!credential.secretAvailable) return "indisponivel";
+  if (!credential.secretAvailable) return "indisponível";
   if (revealedCredentials.has(credential.orderItemId) && secret) {
     return secret[field];
   }
@@ -467,7 +467,7 @@ async function copyPix(
     setError("");
     markCopied("pix", setCopiedAction);
   } catch {
-    setError("Nao foi possivel copiar o PIX automaticamente.");
+    setError("Não foi possível copiar o PIX automaticamente.");
   }
 }
 

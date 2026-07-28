@@ -2777,7 +2777,7 @@ select:focus-visible {
 .pix-card-v2 code {
   display: block;
   white-space: pre-wrap;
-  word-break: break-word;
+  word-break: break-all;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
