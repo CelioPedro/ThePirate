@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.thepiratemax.backend.TestCatalogFactory;
+import com.thepiratemax.backend.api.admin.ResolvePaymentReviewRequest;
 import com.thepiratemax.backend.api.order.OrderStatusResponse;
 import com.thepiratemax.backend.domain.credential.CredentialEntity;
 import com.thepiratemax.backend.domain.credential.CredentialStatus;
@@ -19,6 +21,7 @@ import com.thepiratemax.backend.domain.product.ProductProvider;
 import com.thepiratemax.backend.domain.product.ProductStatus;
 import com.thepiratemax.backend.domain.user.UserEntity;
 import com.thepiratemax.backend.domain.user.UserStatus;
+import com.thepiratemax.backend.repository.CatalogCategoryRepository;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.CredentialViewRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
@@ -46,6 +49,9 @@ class AdminOrderOperationsServiceTest {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private CatalogCategoryRepository catalogCategoryRepository;
 
     @Autowired
     private CredentialRepository credentialRepository;
@@ -87,6 +93,7 @@ class AdminOrderOperationsServiceTest {
         product.setName("Admin Product");
         product.setDescription("Product for admin delivery reprocessing");
         product.setCategory(ProductCategory.STREAMING);
+        product.setCatalogCategory(TestCatalogFactory.catalogCategory(catalogCategoryRepository, ProductCategory.STREAMING));
         product.setProvider(ProductProvider.NETFLIX);
         product.setStatus(ProductStatus.ACTIVE);
         product.setPriceCents(1590L);
@@ -165,6 +172,53 @@ class AdminOrderOperationsServiceTest {
         assertEquals("ORDER_RESERVATION_NOT_RELEASABLE", exception.code());
     }
 
+    @Test
+    void deliversPaymentReviewOrderAfterManualApproval() {
+        CredentialEntity credential = createAvailableCredential();
+        OrderEntity order = createOrder(OrderStatus.PAYMENT_REVIEW);
+        order.setFailureReason("APPROVED_AFTER_EXPIRATION");
+        orderRepository.save(order);
+        createOrderItem(order, credential);
+
+        OrderStatusResponse response = adminOrderOperationsService.resolvePaymentReview(
+                order.getId(),
+                new ResolvePaymentReviewRequest("DELIVER", "Manual review confirmed payment")
+        );
+
+        OrderEntity refreshedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        CredentialEntity refreshedCredential = credentialRepository.findById(credential.getId()).orElseThrow();
+
+        assertEquals("DELIVERED", response.status());
+        assertNull(response.failureReason());
+        assertEquals(OrderStatus.DELIVERED, refreshedOrder.getStatus());
+        assertNotNull(refreshedOrder.getDeliveredAt());
+        assertEquals(CredentialStatus.DELIVERED, refreshedCredential.getStatus());
+        assertNotNull(refreshedCredential.getDeliveredAt());
+    }
+
+    @Test
+    void refundsPaymentReviewOrderAfterManualRejection() {
+        CredentialEntity credential = createReservedCredential();
+        OrderEntity order = createOrder(OrderStatus.PAYMENT_REVIEW);
+        order.setFailureReason("APPROVED_AFTER_EXPIRATION");
+        orderRepository.save(order);
+        createOrderItem(order, credential);
+
+        OrderStatusResponse response = adminOrderOperationsService.resolvePaymentReview(
+                order.getId(),
+                new ResolvePaymentReviewRequest("REFUND", "Payment was approved after reservation expiration")
+        );
+
+        OrderEntity refreshedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        CredentialEntity refreshedCredential = credentialRepository.findById(credential.getId()).orElseThrow();
+
+        assertEquals("REFUNDED", response.status());
+        assertEquals("Payment was approved after reservation expiration", response.failureReason());
+        assertEquals(OrderStatus.REFUNDED, refreshedOrder.getStatus());
+        assertEquals(CredentialStatus.AVAILABLE, refreshedCredential.getStatus());
+        assertNull(refreshedCredential.getReservedAt());
+    }
+
     private CredentialEntity createReservedCredential() {
         CredentialEntity credential = new CredentialEntity();
         credential.setProduct(product);
@@ -174,6 +228,17 @@ class AdminOrderOperationsServiceTest {
         credential.setStatus(CredentialStatus.RESERVED);
         credential.setSourceBatch("admin-batch");
         credential.setReservedAt(OffsetDateTime.now().minusMinutes(5));
+        return credentialRepository.save(credential);
+    }
+
+    private CredentialEntity createAvailableCredential() {
+        CredentialEntity credential = new CredentialEntity();
+        credential.setProduct(product);
+        credential.setLoginEncrypted("available-login");
+        credential.setPasswordEncrypted("available-pass");
+        credential.setEncryptionKeyVersion("test-v1");
+        credential.setStatus(CredentialStatus.AVAILABLE);
+        credential.setSourceBatch("admin-batch");
         return credentialRepository.save(credential);
     }
 

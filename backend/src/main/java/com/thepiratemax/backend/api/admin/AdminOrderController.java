@@ -9,8 +9,10 @@ import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin/orders")
@@ -35,6 +37,14 @@ public class AdminOrderController {
     @PostMapping("/{orderId}/release-reservation")
     public OrderStatusResponse releaseReservation(@PathVariable UUID orderId) {
         return adminOrderOperationsService.releaseReservation(orderId);
+    }
+
+    @PostMapping("/{orderId}/resolve-payment-review")
+    public OrderStatusResponse resolvePaymentReview(
+            @PathVariable UUID orderId,
+            @Valid @RequestBody ResolvePaymentReviewRequest request
+    ) {
+        return adminOrderOperationsService.resolvePaymentReview(orderId, request);
     }
 
     @GetMapping("/{orderId}/diagnostics")

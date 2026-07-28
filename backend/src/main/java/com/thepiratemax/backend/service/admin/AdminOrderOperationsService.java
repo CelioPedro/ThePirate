@@ -2,20 +2,25 @@ package com.thepiratemax.backend.service.admin;
 
 import com.thepiratemax.backend.api.admin.AdminOrderDiagnosticsResponse;
 import com.thepiratemax.backend.api.admin.AdminOrderSummaryResponse;
+import com.thepiratemax.backend.api.admin.ResolvePaymentReviewRequest;
 import com.thepiratemax.backend.api.order.OrderStatusResponse;
+import com.thepiratemax.backend.domain.audit.AdminOrderActionLogEntity;
 import com.thepiratemax.backend.domain.credential.CredentialEntity;
 import com.thepiratemax.backend.domain.credential.CredentialStatus;
 import com.thepiratemax.backend.domain.order.OrderEntity;
 import com.thepiratemax.backend.domain.order.OrderItemEntity;
 import com.thepiratemax.backend.domain.order.OrderStatus;
 import com.thepiratemax.backend.domain.payment.PaymentEntity;
+import com.thepiratemax.backend.repository.AdminOrderActionLogRepository;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
 import com.thepiratemax.backend.repository.OrderRepository;
 import com.thepiratemax.backend.repository.PaymentRepository;
 import com.thepiratemax.backend.service.delivery.OrderDeliveryService;
+import com.thepiratemax.backend.service.auth.CurrentUserProvider;
 import com.thepiratemax.backend.service.exception.ConflictException;
 import com.thepiratemax.backend.service.exception.NotFoundException;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -45,19 +50,25 @@ public class AdminOrderOperationsService {
     private final CredentialRepository credentialRepository;
     private final PaymentRepository paymentRepository;
     private final OrderDeliveryService orderDeliveryService;
+    private final CurrentUserProvider currentUserProvider;
+    private final AdminOrderActionLogRepository adminOrderActionLogRepository;
 
     public AdminOrderOperationsService(
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
             CredentialRepository credentialRepository,
             PaymentRepository paymentRepository,
-            OrderDeliveryService orderDeliveryService
+            OrderDeliveryService orderDeliveryService,
+            CurrentUserProvider currentUserProvider,
+            AdminOrderActionLogRepository adminOrderActionLogRepository
     ) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.credentialRepository = credentialRepository;
         this.paymentRepository = paymentRepository;
         this.orderDeliveryService = orderDeliveryService;
+        this.currentUserProvider = currentUserProvider;
+        this.adminOrderActionLogRepository = adminOrderActionLogRepository;
     }
 
     @Transactional(readOnly = true)
@@ -107,7 +118,9 @@ public class AdminOrderOperationsService {
             );
         }
 
+        OrderStatus previousStatus = order.getStatus();
         orderDeliveryService.processOrder(order);
+        registerAdminOrderAction(order, previousStatus.name(), order.getStatus().name(), "REPROCESS_DELIVERY", "Manual delivery reprocess requested");
         logger.info("event=admin_reprocess_delivery orderId={} externalReference={} newStatus={} failureReason={}",
                 order.getId(), order.getExternalReference(), order.getStatus().name(), order.getFailureReason());
 
@@ -132,6 +145,7 @@ public class AdminOrderOperationsService {
             );
         }
 
+        OrderStatus previousStatus = order.getStatus();
         List<OrderItemEntity> items = orderItemRepository.findAllByOrderIdOrderByCreatedAtAsc(orderId);
         for (OrderItemEntity item : items) {
             CredentialEntity credential = item.getCredential();
@@ -144,6 +158,7 @@ public class AdminOrderOperationsService {
 
         order.setFailureReason(null);
         orderRepository.save(order);
+        registerAdminOrderAction(order, previousStatus.name(), order.getStatus().name(), "RELEASE_RESERVATION", "Manual reservation release requested");
         logger.info("event=admin_release_reservation orderId={} externalReference={} itemCount={}",
                 order.getId(), order.getExternalReference(), items.size());
 
@@ -154,6 +169,48 @@ public class AdminOrderOperationsService {
                 order.getPaidAt(),
                 order.getDeliveredAt()
         );
+    }
+
+    @Transactional
+    public OrderStatusResponse resolvePaymentReview(UUID orderId, ResolvePaymentReviewRequest request) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("ORDER_NOT_FOUND", "Order not found: " + orderId));
+
+        if (order.getStatus() != OrderStatus.PAYMENT_REVIEW) {
+            throw new ConflictException(
+                    "ORDER_NOT_IN_PAYMENT_REVIEW",
+                    "Order cannot be resolved as payment review from status: " + order.getStatus().name()
+            );
+        }
+
+        OrderStatus previousStatus = order.getStatus();
+        String action = request.action().trim().toUpperCase();
+        String reason = request.reason().trim();
+
+        if ("REFUND".equals(action)) {
+            order.setStatus(OrderStatus.REFUNDED);
+            order.setFailureReason(reason);
+            releaseReservedCredentials(orderId);
+            orderRepository.save(order);
+            registerAdminOrderAction(order, previousStatus.name(), order.getStatus().name(), "PAYMENT_REVIEW_REFUND", reason);
+            logger.info("event=admin_payment_review_refunded orderId={} externalReference={} reason={}",
+                    order.getId(), order.getExternalReference(), reason);
+            return toStatusResponse(order);
+        }
+
+        if ("DELIVER".equals(action)) {
+            reserveCredentialsForReviewedOrder(orderId);
+            order.setStatus(OrderStatus.PAID);
+            order.setFailureReason(null);
+            orderRepository.save(order);
+            orderDeliveryService.processOrder(order);
+            registerAdminOrderAction(order, previousStatus.name(), order.getStatus().name(), "PAYMENT_REVIEW_DELIVER", reason);
+            logger.info("event=admin_payment_review_delivered orderId={} externalReference={} newStatus={} reason={}",
+                    order.getId(), order.getExternalReference(), order.getStatus().name(), reason);
+            return toStatusResponse(order);
+        }
+
+        throw new ConflictException("PAYMENT_REVIEW_ACTION_INVALID", "Payment review action is invalid");
     }
 
     @Transactional(readOnly = true)
@@ -206,6 +263,84 @@ public class AdminOrderOperationsService {
                             );
                         })
                         .toList()
+        );
+    }
+
+    private void reserveCredentialsForReviewedOrder(UUID orderId) {
+        List<OrderItemEntity> items = orderItemRepository.findAllByOrderIdOrderByCreatedAtAsc(orderId);
+        for (OrderItemEntity item : items) {
+            CredentialEntity credential = item.getCredential();
+            if (credential != null && credential.getStatus() == CredentialStatus.DELIVERED) {
+                continue;
+            }
+
+            if (credential != null && credential.getStatus() == CredentialStatus.AVAILABLE) {
+                credential.setStatus(CredentialStatus.RESERVED);
+                credential.setReservedAt(OffsetDateTime.now());
+                credentialRepository.save(credential);
+                continue;
+            }
+
+            List<CredentialEntity> availableCredentials = credentialRepository.findByProduct_IdAndStatusOrderByCreatedAtAsc(
+                    item.getProduct().getId(),
+                    CredentialStatus.AVAILABLE,
+                    PageRequest.of(0, 1)
+            );
+            if (availableCredentials.isEmpty()) {
+                throw new ConflictException("PRODUCT_OUT_OF_STOCK", "No available credential for product: " + item.getProduct().getSku());
+            }
+
+            CredentialEntity replacement = availableCredentials.getFirst();
+            replacement.setStatus(CredentialStatus.RESERVED);
+            replacement.setReservedAt(OffsetDateTime.now());
+            credentialRepository.save(replacement);
+            item.setCredential(replacement);
+        }
+    }
+
+    private void releaseReservedCredentials(UUID orderId) {
+        List<OrderItemEntity> items = orderItemRepository.findAllByOrderIdOrderByCreatedAtAsc(orderId);
+        for (OrderItemEntity item : items) {
+            CredentialEntity credential = item.getCredential();
+            if (credential != null && credential.getStatus() == CredentialStatus.RESERVED) {
+                credential.setStatus(CredentialStatus.AVAILABLE);
+                credential.setReservedAt(null);
+                credentialRepository.save(credential);
+            }
+        }
+    }
+
+    private void registerAdminOrderAction(
+            OrderEntity order,
+            String previousStatus,
+            String newStatus,
+            String action,
+            String reason
+    ) {
+        AdminOrderActionLogEntity actionLog = new AdminOrderActionLogEntity();
+        try {
+            actionLog.setAdminUser(currentUserProvider.getCurrentUser());
+        } catch (RuntimeException exception) {
+            logger.warn("event=admin_order_action_log_without_authenticated_admin orderId={} action={}",
+                    order.getId(), action);
+            actionLog.setAdminUser(order.getUser());
+        }
+        actionLog.setOrder(order);
+        actionLog.setAction(action);
+        actionLog.setReason(reason);
+        actionLog.setPreviousStatus(previousStatus);
+        actionLog.setNewStatus(newStatus);
+        actionLog.setCreatedByAdminAt(OffsetDateTime.now());
+        adminOrderActionLogRepository.save(actionLog);
+    }
+
+    private OrderStatusResponse toStatusResponse(OrderEntity order) {
+        return new OrderStatusResponse(
+                order.getId(),
+                order.getStatus().name(),
+                order.getFailureReason(),
+                order.getPaidAt(),
+                order.getDeliveredAt()
         );
     }
 }
