@@ -3,6 +3,7 @@ package com.thepiratemax.backend.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thepiratemax.backend.api.ApiError;
 import com.thepiratemax.backend.security.JwtAuthenticationFilter;
+import com.thepiratemax.backend.security.RateLimitFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,7 +24,12 @@ public class SecurityConfig {
 
     @Bean
     @ConditionalOnProperty(name = "app.auth.enabled", havingValue = "true")
-    SecurityFilterChain securedFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, ObjectMapper objectMapper)
+    SecurityFilterChain securedFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            RateLimitFilter rateLimitFilter,
+            ObjectMapper objectMapper
+    )
             throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
@@ -38,7 +44,11 @@ public class SecurityConfig {
                                 writeError(response, HttpServletResponse.SC_FORBIDDEN, objectMapper, "FORBIDDEN", "You do not have access to this resource"))
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/password-reset/request",
+                                "/api/auth/password-reset/confirm").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/webhooks/mercadopago").permitAll()
@@ -47,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/orders/**", "/api/auth/me").authenticated()
                         .anyRequest().permitAll()
                 )
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

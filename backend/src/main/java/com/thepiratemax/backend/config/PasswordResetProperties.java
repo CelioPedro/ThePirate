@@ -1,0 +1,10 @@
+package com.thepiratemax.backend.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "app.auth.password-reset")
+public record PasswordResetProperties(
+        long expirationMinutes,
+        boolean exposeTokenInResponse
+) {
+}

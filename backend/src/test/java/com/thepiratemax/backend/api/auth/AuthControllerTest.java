@@ -18,11 +18,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("security-test")
+@TestPropertySource(properties = "app.auth.password-reset.expose-token-in-response=true")
 class AuthControllerTest {
 
     @Autowired
@@ -131,6 +133,54 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token", notNullValue()))
                 .andExpect(jsonPath("$.user.email").value("login@thepiratemax.local"));
+    }
+
+    @Test
+    void resetsPasswordWithIssuedToken() throws Exception {
+        String email = "reset@thepiratemax.local";
+        registerAndReturnToken(email, "oldpass123", "Reset User");
+
+        String resetRequestPayload = """
+                {
+                  "email": "%s"
+                }
+                """.formatted(email);
+
+        String resetResponse = mockMvc.perform(post("/api/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(resetRequestPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resetToken", notNullValue()))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String resetToken = com.jayway.jsonpath.JsonPath.read(resetResponse, "$.resetToken");
+        String confirmPayload = """
+                {
+                  "token": "%s",
+                  "newPassword": "newpass123"
+                }
+                """.formatted(resetToken);
+
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(confirmPayload))
+                .andExpect(status().isNoContent());
+
+        String oldLoginPayload = """
+                {
+                  "email": "%s",
+                  "password": "oldpass123"
+                }
+                """.formatted(email);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(oldLoginPayload))
+                .andExpect(status().isUnauthorized());
+
+        loginAndReturnToken(email, "newpass123");
     }
 
     private String registerAndReturnToken(String email, String password, String name) throws Exception {
