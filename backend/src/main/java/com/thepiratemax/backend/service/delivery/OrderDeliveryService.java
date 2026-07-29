@@ -5,6 +5,7 @@ import com.thepiratemax.backend.domain.credential.CredentialStatus;
 import com.thepiratemax.backend.domain.order.OrderEntity;
 import com.thepiratemax.backend.domain.order.OrderItemEntity;
 import com.thepiratemax.backend.domain.order.OrderStatus;
+import com.thepiratemax.backend.domain.product.DeliveryType;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
 import com.thepiratemax.backend.repository.OrderRepository;
@@ -71,7 +72,15 @@ public class OrderDeliveryService {
 
         orderStateService.moveToDeliveryPending(order);
 
-        boolean missingCredential = items.stream().anyMatch(item -> item.getCredential() == null);
+        boolean allManual = items.stream().allMatch(item -> item.getProduct().getDeliveryType() == DeliveryType.MANUAL);
+        if (allManual) {
+            // Stay in pending, do nothing automatically. Admin will fulfill it.
+            return false;
+        }
+
+        boolean missingCredential = items.stream()
+                .filter(item -> item.getProduct().getDeliveryType() != DeliveryType.MANUAL)
+                .anyMatch(item -> item.getCredential() == null);
         if (missingCredential) {
             orderStateService.markDeliveryFailed(order, "MISSING_CREDENTIAL");
             orderRepository.save(order);
@@ -82,12 +91,16 @@ public class OrderDeliveryService {
 
         OffsetDateTime deliveredAt = OffsetDateTime.now();
         for (OrderItemEntity item : items) {
+            if (item.getProduct().getDeliveryType() == DeliveryType.MANUAL) {
+                continue;
+            }
+
             CredentialEntity credential = item.getCredential();
-            if (credential.getStatus() == CredentialStatus.INVALID) {
+            if (credential == null || credential.getStatus() == CredentialStatus.INVALID) {
                 orderStateService.markDeliveryFailed(order, "INVALID_CREDENTIAL");
                 orderRepository.save(order);
                 logger.warn("event=delivery_failed orderId={} externalReference={} credentialId={} reason={}",
-                        order.getId(), order.getExternalReference(), credential.getId(), order.getFailureReason());
+                        order.getId(), order.getExternalReference(), credential != null ? credential.getId() : "null", order.getFailureReason());
                 return false;
             }
 

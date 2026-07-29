@@ -11,6 +11,7 @@ import com.thepiratemax.backend.domain.payment.PaymentEntity;
 import com.thepiratemax.backend.domain.payment.PaymentProvider;
 import com.thepiratemax.backend.domain.product.ProductEntity;
 import com.thepiratemax.backend.domain.product.ProductStatus;
+import com.thepiratemax.backend.domain.product.DeliveryType;
 import com.thepiratemax.backend.domain.user.UserEntity;
 import com.thepiratemax.backend.repository.CredentialRepository;
 import com.thepiratemax.backend.repository.OrderItemRepository;
@@ -187,6 +188,10 @@ public class OrderCreationService {
     }
 
     private CredentialEntity reserveCredential(ProductEntity product) {
+        if (product.getDeliveryType() == DeliveryType.MANUAL || !product.isRequiresStock()) {
+            return null;
+        }
+
         List<CredentialEntity> availableCredentials = credentialRepository.findByProduct_IdAndStatusOrderByCreatedAtAsc(
                 product.getId(),
                 CredentialStatus.AVAILABLE,
