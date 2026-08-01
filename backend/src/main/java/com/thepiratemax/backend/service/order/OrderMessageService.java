@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -104,7 +106,7 @@ public class OrderMessageService {
                 message.getOrder().getId(),
                 message.getSenderRole().name(),
                 message.getContent(),
-                message.getCreatedAt()
+                message.getCreatedAt() != null ? OffsetDateTime.ofInstant(message.getCreatedAt(), ZoneOffset.UTC) : null
         );
     }
 }
