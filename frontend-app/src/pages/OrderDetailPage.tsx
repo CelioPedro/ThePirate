@@ -1,13 +1,13 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, CreditCard, Eye, EyeOff, PackageCheck, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, CreditCard, Eye, EyeOff, PackageCheck, RefreshCw, ShieldCheck, MessageCircle, Send } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { getProductImageFromText } from "../shared/catalog/catalogData";
 import { formatCurrency, formatDate, labelStatus, statusTone } from "../shared/lib/format";
 import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
 import { SafeImage } from "../shared/ui/SafeImage";
-import type { DeliveredCredential, DeliveredCredentialSecretResponse, DeliveredCredentialsResponse, OrderDetail } from "../shared/types";
+import type { DeliveredCredential, DeliveredCredentialSecretResponse, DeliveredCredentialsResponse, OrderDetail, OrderMessage } from "../shared/types";
 
 interface PixState {
   qrCode?: string | null;
@@ -29,6 +29,9 @@ export function OrderDetailPage() {
   const [revealedCredentials, setRevealedCredentials] = useState<Set<string>>(new Set());
   const [credentialSecrets, setCredentialSecrets] = useState<Record<string, DeliveredCredentialSecretResponse>>({});
   const [copiedAction, setCopiedAction] = useState<string | null>(null);
+  const [messages, setMessages] = useState<OrderMessage[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [pixState, setPixState] = useState<PixState>({
     qrCode: (location.state as { pixQrCode?: string | null } | null)?.pixQrCode,
     copyPaste: (location.state as { pixCopyPaste?: string } | null)?.pixCopyPaste,
@@ -62,6 +65,8 @@ export function OrderDetailPage() {
         setCredentialSecrets({});
         setRevealedCredentials(new Set());
       }
+      const msgs = await apiClient.getOrderMessages(orderId, apiBase, token);
+      setMessages(msgs);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Não foi possível atualizar o pedido.");
     } finally {
@@ -168,6 +173,21 @@ export function OrderDetailPage() {
       markCopied(`${credential.orderItemId}-${field}`, setCopiedAction);
     } catch {
       setError(`Não foi possível copiar ${field === "login" ? "o login" : "a senha"} automaticamente.`);
+    }
+  }
+
+  async function handleSendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newMessage.trim() || isSendingMessage) return;
+    setIsSendingMessage(true);
+    try {
+      const sent = await apiClient.sendOrderMessage(orderId, newMessage, apiBase, token);
+      setMessages((curr) => [...curr, sent]);
+      setNewMessage("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao enviar mensagem.");
+    } finally {
+      setIsSendingMessage(false);
     }
   }
 
@@ -369,6 +389,49 @@ export function OrderDetailPage() {
             <p>{deliveryHint(order?.status)}</p>
           </div>
         )}
+      </section>
+
+      <section className="panel-card panel-card-wide">
+        <div className="delivery-section-head">
+          <div className="payment-icon"><MessageCircle size={20} /></div>
+          <div>
+            <span className="eyebrow">suporte</span>
+            <h2>Problemas com o pedido?</h2>
+          </div>
+        </div>
+        
+        <div className="order-messages-container">
+          <div className="order-message system-message">
+            <div className="message-bubble">
+              <strong>ThePirateMax Support</strong>
+              <p>Olá! Se você teve algum problema com a entrega ou com a chave, descreva abaixo. Nossa equipe será notificada e responderá por aqui em breve.</p>
+            </div>
+          </div>
+          
+          {messages.map((msg) => (
+            <div key={msg.id} className={`order-message ${msg.senderRole === "USER" ? "user-message" : "admin-message"}`}>
+              <div className="message-bubble">
+                <strong>{msg.senderRole === "USER" ? "Você" : "Equipe ThePirateMax"}</strong>
+                <p>{msg.content}</p>
+                <span className="message-time">{formatDate(msg.createdAt)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <form onSubmit={handleSendMessage} className="order-message-form">
+          <input
+            type="text"
+            className="input-field"
+            placeholder="Digite sua mensagem..."
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            disabled={isSendingMessage}
+          />
+          <button type="submit" className="primary-button" disabled={!newMessage.trim() || isSendingMessage}>
+            <Send size={18} />
+          </button>
+        </form>
       </section>
     </div>
   );

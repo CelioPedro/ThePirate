@@ -2,6 +2,7 @@ package com.thepiratemax.backend.api.order;
 
 import com.thepiratemax.backend.service.order.OrderCreationService;
 import com.thepiratemax.backend.service.order.OrderQueryService;
+import com.thepiratemax.backend.service.order.OrderMessageService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -20,10 +21,12 @@ public class OrderController {
 
     private final OrderCreationService orderCreationService;
     private final OrderQueryService orderQueryService;
+    private final OrderMessageService orderMessageService;
 
-    public OrderController(OrderCreationService orderCreationService, OrderQueryService orderQueryService) {
+    public OrderController(OrderCreationService orderCreationService, OrderQueryService orderQueryService, OrderMessageService orderMessageService) {
         this.orderCreationService = orderCreationService;
         this.orderQueryService = orderQueryService;
+        this.orderMessageService = orderMessageService;
     }
 
     @PostMapping
@@ -55,5 +58,16 @@ public class OrderController {
     @PostMapping("/{orderId}/credentials/{orderItemId}/secret")
     public OrderCredentialSecretResponse revealOrderCredential(@PathVariable UUID orderId, @PathVariable UUID orderItemId) {
         return orderQueryService.revealOrderCredential(orderId, orderItemId);
+    }
+
+    @GetMapping("/{orderId}/messages")
+    public List<OrderMessageResponse> getOrderMessages(@PathVariable UUID orderId) {
+        return orderMessageService.getMessagesForUser(orderId);
+    }
+
+    @PostMapping("/{orderId}/messages")
+    @ResponseStatus(HttpStatus.CREATED)
+    public OrderMessageResponse sendOrderMessage(@PathVariable UUID orderId, @Valid @RequestBody CreateOrderMessageRequest request) {
+        return orderMessageService.sendMessageAsUser(orderId, request);
     }
 }

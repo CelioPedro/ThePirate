@@ -5,7 +5,8 @@ import { formatCurrency, formatDate, humanizeCategory, labelStatus, statusTone }
 import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
 import { SafeImage } from "../shared/ui/SafeImage";
-import type { AdminCredentialResponse, AdminOrderDiagnostics, AdminOrderSummary, AdminProduct, CatalogCategory, InventoryItem, Product } from "../shared/types";
+import type { AdminCredentialResponse, AdminOrderDiagnostics, AdminOrderSummary, AdminProduct, CatalogCategory, InventoryItem, Product, OrderMessage } from "../shared/types";
+import { Send } from "lucide-react";
 
 const EMPTY_CREDENTIAL_FORM = {
   productId: "",
@@ -69,6 +70,11 @@ export function AdminDashboardPage() {
   const [stockMessage, setStockMessage] = useState("");
   const [productMessage, setProductMessage] = useState("");
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>("products");
+  
+  // Chat / Support states
+  const [adminMessages, setAdminMessages] = useState<OrderMessage[]>([]);
+  const [adminNewMessage, setAdminNewMessage] = useState("");
+  const [isAdminSendingMessage, setIsAdminSendingMessage] = useState(false);
 
   useEffect(() => {
     void loadDashboard();
@@ -83,10 +89,36 @@ export function AdminDashboardPage() {
   useEffect(() => {
     if (!selectedOrderId) {
       setDiagnostics(null);
+      setAdminMessages([]);
       return;
     }
     void loadDiagnostics(selectedOrderId);
+    void loadAdminMessages(selectedOrderId);
   }, [selectedOrderId]);
+
+  async function loadAdminMessages(orderId: string) {
+    try {
+      const msgs = await apiClient.admin.getOrderMessages(orderId, apiBase, token);
+      setAdminMessages(msgs);
+    } catch {
+      setAdminMessages([]);
+    }
+  }
+
+  async function handleSendAdminMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedOrderId || !adminNewMessage.trim() || isAdminSendingMessage) return;
+    setIsAdminSendingMessage(true);
+    try {
+      const sent = await apiClient.admin.sendOrderMessage(selectedOrderId, adminNewMessage, apiBase, token);
+      setAdminMessages((curr) => [...curr, sent]);
+      setAdminNewMessage("");
+    } catch (err) {
+      setDiagnosticsMessage(err instanceof Error ? err.message : "Erro ao enviar mensagem.");
+    } finally {
+      setIsAdminSendingMessage(false);
+    }
+  }
 
   async function loadDashboard() {
     setIsLoading(true);
@@ -170,10 +202,10 @@ export function AdminDashboardPage() {
     setDiagnosticsMessage("");
     try {
       if (action === "reprocess") {
-        await apiClient.reprocessAdminOrderDelivery(orderId, apiBase, token);
+        await apiClient.admin.reprocessDelivery(orderId, apiBase, token);
         setDiagnosticsMessage("Reprocessamento solicitado com sucesso.");
       } else {
-        await apiClient.releaseAdminOrderReservation(orderId, apiBase, token);
+        await apiClient.admin.releaseReservation(orderId, apiBase, token);
         setDiagnosticsMessage("Reserva liberada com sucesso.");
       }
       setSelectedOrderId(orderId);
@@ -719,6 +751,43 @@ export function AdminDashboardPage() {
                   </article>
                 ))}
               </div>
+
+              <div className="order-messages-container" style={{ marginTop: "24px" }}>
+                <div className="admin-section-head">
+                  <span className="eyebrow">suporte</span>
+                  <h3>Mensagens do pedido</h3>
+                </div>
+                {adminMessages.length === 0 ? (
+                  <div className="empty-state-panel">
+                    <p>Nenhuma mensagem neste pedido.</p>
+                  </div>
+                ) : (
+                  adminMessages.map((msg) => (
+                    <div key={msg.id} className={`order-message ${msg.senderRole === "USER" ? "user-message" : "admin-message"}`}>
+                      <div className="message-bubble">
+                        <strong>{msg.senderRole === "USER" ? "Cliente" : msg.senderRole === "SYSTEM" ? "Sistema" : "Voce"}</strong>
+                        <p>{msg.content}</p>
+                        <span className="message-time">{formatDate(msg.createdAt)}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+                
+                <form onSubmit={handleSendAdminMessage} className="order-message-form">
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="Responder cliente..."
+                    value={adminNewMessage}
+                    onChange={(e) => setAdminNewMessage(e.target.value)}
+                    disabled={isAdminSendingMessage}
+                  />
+                  <button type="submit" className="primary-button" disabled={!adminNewMessage.trim() || isAdminSendingMessage}>
+                    <Send size={18} />
+                  </button>
+                </form>
+              </div>
+
             </div>
           ) : (
             <div className="empty-state-panel">

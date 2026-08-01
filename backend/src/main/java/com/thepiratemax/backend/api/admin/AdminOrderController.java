@@ -2,8 +2,14 @@ package com.thepiratemax.backend.api.admin;
 
 import com.thepiratemax.backend.api.admin.AdminOrderDiagnosticsResponse;
 import com.thepiratemax.backend.api.admin.AdminOrderSummaryResponse;
+import com.thepiratemax.backend.api.admin.ResolvePaymentReviewRequest;
 import com.thepiratemax.backend.api.order.OrderStatusResponse;
+import com.thepiratemax.backend.api.order.OrderMessageResponse;
+import com.thepiratemax.backend.api.order.CreateOrderMessageRequest;
 import com.thepiratemax.backend.service.admin.AdminOrderOperationsService;
+import com.thepiratemax.backend.service.order.OrderMessageService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +25,11 @@ import jakarta.validation.Valid;
 public class AdminOrderController {
 
     private final AdminOrderOperationsService adminOrderOperationsService;
+    private final OrderMessageService orderMessageService;
 
-    public AdminOrderController(AdminOrderOperationsService adminOrderOperationsService) {
+    public AdminOrderController(AdminOrderOperationsService adminOrderOperationsService, OrderMessageService orderMessageService) {
         this.adminOrderOperationsService = adminOrderOperationsService;
+        this.orderMessageService = orderMessageService;
     }
 
     @GetMapping
@@ -50,5 +58,16 @@ public class AdminOrderController {
     @GetMapping("/{orderId}/diagnostics")
     public AdminOrderDiagnosticsResponse getDiagnostics(@PathVariable UUID orderId) {
         return adminOrderOperationsService.getDiagnostics(orderId);
+    }
+
+    @GetMapping("/{orderId}/messages")
+    public List<OrderMessageResponse> getOrderMessages(@PathVariable UUID orderId) {
+        return orderMessageService.getMessagesForAdmin(orderId);
+    }
+
+    @PostMapping("/{orderId}/messages")
+    @ResponseStatus(HttpStatus.CREATED)
+    public OrderMessageResponse sendOrderMessage(@PathVariable UUID orderId, @Valid @RequestBody CreateOrderMessageRequest request) {
+        return orderMessageService.sendMessageAsAdmin(orderId, request);
     }
 }

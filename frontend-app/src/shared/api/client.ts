@@ -14,7 +14,8 @@ import type {
   OrderDetail,
   OrderStatusResponse,
   OrderSummary,
-  Product
+  Product,
+  OrderMessage
 } from "../types";
 
 const API_BASE_KEY = "tpm-app-api-base";
@@ -134,6 +135,18 @@ export const apiClient = {
       method: "POST"
     });
   },
+  getOrderMessages(orderId: string, apiBase?: string, token?: string | null) {
+    return request<OrderMessage[]>(`/api/orders/${orderId}/messages`, { apiBase, token });
+  },
+  sendOrderMessage(orderId: string, content: string, apiBase?: string, token?: string | null) {
+    return request<OrderMessage>(`/api/orders/${orderId}/messages`, {
+      apiBase,
+      token,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content })
+    });
+  },
   createOrder(payload: { items: { productId: string; quantity: number }[]; paymentMethod: "PIX"; idempotencyKey?: string }, apiBase?: string, token?: string | null) {
     return request<CreateOrderResponse>("/api/orders", {
       apiBase,
@@ -233,19 +246,33 @@ export const apiClient = {
       body: JSON.stringify(payload)
     });
   },
-  reprocessAdminOrderDelivery(orderId: string, apiBase?: string, token?: string | null) {
-    return request<OrderStatusResponse>(`/api/admin/orders/${orderId}/reprocess-delivery`, {
-      apiBase,
-      token,
-      method: "POST"
-    });
-  },
-  releaseAdminOrderReservation(orderId: string, apiBase?: string, token?: string | null) {
-    return request<OrderStatusResponse>(`/api/admin/orders/${orderId}/release-reservation`, {
-      apiBase,
-      token,
-      method: "POST"
-    });
+  admin: {
+    reprocessDelivery(orderId: string, apiBase?: string, token?: string | null) {
+      return request<OrderStatusResponse>(`/api/admin/orders/${orderId}/reprocess-delivery`, {
+        apiBase,
+        token,
+        method: "POST"
+      });
+    },
+    getOrderMessages(orderId: string, apiBase?: string, token?: string | null) {
+      return request<OrderMessage[]>(`/api/admin/orders/${orderId}/messages`, { apiBase, token });
+    },
+    sendOrderMessage(orderId: string, content: string, apiBase?: string, token?: string | null) {
+      return request<OrderMessage>(`/api/admin/orders/${orderId}/messages`, {
+        apiBase,
+        token,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content })
+      });
+    },
+    releaseReservation(orderId: string, apiBase?: string, token?: string | null) {
+      return request<OrderStatusResponse>(`/api/admin/orders/${orderId}/release-reservation`, {
+        apiBase,
+        token,
+        method: "POST"
+      });
+    }
   },
   invalidateAdminCredential(credentialId: string, reason: string, apiBase?: string, token?: string | null) {
     return request<AdminCredentialResponse>(`/api/admin/credentials/${credentialId}/invalidate`, {

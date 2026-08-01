@@ -58,6 +58,14 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+export interface OrderMessage {
+  id: string;
+  orderId: string;
+  senderRole: "USER" | "ADMIN" | "SYSTEM";
+  content: string;
+  createdAt: string;
+}
+
 export interface OrderItem {
   id: string;
   productId: string;
