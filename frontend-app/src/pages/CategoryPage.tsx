@@ -1,23 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
 import { apiClient } from "../shared/api/client";
-import { getCategoryImageUrl, getProductImageUrl, getProductSectionSlugs, FALLBACK_CATEGORIES } from "../shared/catalog/catalogData";
-import { formatCurrency } from "../shared/lib/format";
+import { getCategoryImageUrl, getProductSectionSlugs, FALLBACK_CATEGORIES } from "../shared/catalog/catalogData";
 import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
+import { useCart } from "../shared/cart/CartContext";
 import { SafeImage } from "../shared/ui/SafeImage";
+import { ProductCard } from "../shared/ui/ProductCard";
 import type { CatalogCategory, Product } from "../shared/types";
 
 export function CategoryPage() {
   const { slug = "" } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { apiBase } = useSession();
+  const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CatalogCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const search = searchParams.get("busca") || "";
+  const [recentlyAddedProductId, setRecentlyAddedProductId] = useState<string | null>(null);
+
+  function addProductToCart(product: Product) {
+    addItem(product);
+    setRecentlyAddedProductId(product.id);
+    window.setTimeout(() => setRecentlyAddedProductId((current) => current === product.id ? null : current), 1400);
+  }
 
   async function loadCategory() {
     setIsLoading(true);
@@ -44,11 +50,8 @@ export function CategoryPage() {
 
   const category = (categories.length > 0 ? categories : FALLBACK_CATEGORIES).find((item) => item.slug === slug);
   const filteredProducts = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return products
-      .filter((product) => getProductSectionSlugs(product).includes(slug))
-      .filter((product) => !term || `${product.name} ${product.description} ${product.provider}`.toLowerCase().includes(term));
-  }, [products, search, slug]);
+    return products.filter((product) => getProductSectionSlugs(product).includes(slug));
+  }, [products, slug]);
 
   useDocumentTitle(category?.name || "Categoria");
 
@@ -73,17 +76,6 @@ export function CategoryPage() {
         ) : null}
       </section>
 
-      <label className="catalog-search-field category-search">
-        <Search size={18} />
-        <input
-          className="toolbar-search"
-          value={search}
-          onChange={(event) => setSearchParams(event.target.value ? { busca: event.target.value } : {})}
-          placeholder="Buscar nesta categoria"
-          aria-label="Buscar nesta categoria"
-        />
-      </label>
-
       {isLoading ? (
         <CategorySkeletonGrid />
       ) : null}
@@ -102,18 +94,14 @@ export function CategoryPage() {
         </div>
       ) : null}
 
-      <section className="category-product-grid">
+      <section className="catalog-grid">
         {filteredProducts.map((product) => (
-          <Link key={product.id} to={`/produto/${product.slug}`} className="category-product-card">
-            <SafeImage
-              src={getProductImageUrl(product)}
-              alt=""
-              fallback={<span className="product-image-fallback small">{product.name.slice(0, 2).toUpperCase()}</span>}
-              loading="lazy"
-            />
-            <strong>{product.name}</strong>
-            <span>{formatCurrency(product.priceCents)}</span>
-          </Link>
+          <ProductCard
+            key={product.id}
+            product={product}
+            onAdd={addProductToCart}
+            isRecentlyAdded={recentlyAddedProductId === product.id}
+          />
         ))}
       </section>
     </div>

@@ -7,6 +7,7 @@ import { formatCategoryLabel, getProductImageUrl, getProductSectionSlugs } from 
 import { formatCurrency } from "../shared/lib/format";
 import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
+import { ProductCard } from "../shared/ui/ProductCard";
 import { SafeImage } from "../shared/ui/SafeImage";
 import type { InventoryItem, Product } from "../shared/types";
 
@@ -79,12 +80,19 @@ export function ProductDetailPage() {
   }
 
   const imageUrl = getProductImageUrl(product);
+  const [recentlyAddedRelatedId, setRecentlyAddedRelatedId] = useState<string | null>(null);
 
   function addProductToCart() {
     if (!product) return;
     addItem(product);
     setWasAdded(true);
     window.setTimeout(() => setWasAdded(false), 1400);
+  }
+
+  function addRelatedToCart(related: Product) {
+    addItem(related);
+    setRecentlyAddedRelatedId(related.id);
+    window.setTimeout(() => setRecentlyAddedRelatedId((current) => current === related.id ? null : current), 1400);
   }
 
   return (
@@ -171,18 +179,14 @@ export function ProductDetailPage() {
           <div className="section-heading">
             <h2>Relacionados</h2>
           </div>
-          <div className="related-product-grid">
+          <div className="catalog-grid">
             {relatedProducts.map((related) => (
-              <Link key={related.id} to={`/produto/${related.slug}`} className="related-product-card">
-                <SafeImage
-                  src={getProductImageUrl(related)}
-                  alt=""
-                  fallback={<span className="product-image-fallback small">{related.name.slice(0, 2).toUpperCase()}</span>}
-                  loading="lazy"
-                />
-                <strong>{related.name}</strong>
-                <span>{formatCurrency(related.priceCents)}</span>
-              </Link>
+              <ProductCard
+                key={related.id}
+                product={related}
+                onAdd={addRelatedToCart}
+                isRecentlyAdded={recentlyAddedRelatedId === related.id}
+              />
             ))}
           </div>
         </section>
