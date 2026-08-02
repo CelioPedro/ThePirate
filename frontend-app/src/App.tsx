@@ -10,6 +10,7 @@ import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { AdminDashboardPage } from "./pages/AdminDashboardPage";
 import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { CategoryPage } from "./pages/CategoryPage";
+import { TermsPage } from "./pages/TermsPage";
 import { useSession } from "./shared/session/SessionContext";
 
 export function App() {
@@ -25,6 +26,7 @@ export function App() {
         <Route path="/conta" element={<AccountPage />} />
         <Route path="/pedidos" element={<OrdersPage />} />
         <Route path="/pedidos/:orderId" element={<OrderDetailPage />} />
+        <Route path="/termos" element={<TermsPage />} />
       </Route>
       <Route path="/admin" element={<AdminRoute />}>
         <Route index element={<AdminDashboardPage />} />

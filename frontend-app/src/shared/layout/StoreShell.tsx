@@ -238,6 +238,22 @@ export function StoreShell() {
         <Outlet />
       </main>
 
+      {!isAuthRoute ? (
+        <footer style={{ marginTop: "auto", borderTop: "1px solid var(--border)", padding: "40px 20px", background: "#f8f9fa" }}>
+          <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
+            <div>
+              <strong style={{ fontSize: "16px", color: "#111" }}>ThePirateMax</strong>
+              <p style={{ color: "var(--muted)", fontSize: "14px", marginTop: "4px" }}>&copy; {new Date().getFullYear()} Todos os direitos reservados.</p>
+            </div>
+            <div style={{ display: "flex", gap: "24px" }}>
+              <Link to="/termos" style={{ color: "var(--accent)", fontSize: "14px", textDecoration: "none", fontWeight: 500 }}>
+                Termos e Políticas de Reembolso
+              </Link>
+            </div>
+          </div>
+        </footer>
+      ) : null}
+
       <CartDrawer />
     </div>
   );
