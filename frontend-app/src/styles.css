@@ -4517,21 +4517,22 @@ button.account-action-card {
     justify-content: center;
   }
 
+
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
   }
 
   .popular-category-rail {
-    grid-auto-columns: minmax(158px, 76vw);
+    grid-auto-columns: minmax(120px, 38vw);
   }
 
   .product-rail {
-    grid-auto-columns: minmax(246px, 82vw);
+    grid-auto-columns: minmax(140px, 45vw);
   }
 
   .rail-frame-default .rail-nav {
-    top: calc(max(246px, 82vw) / 3);
+    top: calc(max(140px, 45vw) / 3);
   }
 
   .rail-nav {
