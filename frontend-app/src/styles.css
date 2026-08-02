@@ -4524,15 +4524,50 @@ button.account-action-card {
   }
 
   .popular-category-rail {
-    grid-auto-columns: minmax(120px, 38vw);
+    grid-auto-columns: minmax(120px, 40vw);
   }
 
   .product-rail {
-    grid-auto-columns: minmax(140px, 45vw);
+    grid-auto-columns: minmax(130px, 45vw);
   }
 
   .rail-frame-default .rail-nav {
-    top: calc(max(140px, 45vw) / 3);
+    top: calc(max(130px, 45vw) / 3);
+  }
+
+  /* Reduce fonts and paddings for rail cards on mobile */
+  .rail-product-card .product-body {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .rail-product-card .product-body h3 {
+    font-size: 13.5px;
+    line-height: 1.2;
+  }
+
+  .rail-product-card .product-body p {
+    font-size: 11px;
+    min-height: 2.4em;
+    margin-bottom: 2px;
+  }
+
+  .rail-product-card .product-price strong {
+    font-size: 17px;
+  }
+
+  .rail-product-card .product-price span {
+    font-size: 11px;
+  }
+
+  .rail-product-card .product-card-meta {
+    font-size: 10.5px;
+  }
+
+  .rail-product-card .product-add-button {
+    font-size: 11px;
+    min-height: 28px;
+    padding: 0 10px;
   }
 
   .rail-nav {
