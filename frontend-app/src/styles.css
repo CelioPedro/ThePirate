@@ -4675,8 +4675,37 @@ button.account-action-card {
 
   .catalog-grid,
   .credentials-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .catalog-grid .product-body {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .catalog-grid .product-body h3 {
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  .catalog-grid .product-body p {
+    font-size: 11px;
+    -webkit-line-clamp: 2;
+  }
+
+  .catalog-grid .product-price strong {
+    font-size: 16px;
+  }
+
+  .catalog-grid .product-price span {
+    font-size: 11px;
+  }
+
+  .catalog-grid .product-add-button {
+    font-size: 11px;
+    min-height: 28px;
+    padding: 0 8px;
   }
 
   .admin-shell {
