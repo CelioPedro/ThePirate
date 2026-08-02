@@ -4467,7 +4467,10 @@ button.account-action-card {
 
   .brand-mark {
     justify-self: start;
-    margin-left: 12px;
+  }
+
+  .header-logo-slot {
+    margin-left: 12px; /* Push logo slightly to the right */
   }
 
   .topbar-search {
