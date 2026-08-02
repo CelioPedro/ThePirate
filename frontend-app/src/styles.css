@@ -1471,9 +1471,9 @@ select:focus-visible {
   font-weight: 700;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   overflow: hidden;
-  min-height: 2.36em;
+  min-height: 1.18em;
 }
 
 .rail-product-card .product-body h3 a:hover {
@@ -4552,9 +4552,9 @@ button.account-action-card {
     line-height: 1.2;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     overflow: hidden;
-    min-height: 2.4em;
+    min-height: 1.2em;
   }
 
   .rail-product-card .product-body p {
