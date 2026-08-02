@@ -4467,6 +4467,7 @@ button.account-action-card {
 
   .brand-mark {
     justify-self: start;
+    margin-left: 12px;
   }
 
   .topbar-search {
