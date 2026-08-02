@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { formatCategoryChip, formatDuration, getProductImageFallbackUrl, getProductImageUrl } from "../catalog/catalogData";
-import { formatPriceParts } from "../lib/format";
+import { getProductImageFallbackUrl, getProductImageUrl } from "../catalog/catalogData";
+import { formatCurrency, humanizeCategory } from "../lib/format";
 import type { Product } from "../types";
 
 export function ProductCard({
@@ -56,6 +56,36 @@ export function ProductCard({
       </div>
     </article>
   );
+}
+
+function formatPriceParts(priceCents: number) {
+  const formatted = formatCurrency(priceCents).replace(/\s/g, " ");
+  const [currency, ...amountParts] = formatted.split(" ");
+  return {
+    currency: currency || "R$",
+    amount: amountParts.join(" ") || formatted.replace(/^R\$\s?/, "")
+  };
+}
+
+function formatCategoryChip(product: Product) {
+  const label = product.categoryName || humanizeCategory(product.categorySlug || product.category);
+  const map: Record<string, string> = {
+    "Inteligencia Artificial": "IA",
+    "Inteligência Artificial": "IA",
+    "Assinaturas e Premium": "Premium",
+    "Softwares e Licencas": "Software",
+    "Softwares e Licenças": "Software",
+    "Redes Sociais": "Social",
+    "Servicos Digitais": "Digital",
+    "Serviços Digitais": "Digital",
+    "Cursos e Treinamentos": "Curso",
+    "Contas Digitais": "Conta"
+  };
+  return map[label] || label;
+}
+
+function formatDuration(durationDays: number) {
+  return durationDays === 0 ? "Vitalício" : `${durationDays} dias`;
 }
 
 function ProductImageFallback({ product }: { product: Product }) {
