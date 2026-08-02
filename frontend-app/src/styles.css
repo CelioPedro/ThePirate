@@ -1458,6 +1458,7 @@ select:focus-visible {
 
 .product-body h3,
 .panel-card h2,
+
 .sidepanel-card h3 {
   margin: 0;
   font-size: 22px;
@@ -1468,6 +1469,11 @@ select:focus-visible {
   line-height: 1.18;
   letter-spacing: 0;
   font-weight: 700;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.36em;
 }
 
 .rail-product-card .product-body h3 a:hover {
@@ -4544,6 +4550,11 @@ button.account-action-card {
   .rail-product-card .product-body h3 {
     font-size: 13.5px;
     line-height: 1.2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    min-height: 2.4em;
   }
 
   .rail-product-card .product-body p {
