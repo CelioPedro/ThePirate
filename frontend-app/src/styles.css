@@ -4470,7 +4470,7 @@ button.account-action-card {
   }
 
   .header-logo-slot {
-    margin-left: 30px; /* Push logo slightly to the right */
+    margin-left: 100px; /* Push logo slightly to the right */
   }
 
   .topbar-search {
