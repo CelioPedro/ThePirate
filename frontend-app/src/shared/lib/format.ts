@@ -13,7 +13,8 @@ export function formatDate(value?: string | null) {
   }).format(new Date(value));
 }
 
-export function humanizeCategory(category: string) {
+export function humanizeCategory(category?: string | null) {
+  if (!category) return "Produto";
   const map: Record<string, string> = {
     STREAMING: "Streaming",
     ASSINATURA: "Assinaturas",

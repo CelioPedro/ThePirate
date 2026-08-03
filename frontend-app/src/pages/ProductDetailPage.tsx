@@ -214,7 +214,7 @@ function ProductDetailSkeleton() {
   );
 }
 
-function ProductImageFallback({ name }: { name: string }) {
+function ProductImageFallback({ name = "PR" }: { name?: string }) {
   return (
     <div className="product-image-fallback" aria-label={name}>
       <span>{name.slice(0, 2).toUpperCase()}</span>

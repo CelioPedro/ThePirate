@@ -17,7 +17,7 @@ export function ProductCard({
 
   return (
     <article className="product-card rail-product-card">
-      <div className={`product-visual product-visual-${(product.categorySlug || product.category).toLowerCase()}`}>
+      <div className={`product-visual product-visual-${(product.categorySlug || product.category || "outros").toLowerCase()}`}>
         <Link to={`/produto/${product.slug}`} className="product-visual-link" aria-label={`Ver ${product.name}`}>
         {imageUrl ? (
           <img
@@ -89,7 +89,7 @@ function formatDuration(durationDays: number) {
 }
 
 function ProductImageFallback({ product }: { product: Product }) {
-  const label = formatCategoryChip(product);
+  const label = formatCategoryChip(product) || "PR";
   return (
     <span className="product-image-fallback" aria-hidden="true">
       <span>{label.slice(0, 2).toUpperCase()}</span>

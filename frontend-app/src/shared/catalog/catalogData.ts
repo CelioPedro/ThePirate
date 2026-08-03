@@ -156,7 +156,8 @@ export function getProductSectionSlugs(product: Product) {
   return Array.from(slugs);
 }
 
-export function legacyCategorySlug(category: string) {
+export function legacyCategorySlug(category?: string | null) {
+  if (!category) return "outros";
   const map: Record<string, string> = {
     ASSINATURA: "assinaturas-premium",
     STREAMING: "streaming",
