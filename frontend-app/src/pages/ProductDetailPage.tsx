@@ -58,6 +58,7 @@ function ProductDetailPageInner() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [wasAdded, setWasAdded] = useState(false);
+  const [recentlyAddedRelatedId, setRecentlyAddedRelatedId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -118,7 +119,6 @@ function ProductDetailPageInner() {
   }
 
   const imageUrl = getProductImageUrl(product);
-  const [recentlyAddedRelatedId, setRecentlyAddedRelatedId] = useState<string | null>(null);
 
   function addProductToCart() {
     if (!product) return;
