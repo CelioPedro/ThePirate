@@ -47,8 +47,8 @@ export function AuthPage({ defaultMode }: { defaultMode: "login" | "register" })
   function handleSwitchMode(newMode: "login" | "register") {
     setMode(newMode);
     setError("");
-    // Update URL without full page reload so back button works correctly
-    navigate(newMode === "login" ? "/login" : "/cadastro", { replace: true, state: location.state });
+    // Use pushState to change URL without triggering React Router remount
+    window.history.pushState(location.state, "", newMode === "login" ? "/login" : "/cadastro");
   }
 
   return (

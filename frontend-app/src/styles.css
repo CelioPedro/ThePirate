@@ -3022,14 +3022,11 @@ select:focus-visible {
 }
 
 .auth-form-transition-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-areas: "content";
   position: relative;
+  width: 100%;
 }
 
 .auth-form-content {
-  grid-area: content;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -3037,6 +3034,7 @@ select:focus-visible {
 }
 
 .auth-form-content.active {
+  position: relative;
   opacity: 1;
   transform: translateX(0);
   pointer-events: auto;
@@ -3044,6 +3042,9 @@ select:focus-visible {
 }
 
 .auth-form-content.inactive-left {
+  position: absolute;
+  top: 0;
+  left: 0;
   opacity: 0;
   transform: translateX(-30px);
   pointer-events: none;
@@ -3051,6 +3052,9 @@ select:focus-visible {
 }
 
 .auth-form-content.inactive-right {
+  position: absolute;
+  top: 0;
+  left: 0;
   opacity: 0;
   transform: translateX(30px);
   pointer-events: none;
