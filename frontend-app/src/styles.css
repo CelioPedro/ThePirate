@@ -4718,7 +4718,7 @@ button.account-action-card {
   }
 
   .login-visual-fallback {
-    display: none;
+    display: grid;
   }
 
   .login-helper {
