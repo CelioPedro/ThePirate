@@ -4487,6 +4487,7 @@ button.account-action-card {
     height: auto !important;
     min-height: 0 !important;
     padding: 16px !important;
+    gap: 0 !important;
     border-radius: 32px !important;
     display: flex !important;
     flex-direction: column !important;
@@ -4500,7 +4501,7 @@ button.account-action-card {
   }
   
   .login-form-panel {
-    padding: 24px 8px 16px !important;
+    padding: 12px 8px 16px !important;
     height: auto !important;
     min-height: 0 !important;
     flex: 1 1 auto !important;
@@ -4510,7 +4511,7 @@ button.account-action-card {
   .login-brand-lockup {
     font-size: 18px !important;
     align-self: center !important;
-    margin: 0 auto 20px !important;
+    margin: 0 auto 8px !important;
   }
 
   .login-brand-lockup img {
@@ -4519,7 +4520,7 @@ button.account-action-card {
   }
 
   .login-heading {
-    margin-top: 18px;
+    margin-top: 4px !important;
     text-align: center;
     display: flex;
     flex-direction: column;
