@@ -173,7 +173,7 @@ export function OrdersPage() {
                         <SafeImage
                           src={getProductImageFromText(item.productName)}
                           alt=""
-                          fallback={<img src="/brand/ThePirateMaxlogo0.svg" alt="" loading="lazy" />}
+                          fallback={<img src="/brand/ThePirateMax3.png" alt="" loading="lazy" />}
                           loading="lazy"
                         />
                       </span>

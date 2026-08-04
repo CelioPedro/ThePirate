@@ -10,7 +10,7 @@ export function AdminShell() {
       <aside className="admin-sidebar">
         <Link to="/admin" className="admin-brand">
           <span className="admin-brand-logo" aria-hidden="true">
-            <img src="/brand/ThePirateMaxlogo0.svg" alt="" />
+            <img src="/brand/ThePirateMax3.png" alt="" />
           </span>
           <div>
             <strong>The Pirate Max</strong>
