@@ -124,9 +124,9 @@ export function AuthPage({ defaultMode }: { defaultMode: "login" | "register" })
 
               <p className="helper-text login-helper">
                 Ainda nao tem uma conta?{" "}
-                <button type="button" className="text-link-button" onClick={() => handleSwitchMode("register")}>
+                <a href="/cadastro" onClick={(e) => { e.preventDefault(); handleSwitchMode("register"); }}>
                   Criar conta
-                </button>
+                </a>
               </p>
             </div>
 
@@ -202,9 +202,9 @@ export function AuthPage({ defaultMode }: { defaultMode: "login" | "register" })
 
               <p className="helper-text login-helper" style={{ marginTop: "24px" }}>
                 Ja possui conta?{" "}
-                <button type="button" className="text-link-button" onClick={() => handleSwitchMode("login")}>
+                <a href="/login" onClick={(e) => { e.preventDefault(); handleSwitchMode("login"); }}>
                   Fazer login
-                </button>
+                </a>
               </p>
             </div>
           </div>
@@ -212,11 +212,20 @@ export function AuthPage({ defaultMode }: { defaultMode: "login" | "register" })
 
         <div className="login-visual-panel">
           {hasHeroImage ? (
-            <img
-              src="/auth/login-hero.webp"
-              alt="The Pirate Max"
-              onError={() => setHasHeroImage(false)}
-            />
+            <>
+              <img
+                src="/auth/login-hero.webp"
+                alt="The Pirate Max Login"
+                className={`auth-hero-img ${mode === "login" ? "visible" : "hidden"}`}
+                onError={() => setHasHeroImage(false)}
+              />
+              <img
+                src="/auth/register-hero.webp"
+                alt="The Pirate Max Cadastro"
+                className={`auth-hero-img ${mode === "register" ? "visible" : "hidden"}`}
+                onError={() => setHasHeroImage(false)}
+              />
+            </>
           ) : (
             <div className="login-visual-fallback">
               <img src="/brand/ThePirateMax3.png" alt="" />
