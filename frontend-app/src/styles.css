@@ -4647,38 +4647,57 @@ button.account-action-card {
   }
 
   .product-detail-hero {
-    padding: 18px;
+    display: flex;
+    align-items: flex-start;
+    padding: 16px;
     border-radius: 20px;
     gap: 16px;
   }
 
   .product-detail-media {
-    max-width: 240px;
-    margin: 0 auto;
+    width: 110px;
+    flex-shrink: 0;
+    margin: 0;
   }
 
   .product-detail-info {
-    text-align: center;
-    justify-items: center;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    justify-items: start;
     gap: 12px;
   }
 
   .product-detail-info h1,
   .category-hero h1 {
-    font-size: 28px;
+    font-size: 22px;
+  }
+
+  .product-detail-info p {
+    font-size: 14px;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .product-detail-price {
-    font-size: 32px;
+    font-size: 26px;
   }
 
   .product-detail-actions {
-    justify-content: center;
+    justify-content: flex-start;
     width: 100%;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .product-detail-actions button {
     width: 100%;
+  }
+
+  .trust-strip {
+    justify-content: flex-start;
   }
 
   .product-detail-grid {
