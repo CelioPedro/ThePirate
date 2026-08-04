@@ -4486,8 +4486,8 @@ button.account-action-card {
     width: min(100%, 620px) !important;
     height: auto !important;
     min-height: 0 !important;
-    padding: 0 !important;
-    border-radius: 24px !important;
+    padding: 16px !important;
+    border-radius: 32px !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
@@ -4500,7 +4500,7 @@ button.account-action-card {
   }
   
   .login-form-panel {
-    padding: 24px 28px !important;
+    padding: 24px 8px 16px !important;
     height: auto !important;
     min-height: 0 !important;
     flex: 1 1 auto !important;
@@ -4534,11 +4534,12 @@ button.account-action-card {
     order: -1 !important;
     display: grid !important;
     width: 100% !important;
-    height: 320px !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
     min-height: 0 !important;
-    max-height: 320px !important;
-    flex: 0 0 320px !important;
-    border-radius: 24px 24px 0 0 !important;
+    max-height: 420px !important;
+    flex: 0 0 auto !important;
+    border-radius: 24px !important;
   }
 
   .login-visual-fallback {
