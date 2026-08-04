@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Search, ShoppingBag, UserCircle2 } from "lucide-react";
+import { Search, ShoppingBag, UserCircle2, Instagram, Facebook, Youtube, MessageCircle } from "lucide-react";
 import { apiClient } from "../api/client";
 import { useCart } from "../cart/CartContext";
 import { FALLBACK_CATEGORIES, getCategoryImageUrl, getProductImageUrl } from "../catalog/catalogData";
@@ -239,16 +239,58 @@ export function StoreShell() {
       </main>
 
       {!isAuthRoute ? (
-        <footer style={{ marginTop: "auto", borderTop: "1px solid var(--border)", padding: "40px 20px", background: "#f8f9fa" }}>
-          <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
-            <div>
-              <strong style={{ fontSize: "16px", color: "#111" }}>ThePirateMax</strong>
-              <p style={{ color: "var(--muted)", fontSize: "14px", marginTop: "4px" }}>&copy; {new Date().getFullYear()} Todos os direitos reservados.</p>
+        <footer className="site-footer">
+          <div className="container">
+            <div className="site-footer-inner">
+              <div className="footer-col footer-col-about">
+                <img src="/brand/ThePirateMaxLogo.webp" alt="The Pirate Max" />
+                <p>
+                  A The Pirate Max é a sua plataforma definitiva para produtos digitais. Oferecemos entrega rápida, suporte dedicado e segurança máxima para todas as suas compras de assinaturas, jogos e licenças.
+                </p>
+                <div className="footer-socials">
+                  <a href="#" aria-label="Discord"><MessageCircle size={20} /></a>
+                  <a href="#" aria-label="YouTube"><Youtube size={20} /></a>
+                  <a href="#" aria-label="Facebook"><Facebook size={20} /></a>
+                  <a href="#" aria-label="Instagram"><Instagram size={20} /></a>
+                </div>
+              </div>
+
+              <div className="footer-col">
+                <h4>Acesso Rápido</h4>
+                <ul className="footer-links">
+                  <li><Link to="/catalogo">Catálogo</Link></li>
+                  <li><Link to="/categoria/inteligencia-artificial">Inteligência Artificial</Link></li>
+                  <li><Link to="/categoria/streaming">Streaming</Link></li>
+                  <li><Link to="/categoria/games">Games</Link></li>
+                  <li><Link to="/pedidos">Meus Pedidos</Link></li>
+                </ul>
+              </div>
+
+              <div className="footer-col">
+                <h4>Como Funciona</h4>
+                <ul className="footer-links">
+                  <li><Link to="/termos">Como comprar</Link></li>
+                  <li><Link to="/termos">Vantagens</Link></li>
+                  <li><Link to="/termos">Formas de pagamento</Link></li>
+                  <li><Link to="/termos">Prazos de entrega</Link></li>
+                  <li><Link to="/conta">Suporte e Ajuda</Link></li>
+                </ul>
+              </div>
+
+              <div className="footer-col">
+                <h4>Institucional</h4>
+                <ul className="footer-links">
+                  <li><Link to="/termos">Termos de uso</Link></li>
+                  <li><Link to="/termos">Política de privacidade</Link></li>
+                  <li><Link to="/termos">Política de reembolso</Link></li>
+                  <li><Link to="/termos">Garantia de entrega</Link></li>
+                </ul>
+              </div>
             </div>
-            <div style={{ display: "flex", gap: "24px" }}>
-              <Link to="/termos" style={{ color: "var(--accent)", fontSize: "14px", textDecoration: "none", fontWeight: 500 }}>
-                Termos e Políticas de Reembolso
-              </Link>
+
+            <div className="site-footer-bottom">
+              <p>Copyright &copy; The Pirate Max 2026. Todos os direitos reservados.</p>
+              <p>CNPJ: 00.000.000/0001-00</p>
             </div>
           </div>
         </footer>
