@@ -107,12 +107,12 @@ export function AuthPage({ defaultMode }: { defaultMode: "login" | "register" })
                   {isSubmitting ? "Entrando..." : "Entrar"}
                 </button>
               </form>
+              
+              <button type="button" className="forgot-password-button" onClick={() => setError("Recuperação de senha em breve.")}>
+                Esqueci minha senha
+              </button>
 
               {import.meta.env.DEV ? (
-                <>
-                  <button type="button" className="forgot-password-button" onClick={() => setError("Recuperacao de senha em breve.")}>
-                    Esqueci minha senha
-                  </button>
                   <div className="login-divider"><span>Ou continuar com</span></div>
                   <div className="social-login-stack">
                     <button type="button" onClick={() => setError("Login com Google em breve.")}>

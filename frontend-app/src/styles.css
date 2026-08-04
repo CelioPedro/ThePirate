@@ -4670,8 +4670,11 @@ button.account-action-card {
   .login-card-shell {
     width: min(100%, 420px);
     min-height: 0;
-    padding: 24px 22px;
-    border-radius: 22px;
+    padding: 0; /* Remove padding to allow image to touch edges */
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .login-card-shell::before {
@@ -4679,9 +4682,15 @@ button.account-action-card {
       0 20px 54px rgba(21, 21, 21, 0.08),
       0 0 0 1px rgba(21, 21, 21, 0.035) inset;
   }
+  
+  .login-form-panel {
+    padding: 24px;
+  }
 
   .login-brand-lockup {
     font-size: 18px;
+    align-self: center;
+    margin: 0 auto;
   }
 
   .login-brand-lockup img {
@@ -4690,16 +4699,27 @@ button.account-action-card {
   }
 
   .login-heading {
-    margin-top: 24px;
+    margin-top: 18px;
+    text-align: center;
+    align-items: center;
   }
 
   .login-heading h1 {
     font-size: 32px;
   }
 
-  .login-visual-panel,
+  .login-visual-panel {
+    order: -1;
+    min-height: 280px;
+    border-radius: 24px 24px 0 0;
+  }
+
   .login-visual-fallback {
     display: none;
+  }
+
+  .login-helper {
+    text-align: center;
   }
 
   .product-detail-hero {
