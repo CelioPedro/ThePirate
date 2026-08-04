@@ -3062,11 +3062,14 @@ select:focus-visible {
 }
 
 .login-brand-lockup {
+  width: fit-content;
+  display: inline-flex;
   align-items: center;
   gap: 13px;
   color: #0e0e0e;
   font-size: 21px;
   font-weight: 900;
+  text-decoration: none;
 }
 
 .login-brand-lockup img {
