@@ -3018,11 +3018,46 @@ select:focus-visible {
   flex-direction: column;
   justify-content: center;
   min-width: 0;
+  overflow: hidden; /* Prevent horizontal scroll during transitions */
+}
+
+.auth-form-transition-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "content";
+  position: relative;
+}
+
+.auth-form-content {
+  grid-area: content;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+}
+
+.auth-form-content.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.auth-form-content.inactive-left {
+  opacity: 0;
+  transform: translateX(-30px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.auth-form-content.inactive-right {
+  opacity: 0;
+  transform: translateX(30px);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .login-brand-lockup {
-  width: fit-content;
-  display: inline-flex;
   align-items: center;
   gap: 13px;
   color: #0e0e0e;
@@ -3039,9 +3074,6 @@ select:focus-visible {
   mix-blend-mode: multiply;
 }
 
-.register-card-shell {
-  min-height: 560px;
-}
 
 .login-heading {
   margin-top: 34px;
