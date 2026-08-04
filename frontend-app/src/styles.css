@@ -4499,13 +4499,13 @@ button.account-action-card {
   }
   
   .login-form-panel {
-    padding: 16px 28px 32px;
+    padding: 0 28px 32px;
   }
 
   .login-brand-lockup {
     font-size: 18px;
     align-self: center;
-    margin: 0 auto;
+    margin: 20px auto 0;
   }
 
   .login-brand-lockup img {
@@ -4530,6 +4530,7 @@ button.account-action-card {
     display: grid;
     width: 100%;
     aspect-ratio: 1 / 1;
+    min-height: 0;
     max-height: 300px;
     flex: 0 0 auto;
     border-radius: 24px 24px 0 0;
