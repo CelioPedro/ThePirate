@@ -472,7 +472,7 @@ export function AdminDashboardPage() {
                   <SafeImage
                     src={getProductImageUrl(product)}
                     alt=""
-                    fallback={<img src="/brand/ThePirateMaxLogo.webp" alt="" loading="lazy" />}
+                    fallback={<img src="/brand/ThePirateMaxlogo0.svg" alt="" loading="lazy" />}
                     loading="lazy"
                   />
                 </span>

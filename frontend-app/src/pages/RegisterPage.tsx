@@ -37,7 +37,7 @@ export function RegisterPage() {
       <section className="login-card-shell register-card-shell" aria-labelledby="register-title">
         <div className="login-form-panel">
           <Link to="/" className="login-brand-lockup" aria-label="The Pirate Max">
-            <img src="/brand/ThePirateMaxLogo.webp" alt="" />
+            <img src="/brand/ThePirateMaxlogo0.svg" alt="" />
             <strong>The Pirate Max</strong>
           </Link>
 
@@ -125,7 +125,7 @@ export function RegisterPage() {
             />
           ) : (
             <div className="login-visual-fallback">
-              <img src="/brand/ThePirateMaxLogo.webp" alt="" />
+              <img src="/brand/ThePirateMaxlogo0.svg" alt="" />
               <strong>Bem-vindo a bordo</strong>
               <span>Imagem da pagina de cadastro</span>
             </div>

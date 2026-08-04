@@ -112,7 +112,7 @@ export function StoreShell() {
           </nav>
 
           <Link to="/" className="header-logo-slot" aria-label="The Pirate Max">
-            <img src="/brand/ThePirateMaxLogo.webp" alt="The Pirate Max" />
+            <img src="/brand/ThePirateMaxlogo0.svg" alt="The Pirate Max" />
           </Link>
 
           <div className="topbar-actions topbar-actions-right">
@@ -243,7 +243,7 @@ export function StoreShell() {
           <div className="container">
             <div className="site-footer-inner">
               <div className="footer-col footer-col-about">
-                <img src="/brand/ThePirateMaxLogo.webp" alt="The Pirate Max" />
+                <img src="/brand/ThePirateMaxlogo0.svg" alt="The Pirate Max" />
                 <p>
                   A The Pirate Max é a sua plataforma definitiva para produtos digitais. Oferecemos entrega rápida, suporte dedicado e segurança máxima para todas as suas compras de assinaturas, jogos e licenças.
                 </p>

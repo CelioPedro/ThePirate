@@ -36,7 +36,7 @@ export function LoginPage() {
       <section className="login-card-shell" aria-labelledby="login-title">
         <div className="login-form-panel">
           <Link to="/" className="login-brand-lockup" aria-label="The Pirate Max">
-            <img src="/brand/ThePirateMaxLogo.webp" alt="" />
+            <img src="/brand/ThePirateMaxlogo0.svg" alt="" />
             <strong>The Pirate Max</strong>
           </Link>
 
@@ -119,7 +119,7 @@ export function LoginPage() {
             />
           ) : (
             <div className="login-visual-fallback">
-              <img src="/brand/ThePirateMaxLogo.webp" alt="" />
+              <img src="/brand/ThePirateMaxlogo0.svg" alt="" />
               <strong>The Pirate Max</strong>
               <span>Imagem da pagina de login</span>
             </div>
