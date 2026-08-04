@@ -113,6 +113,7 @@ export function AuthPage({ defaultMode }: { defaultMode: "login" | "register" })
               </button>
 
               {import.meta.env.DEV ? (
+                <>
                   <div className="login-divider"><span>Ou continuar com</span></div>
                   <div className="social-login-stack">
                     <button type="button" onClick={() => setError("Login com Google em breve.")}>
