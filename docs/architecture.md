@@ -9,17 +9,13 @@ flowchart TD
     %% ATORES
     subgraph Users ["🧑‍💻 Atores (Classes de Usuários)"]
         direction LR
-        Buyer(("🛒 Cliente\n(Comprador)"))
-        Admin(("🛡️ Admin\n(Operação Master)"))
-        Seller(("🏪 Vendedor\n(Futuro)"))
+        Buyer(("🛒 Cliente\n(Comprador)")) ~~~ Admin(("🛡️ Admin\n(Operação Master)")) ~~~ Seller(("🏪 Vendedor\n(Futuro)"))
     end
 
     %% FRONTEND
     subgraph Vercel ["⚡ Vercel (Frontend Hosting)"]
         direction LR
-        UI_Buyer["⚛️ App Cliente\n(Loja e Pedidos)"]
-        UI_Admin["⚛️ Painel Admin\n(Gestão Geral)"]
-        UI_Seller["⚛️ Painel Vendedor\n(Futuro)"]
+        UI_Buyer["⚛️ App Cliente\n(Loja e Pedidos)"] ~~~ UI_Admin["⚛️ Painel Admin\n(Gestão Geral)"] ~~~ UI_Seller["⚛️ Painel Vendedor\n(Futuro)"]
     end
 
     %% BACKEND & INFRA
@@ -43,9 +39,7 @@ flowchart TD
     %% INTEGRAÇÕES
     subgraph Integrations ["🔌 Integrações Externas"]
         direction LR
-        MercadoPago["💳 Mercado Pago\n(MVP: PIX Direto)"]
-        MPSplit["💳 MP Marketplace\n(Futuro: Split)"]
-        Email["📧 Serviço SMTP\n(Futuro)"]
+        MercadoPago["💳 Mercado Pago\n(MVP: PIX Direto)"] ~~~ MPSplit["💳 MP Marketplace\n(Futuro: Split)"] ~~~ Email["📧 Serviço SMTP\n(Futuro)"]
     end
 
     %% FLUXOS E RELACIONAMENTOS
