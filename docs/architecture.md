@@ -4,13 +4,71 @@ Este documento resume a arquitetura atual do The Pirate Max para leitura de port
 
 ## Visao geral
 
-```text
-Usuario
-  -> Frontend Vercel
-  -> API HTTPS em api.163.176.60.109.sslip.io
-  -> Nginx na Oracle VM
-  -> Container Docker do backend Spring Boot
-  -> Banco Neon PostgreSQL
+```mermaid
+flowchart TD
+    %% ATORES
+    subgraph Users ["🧑‍💻 Atores (Classes de Usuários)"]
+        direction LR
+        Buyer(("🛒 Cliente\n(Comprador)"))
+        Admin(("🛡️ Admin\n(Operação Master)"))
+        Seller(("🏪 Vendedor\n(Futuro)"))
+    end
+
+    %% FRONTEND
+    subgraph Vercel ["⚡ Vercel (Frontend Hosting)"]
+        direction LR
+        UI_Buyer["⚛️ App Cliente\n(Loja e Pedidos)"]
+        UI_Admin["⚛️ Painel Admin\n(Gestão Geral)"]
+        UI_Seller["⚛️ Painel Vendedor\n(Futuro)"]
+    end
+
+    %% BACKEND & INFRA
+    subgraph OracleVM ["☁️ Oracle Cloud VM (Infraestrutura)"]
+        Nginx["🌐 Nginx\n(Proxy / HTTPS)"]
+        
+        subgraph Docker ["🐳 Container Docker (Monolito)"]
+            API["☕ API REST (Spring Boot)\nPedidos, Auth, Catálogo"]
+            Scanner["⚙️ Scheduled Scanner\n(MVP: Entrega Interna)"]
+            Worker["⚙️ Background Worker\n(Futuro: Desacoplado)"]
+        end
+        
+        Redis[("🟥 Redis\n(Fila Futura)")]
+    end
+
+    %% DADOS
+    subgraph Data ["🐘 Neon Serverless"]
+        DB[("PostgreSQL\n(Dados & Flyway)")]
+    end
+
+    %% INTEGRAÇÕES
+    subgraph Integrations ["🔌 Integrações Externas"]
+        direction LR
+        MercadoPago["💳 Mercado Pago\n(MVP: PIX Direto)"]
+        MPSplit["💳 MP Marketplace\n(Futuro: Split)"]
+        Email["📧 Serviço SMTP\n(Futuro)"]
+    end
+
+    %% FLUXOS E RELACIONAMENTOS
+    Buyer --> UI_Buyer
+    Admin --> UI_Admin
+    Seller -.-> UI_Seller
+    
+    UI_Buyer --> Nginx
+    UI_Admin --> Nginx
+    UI_Seller -.-> Nginx
+    
+    Nginx --> API
+    
+    API -->|Persiste| DB
+    Scanner -->|Varre Pendentes| DB
+    
+    API -.->|Envia p/ Fila| Redis
+    Redis -.->|Consome| Worker
+    Worker -.->|Conclui| DB
+    Worker -.->|Notifica| Email
+    
+    API <-->|Cobrança e Webhooks| MercadoPago
+    API -.->|Repasse| MPSplit
 ```
 
 ## Frontend
