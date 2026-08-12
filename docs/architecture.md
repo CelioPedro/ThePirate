@@ -69,6 +69,14 @@ flowchart TD
     
     API <-->|Cobrança e Webhooks| MercadoPago
     API -.->|Repasse| MPSplit
+
+    %% ESTILOS (Fundo transparente)
+    style Users fill:transparent,stroke:#555,stroke-width:2px,stroke-dasharray: 5 5
+    style Vercel fill:transparent,stroke:#555,stroke-width:2px,stroke-dasharray: 5 5
+    style OracleVM fill:transparent,stroke:#555,stroke-width:2px,stroke-dasharray: 5 5
+    style Docker fill:transparent,stroke:#555,stroke-width:2px,stroke-dasharray: 5 5
+    style Data fill:transparent,stroke:#555,stroke-width:2px,stroke-dasharray: 5 5
+    style Integrations fill:transparent,stroke:#555,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
 ## Frontend
