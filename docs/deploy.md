@@ -36,7 +36,8 @@ Variaveis `VITE_*` sao aplicadas no build. Se `VITE_API_BASE_URL` mudar, o front
 
 ## Backend
 
-O backend de producao roda em Docker na Oracle Cloud VM.
+O backend de producao roda em Docker (junto com o banco de dados PostgreSQL local) na Oracle Cloud VM.
+Migramos o banco de dados do Neon DB para a própria VM (via Docker Compose) após atingirmos os limites do plano gratuito da plataforma externa.
 
 Atualizacao manual na VM:
 
@@ -45,17 +46,11 @@ ssh -i "$env:USERPROFILE\.ssh\the-pirate-max-oracle.key" ubuntu@163.176.60.109
 ```
 
 ```bash
-cd ~/apps/ThePirate
-git pull origin main
-docker build -t the-pirate-backend:latest .
-docker stop the-pirate-backend
-docker rm the-pirate-backend
-docker run -d \
-  --name the-pirate-backend \
-  --env-file backend.env \
-  -p 8080:8080 \
-  --restart unless-stopped \
-  the-pirate-backend:latest
+cd ~/the-pirate-max
+# Atualizar a imagem se necessário (caso haja build novo)
+# docker build -t the-pirate-backend:latest .
+# Recriar a infraestrutura
+docker compose up -d
 ```
 
 Validacao:

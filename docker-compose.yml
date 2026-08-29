@@ -1,0 +1,67 @@
+version: '3.8'
+
+# Este arquivo serve apenas como referência arquitetural e para facilitar
+# novos deploys na VM da Oracle Cloud.
+# 
+# ATENÇÃO: Nunca comite senhas reais de produção neste arquivo. 
+# Utilize um arquivo .env na máquina host (Oracle VM) ou injete
+# as variáveis diretamente pelo sistema operacional.
+
+services:
+  db:
+    image: postgres:16
+    container_name: the-pirate-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-exemplo_senha_banco_segura}
+      POSTGRES_DB: the_pirate_max
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - the-pirate-network
+
+  backend:
+    image: the-pirate-backend:latest
+    container_name: the-pirate-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - SERVER_PORT=8080
+      - DB_URL=jdbc:postgresql://db:5432/the_pirate_max
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=${DB_PASSWORD:-exemplo_senha_banco_segura}
+      
+      # Segurança
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET:-sua_chave_jwt_secreta_super_longa}
+      - AUTH_JWT_EXPIRATION_HOURS=24
+      - CREDENTIAL_ENCRYPTION_SECRET=${CREDENTIAL_ENCRYPTION_SECRET:-sua_chave_criptografia_credenciais_longa}
+      - CREDENTIAL_ENCRYPTION_KEY_VERSION=prod-aesgcm-v1
+      
+      # CORS
+      - CORS_ALLOWED_ORIGIN_PATTERNS=https://the-pirate-frontend.vercel.app,https://*.vercel.app
+      
+      # Mercado Pago
+      - MERCADO_PAGO_ACCESS_TOKEN=${MERCADO_PAGO_ACCESS_TOKEN:-APP_USR-00000000-0000-0000}
+      - MERCADO_PAGO_WEBHOOK_SECRET=${MERCADO_PAGO_WEBHOOK_SECRET:-segredo_do_webhook}
+      - MERCADO_PAGO_NOTIFICATION_URL=https://api.SEU_DOMINIO_OU_IP.sslip.io/api/webhooks/mercadopago
+      - MERCADO_PAGO_PIX_EXPIRATION_MINUTES=30
+      
+      # Bootstrap Admin (Desativar após a primeira subida)
+      - INITIAL_ADMIN_ENABLED=false
+      - INITIAL_ADMIN_EMAIL=admin@seudominio.com
+      - INITIAL_ADMIN_PASSWORD=SenhaForte123!
+      - INITIAL_ADMIN_NAME=Admin Principal
+    networks:
+      - the-pirate-network
+
+volumes:
+  postgres_data:
+
+networks:
+  the-pirate-network:
+    driver: bridge

@@ -254,12 +254,17 @@ Desde a última revisão histórica, o sistema evoluiu substancialmente em suas 
 
 Ao abrir a interface do frontend (tanto no ambiente de produção na Vercel `https://the-pirate-frontend.vercel.app` quanto em desenvolvimento local), a exibição de **"erro de conexão com servidor"** ou falha ao carregar produtos/categorias ocorre devido às seguintes razões estruturais mapeadas:
 
-### 1. Ambiente de Produção (Oracle Cloud VM + Neon DB Serverless) — *Causa Raiz Identificada*
+### 1. Ambiente de Produção (Oracle Cloud VM com PostgreSQL Local via Docker Compose)
 No ambiente público de produção, o frontend na Vercel consome a API via Nginx com HTTPS no endereço `https://api.163.176.60.109.sslip.io`.
-- **O Problema**: O container Docker do backend (`the-pirate-backend`) estava em execução ininterrupta há mais de 2 meses na Oracle Cloud Free Tier (ARM VM). Após longos períodos de inatividade do banco serverless na nuvem (**Neon DB PostgreSQL**), as sessões SSL do pool de conexões (HikariCP) sofreram *timeout* e foram encerradas pelo servidor remoto (`SSL error: Remote host terminated the handshake` / `Connection is not available`). Com o pool travado e sem conexões válidas, o backend parou de responder, fazendo com que o Nginx retornasse **502 Bad Gateway** para o frontend na Vercel.
-- **A Solução (Executada)**: Para restabelecer o handshake SSL limpo com o Neon DB, basta reiniciar o container Docker na VM através do terminal Windows (utilizando a chave SSH da Oracle):
+
+- **Histórico de Incidentes e Evolução**: Originalmente, o banco de dados rodava externamente no **Neon DB Serverless**. O container Docker do backend (`the-pirate-backend`) estava em execução ininterrupta na Oracle Cloud Free Tier. Ocorriam erros de *timeout* (502 Bad Gateway) após o Neon DB "dormir", e eventualmente a plataforma bloqueou a conexão por exceder o limite de horas de computação (compute time quota).
+- **A Solução Definitiva (Migração Executada)**: Abandonamos o Database as a Service (Neon DB) e migramos para uma infraestrutura autossuficiente na própria VM da Oracle. Agora, o banco de dados (`postgres:16`) e o backend rodam orquestrados via `docker-compose` diretamente no servidor, garantindo disponibilidade 24/7 sem custos extras.
+
+Para reiniciar o ambiente na Oracle, basta acessar via SSH e utilizar os comandos do Compose:
   ```powershell
-  ssh -i "$env:USERPROFILE\.ssh\the-pirate-max-oracle.key" ubuntu@163.176.60.109 "docker restart the-pirate-backend"
+  ssh -i "$env:USERPROFILE\.ssh\the-pirate-max-oracle.key" ubuntu@163.176.60.109
+  cd ~/the-pirate-max
+  docker compose down && docker compose up -d
   ```
   *(Nota: Em máquinas ARM Free Tier da Oracle, o Spring Boot leva cerca de 90 a 110 segundos para inicializar totalmente após o restart e reativar o status `UP` no Health Check).*
 
