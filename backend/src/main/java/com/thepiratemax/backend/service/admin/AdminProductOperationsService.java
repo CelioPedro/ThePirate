@@ -172,6 +172,7 @@ public class AdminProductOperationsService {
             case STREAMING -> "streaming";
             case GAMES -> "games";
             case ASSINATURA -> "assinaturas-premium";
+            case IA -> "inteligencia-artificial";
         };
         return catalogCategoryRepository.findBySlug(fallbackSlug)
                 .orElseThrow(() -> new NotFoundException("CATEGORY_NOT_FOUND", "No category configured for: " + fallbackCategory));
