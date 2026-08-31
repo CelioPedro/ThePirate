@@ -10,6 +10,7 @@ import { useSession } from "../shared/session/SessionContext";
 import { ProductCard } from "../shared/ui/ProductCard";
 import { SafeImage } from "../shared/ui/SafeImage";
 import type { InventoryItem, Product } from "../shared/types";
+import { groupProducts } from "../shared/lib/productGroup";
 
 import React, { Component, ErrorInfo, ReactNode } from "react";
 
@@ -92,6 +93,7 @@ function ProductDetailPageInner() {
         .filter((item) => item.id !== product.id && getProductSectionSlugs(item).some((sectionSlug) => getProductSectionSlugs(product).includes(sectionSlug)))
         .slice(0, 4)
     : [];
+  const groupedRelated = useMemo(() => groupProducts(relatedProducts), [relatedProducts]);
   useDocumentTitle(product?.name || "Produto");
 
   if (!isLoading && !loadError && !product) {
@@ -212,18 +214,18 @@ function ProductDetailPageInner() {
         </article>
       </section>
 
-      {relatedProducts.length > 0 ? (
+      {groupedRelated.length > 0 ? (
         <section className="related-products">
           <div className="section-heading">
             <h2>Relacionados</h2>
           </div>
           <div className="catalog-grid">
-            {relatedProducts.map((related) => (
+            {groupedRelated.map((group) => (
               <ProductCard
-                key={related.id}
-                product={related}
+                key={group.products[0].id}
+                group={group}
                 onAdd={addRelatedToCart}
-                isRecentlyAdded={recentlyAddedRelatedId === related.id}
+                recentlyAddedProductId={recentlyAddedRelatedId}
               />
             ))}
           </div>
