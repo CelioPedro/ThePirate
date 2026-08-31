@@ -17,6 +17,7 @@ public final class TestCatalogFactory {
             case STREAMING -> "streaming";
             case GAMES -> "games";
             case ASSINATURA -> "assinaturas-premium";
+            case IA -> "inteligencia-artificial";
         };
 
         return repository.findBySlug(slug)
