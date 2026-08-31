@@ -8,12 +8,13 @@ import { useDocumentTitle } from "../shared/lib/useDocumentTitle";
 import { useSession } from "../shared/session/SessionContext";
 import { ProductCard } from "../shared/ui/ProductCard";
 import type { CatalogCategory, InventoryItem, Product } from "../shared/types";
+import { groupProducts, type ProductGroup } from "../shared/lib/productGroup";
 
 type CatalogSection = {
   id: string;
   title: string;
   summary: string;
-  products: Product[];
+  productGroups: ProductGroup[];
 };
 
 const FALLBACK_CATEGORIES: CatalogCategory[] = [
@@ -295,14 +296,14 @@ function CatalogProductSection({
         </div>
         <Link to={`/categoria/${section.id}`}>Ver mais <ArrowRight size={15} /></Link>
       </div>
-      {section.products.length > 0 ? (
+      {section.productGroups.length > 0 ? (
         <ScrollableRail className="product-rail" label={`Navegar produtos de ${section.title}`}>
-          {section.products.map((product) => (
+          {section.productGroups.map((group) => (
             <ProductCard
-              key={product.id}
-              product={product}
+              key={group.products[0].id}
+              group={group}
               onAdd={onAdd}
-              isRecentlyAdded={recentlyAddedProductId === product.id}
+              recentlyAddedProductId={recentlyAddedProductId}
             />
           ))}
         </ScrollableRail>
@@ -405,12 +406,15 @@ function LoadingCatalogSections() {
 }
 
 function buildCatalogSections(products: Product[], categories: CatalogCategory[]): CatalogSection[] {
-  return categories.map((category) => ({
-    id: category.slug,
-    title: category.name,
-    summary: category.description || "Produtos digitais selecionados para esta categoria.",
-    products: products.filter((product) => getProductSectionSlugs(product).includes(category.slug))
-  }));
+  return categories.map((category) => {
+    const sectionProducts = products.filter((product) => getProductSectionSlugs(product).includes(category.slug));
+    return {
+      id: category.slug,
+      title: category.name,
+      summary: category.description || "Produtos digitais selecionados para esta categoria.",
+      productGroups: groupProducts(sectionProducts)
+    };
+  });
 }
 
 function getProductSectionSlugs(product: Product) {
