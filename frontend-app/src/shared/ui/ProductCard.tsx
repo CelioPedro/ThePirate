@@ -1,31 +1,37 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getProductImageFallbackUrl, getProductImageUrl } from "../catalog/catalogData";
 import { formatCurrency, humanizeCategory } from "../lib/format";
 import type { Product } from "../types";
+import type { ProductGroup } from "../lib/productGroup";
 
 export function ProductCard({
-  product,
+  group,
   onAdd,
-  isRecentlyAdded
+  recentlyAddedProductId
 }: {
-  product: Product;
+  group: ProductGroup;
   onAdd: (product: Product) => void;
-  isRecentlyAdded: boolean;
+  recentlyAddedProductId?: string | null;
 }) {
-  const imageUrl = getProductImageUrl(product);
-  const price = formatPriceParts(product.priceCents);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const selectedProduct = group.products[selectedIndex];
+
+  const imageUrl = getProductImageUrl(selectedProduct);
+  const price = formatPriceParts(selectedProduct.priceCents);
+  const isRecentlyAdded = recentlyAddedProductId === selectedProduct.id;
 
   return (
     <article className="product-card rail-product-card">
-      <div className={`product-visual product-visual-${(product.categorySlug || product.category || "outros").toLowerCase()}`}>
-        <Link to={`/produto/${product.slug}`} className="product-visual-link" aria-label={`Ver ${product.name}`}>
+      <div className={`product-visual product-visual-${(selectedProduct.categorySlug || selectedProduct.category || "outros").toLowerCase()}`}>
+        <Link to={`/produto/${selectedProduct.slug}`} className="product-visual-link" aria-label={`Ver ${selectedProduct.name}`}>
         {imageUrl ? (
           <img
             src={imageUrl}
-            alt={product.name}
+            alt={selectedProduct.name}
             loading="lazy"
             onError={(event) => {
-              const fallbackImageUrl = getProductImageFallbackUrl(product);
+              const fallbackImageUrl = getProductImageFallbackUrl(selectedProduct);
               if (fallbackImageUrl && event.currentTarget.src !== new URL(fallbackImageUrl, window.location.origin).href) {
                 event.currentTarget.src = fallbackImageUrl;
                 return;
@@ -33,22 +39,43 @@ export function ProductCard({
               event.currentTarget.style.display = "none";
             }}
           />
-        ) : <ProductImageFallback product={product} />}
+        ) : <ProductImageFallback product={selectedProduct} />}
         </Link>
       </div>
       <div className="product-body">
-        <h3><Link to={`/produto/${product.slug}`}>{product.name}</Link></h3>
-        <p>{product.description}</p>
+        <h3><Link to={`/produto/${selectedProduct.slug}`}>{group.baseName}</Link></h3>
+        <p>{selectedProduct.description}</p>
+        
+        {group.products.length > 1 && (
+          <div className="product-variant-selector" style={{ marginTop: '8px', marginBottom: '8px' }}>
+            <select 
+              value={selectedIndex} 
+              onChange={(e) => setSelectedIndex(Number(e.target.value))}
+              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.85rem' }}
+            >
+              {group.products.map((p, idx) => {
+                const variantNameMatch = p.name.match(/\(([^)]+)\)/);
+                const variantName = variantNameMatch ? variantNameMatch[1] : p.name;
+                return (
+                  <option key={p.id} value={idx}>
+                    {variantName}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        )}
+
         <div className="product-price">
           <span>{price.currency}</span>
           <strong>{price.amount}</strong>
         </div>
         <div className="product-footer">
-          <span className="product-card-meta">{formatCategoryChip(product)}{" \u2022 "}{formatDuration(product.durationDays)}</span>
+          <span className="product-card-meta">{formatCategoryChip(selectedProduct)}{" \u2022 "}{formatDuration(selectedProduct.durationDays)}</span>
           <button
             type="button"
             className={isRecentlyAdded ? "product-add-button added" : "product-add-button"}
-            onClick={() => onAdd(product)}
+            onClick={() => onAdd(selectedProduct)}
           >
             {isRecentlyAdded ? "Adicionado" : "Adicionar"}
           </button>
