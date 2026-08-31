@@ -8,6 +8,7 @@ import { useCart } from "../shared/cart/CartContext";
 import { SafeImage } from "../shared/ui/SafeImage";
 import { ProductCard } from "../shared/ui/ProductCard";
 import type { CatalogCategory, Product } from "../shared/types";
+import { groupProducts } from "../shared/lib/productGroup";
 
 export function CategoryPage() {
   const { slug = "" } = useParams();
@@ -49,8 +50,8 @@ export function CategoryPage() {
   }, [apiBase]);
 
   const category = (categories.length > 0 ? categories : FALLBACK_CATEGORIES).find((item) => item.slug === slug);
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => getProductSectionSlugs(product).includes(slug));
+  const productGroups = useMemo(() => {
+    return groupProducts(products.filter((product) => getProductSectionSlugs(product).includes(slug)));
   }, [products, slug]);
 
   useDocumentTitle(category?.name || "Categoria");
@@ -86,7 +87,7 @@ export function CategoryPage() {
           <button type="button" className="secondary-button compact" onClick={() => void loadCategory()}>Tentar novamente</button>
         </div>
       ) : null}
-      {!isLoading && !loadError && filteredProducts.length === 0 ? (
+      {!isLoading && !loadError && productGroups.length === 0 ? (
         <div className="empty-state-panel">
           <strong>Nenhum produto nesta categoria</strong>
           <p>Novos itens podem entrar em breve. Enquanto isso, explore outras categorias do catalogo.</p>
@@ -95,12 +96,12 @@ export function CategoryPage() {
       ) : null}
 
       <section className="catalog-grid">
-        {filteredProducts.map((product) => (
+        {productGroups.map((group) => (
           <ProductCard
-            key={product.id}
-            product={product}
+            key={group.products[0].id}
+            group={group}
             onAdd={addProductToCart}
-            isRecentlyAdded={recentlyAddedProductId === product.id}
+            recentlyAddedProductId={recentlyAddedProductId}
           />
         ))}
       </section>
