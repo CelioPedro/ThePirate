@@ -59,8 +59,18 @@ Cada produto do catalogo carrega os campos principais:
 | --- | --- | --- | --- | --- |
 | `TPM-CANVA-001` | Canva Pro | `ASSINATURA` | `CANVA` | `699` |
 | `TPM-FIGMA-001` | Figma | `ASSINATURA` | `FIGMA` | `2299` |
-| `TPM-CHATGPT-001` | ChatGPT Plus | `ASSINATURA` | `CHATGPT_PLUS` | `2599` |
 | `TPM-ANTIGRAVITY-001` | Antigravity | `ASSINATURA` | `ANTIGRAVITY` | `2599` |
+
+### Inteligência Artificial
+
+| SKU | Produto | Categoria | Provider | Preco |
+| --- | --- | --- | --- | --- |
+| `TPM-CHATGPT-PRIV-001` | ChatGPT Plus (Privada) | `IA` | `OPENAI` | `5999` |
+| `TPM-CHATGPT-COMP-001` | ChatGPT Plus (Compartilhada) | `IA` | `OPENAI` | `2999` |
+| `TPM-GEMINI-PRIV-001` | Gemini Advanced (Privada) | `IA` | `GOOGLE` | `5999` |
+| `TPM-GEMINI-COMP-001` | Gemini Advanced (Compartilhada) | `IA` | `GOOGLE` | `2999` |
+| `TPM-CLAUDE-PRIV-001` | Claude 3 Pro (Privada) | `IA` | `ANTHROPIC` | `6999` |
+| `TPM-CLAUDE-COMP-001` | Claude 3 Pro (Compartilhada) | `IA` | `ANTHROPIC` | `3999` |
 
 ### Games
 
@@ -84,7 +94,12 @@ As quantidades atuais do seed local sao apenas operacionais para teste:
 - YouTube Premium: `6`
 - Canva Pro: `10`
 - Figma: `6`
-- ChatGPT Plus: `5`
+- ChatGPT Plus (Privada): `2`
+- ChatGPT Plus (Compartilhada): `5`
+- Gemini Advanced (Privada): `2`
+- Gemini Advanced (Compartilhada): `5`
+- Claude 3 Pro (Privada): `2`
+- Claude 3 Pro (Compartilhada): `5`
 - Antigravity: `4`
 - Conta LoL Diamante 1: `3`
 - Conta LoL Platina 2: `4`
