@@ -1507,9 +1507,16 @@ select:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 8px;
   margin-top: 6px;
+}
+
+.product-card-meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .product-price {
@@ -1540,6 +1547,9 @@ select:focus-visible {
 }
 
 .product-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 32px;
   padding: 0 14px;
   border: 1px solid rgba(112, 107, 99, 0.58);
@@ -1550,6 +1560,7 @@ select:focus-visible {
   font-size: 13px;
   font-weight: 500;
   transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  white-space: nowrap;
 }
 
 .product-add-button:hover,
