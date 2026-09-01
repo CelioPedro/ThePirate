@@ -1600,9 +1600,9 @@ select:focus-visible {
 
 .product-detail-hero {
   display: grid;
-  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
-  gap: 30px;
-  align-items: center;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
   padding: 26px;
   border-radius: 24px;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92));
@@ -1614,7 +1614,7 @@ select:focus-visible {
 .product-detail-media {
   overflow: hidden;
   width: 100%;
-  max-width: 320px;
+  max-width: 240px;
   justify-self: center;
   border: 0;
   border-radius: 20px;
@@ -1654,7 +1654,7 @@ select:focus-visible {
 .product-detail-info {
   display: grid;
   gap: 14px;
-  align-content: center;
+  align-content: start;
 }
 
 .product-detail-kicker {
