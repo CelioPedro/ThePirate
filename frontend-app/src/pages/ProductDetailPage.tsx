@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, Navigate, useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Clock3, Headphones, ShieldCheck, ShoppingBag, Zap, Info } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, Headphones, ShieldCheck, ShoppingBag, Zap, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { useCart } from "../shared/cart/CartContext";
 import { formatCategoryLabel, getProductImageUrl, getProductSectionSlugs } from "../shared/catalog/catalogData";
@@ -97,7 +97,7 @@ function ProductDetailPageInner() {
   const relatedProducts = product
     ? mergedProducts
         .filter((item) => item.id !== product.id && getProductSectionSlugs(item).some((sectionSlug) => getProductSectionSlugs(product).includes(sectionSlug)))
-        .slice(0, 4)
+        .slice(0, 12)
     : [];
   const groupedRelated = useMemo(() => groupProducts(relatedProducts), [relatedProducts]);
   useDocumentTitle(product?.name || "Produto");
@@ -273,7 +273,7 @@ function ProductDetailPageInner() {
           <div className="section-heading">
             <h2>Relacionados</h2>
           </div>
-          <div className="catalog-grid">
+          <ScrollableRail className="product-rail" label="Produtos Relacionados">
             {groupedRelated.map((group) => (
               <ProductCard
                 key={group.products[0].id}
@@ -282,7 +282,7 @@ function ProductDetailPageInner() {
                 recentlyAddedProductId={recentlyAddedRelatedId}
               />
             ))}
-          </div>
+          </ScrollableRail>
         </section>
       ) : null}
     </div>
@@ -318,4 +318,76 @@ function ProductImageFallback({ name = "PR" }: { name?: string }) {
 
 function formatDuration(durationDays: number) {
   return durationDays === 0 ? "Vitalício" : `${durationDays} dias`;
+}
+
+function ScrollableRail({
+  className,
+  label,
+  variant = "default",
+  children
+}: {
+  className: string;
+  label: string;
+  variant?: "default" | "category";
+  children: React.ReactNode;
+}) {
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollPrevious, setCanScrollPrevious] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+
+    function updateScrollState() {
+      if (!rail) return;
+      const maxScroll = rail.scrollWidth - rail.clientWidth;
+      setCanScrollPrevious(rail.scrollLeft > 4);
+      setCanScrollNext(rail.scrollLeft < maxScroll - 4);
+    }
+
+    updateScrollState();
+    rail.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    return () => {
+      rail.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [children]);
+
+  function scrollRail(direction: "previous" | "next") {
+    const rail = railRef.current;
+    if (!rail) return;
+    const distance = Math.max(rail.clientWidth * 0.82, 260);
+    rail.scrollBy({
+      left: direction === "next" ? distance : -distance,
+      behavior: "smooth"
+    });
+  }
+
+  return (
+    <div className={`rail-frame rail-frame-${variant} ${canScrollPrevious ? "has-previous" : ""} ${canScrollNext ? "has-next" : ""}`}>
+      <button
+        type="button"
+        className="rail-nav rail-nav-prev"
+        aria-label={`${label} para esquerda`}
+        disabled={!canScrollPrevious}
+        onClick={() => scrollRail("previous")}
+      >
+        <ChevronLeft size={22} strokeWidth={2.2} />
+      </button>
+      <div ref={railRef} className={className} tabIndex={0}>
+        {children}
+      </div>
+      <button
+        type="button"
+        className="rail-nav rail-nav-next"
+        aria-label={`${label} para direita`}
+        disabled={!canScrollNext}
+        onClick={() => scrollRail("next")}
+      >
+        <ChevronRight size={22} strokeWidth={2.2} />
+      </button>
+    </div>
+  );
 }
