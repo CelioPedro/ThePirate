@@ -46,25 +46,6 @@ export function ProductCard({
         <h3><Link to={`/produto/${selectedProduct.slug}`}>{group.baseName}</Link></h3>
         <p>{selectedProduct.description}</p>
         
-        {group.products.length > 1 && (
-          <div className="product-variant-selector" style={{ marginTop: '8px', marginBottom: '8px' }}>
-            <select 
-              value={selectedIndex} 
-              onChange={(e) => setSelectedIndex(Number(e.target.value))}
-              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.85rem' }}
-            >
-              {group.products.map((p, idx) => {
-                const variantNameMatch = p.name.match(/\(([^)]+)\)/);
-                const variantName = variantNameMatch ? variantNameMatch[1] : p.name;
-                return (
-                  <option key={p.id} value={idx}>
-                    {variantName}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-        )}
 
         <div className="product-price">
           <span>{price.currency}</span>
@@ -72,13 +53,19 @@ export function ProductCard({
         </div>
         <div className="product-footer">
           <span className="product-card-meta">{formatCategoryChip(selectedProduct)}{" \u2022 "}{formatDuration(selectedProduct.durationDays)}</span>
-          <button
-            type="button"
-            className={isRecentlyAdded ? "product-add-button added" : "product-add-button"}
-            onClick={() => onAdd(selectedProduct)}
-          >
-            {isRecentlyAdded ? "Adicionado" : "Adicionar"}
-          </button>
+          {group.products.length > 1 ? (
+            <Link to={`/produto/${selectedProduct.slug}`} className="product-add-button" style={{ textDecoration: 'none', textAlign: 'center' }}>
+              Ver opções
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className={isRecentlyAdded ? "product-add-button added" : "product-add-button"}
+              onClick={() => onAdd(selectedProduct)}
+            >
+              {isRecentlyAdded ? "Adicionado" : "Adicionar"}
+            </button>
+          )}
         </div>
       </div>
     </article>

@@ -1589,7 +1589,7 @@ select:focus-visible {
 
 .product-detail-hero {
   display: grid;
-  grid-template-columns: minmax(280px, 390px) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
   gap: 30px;
   align-items: center;
   padding: 26px;
@@ -1603,7 +1603,7 @@ select:focus-visible {
 .product-detail-media {
   overflow: hidden;
   width: 100%;
-  max-width: 390px;
+  max-width: 320px;
   justify-self: center;
   border: 0;
   border-radius: 20px;
@@ -1614,14 +1614,14 @@ select:focus-visible {
 .product-detail-media img {
   width: 100%;
   display: block;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 2;
   object-fit: cover;
 }
 
 .product-image-fallback {
   width: 100%;
   min-height: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 2;
   display: grid;
   place-items: center;
   border-radius: inherit;

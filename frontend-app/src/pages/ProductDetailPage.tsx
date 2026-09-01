@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Clock3, Headphones, ShieldCheck, ShoppingBag, Zap, Info } from "lucide-react";
 import { apiClient } from "../shared/api/client";
 import { useCart } from "../shared/cart/CartContext";
@@ -52,6 +52,7 @@ export function ProductDetailPage() {
 
 function ProductDetailPageInner() {
   const { slug = "" } = useParams();
+  const navigate = useNavigate();
   const { apiBase } = useSession();
   const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
@@ -88,6 +89,11 @@ function ProductDetailPageInner() {
   })), [inventory, products]);
 
   const product = mergedProducts.find((item) => item.slug === slug);
+  const productGroup = useMemo(() => {
+    if (!product) return null;
+    const allGroups = groupProducts(mergedProducts);
+    return allGroups.find(g => g.products.some(p => p.id === product.id)) || null;
+  }, [mergedProducts, product]);
   const relatedProducts = product
     ? mergedProducts
         .filter((item) => item.id !== product.id && getProductSectionSlugs(item).some((sectionSlug) => getProductSectionSlugs(product).includes(sectionSlug)))
@@ -155,6 +161,28 @@ function ProductDetailPageInner() {
             <CheckCircle2 size={17} />
             <span>{(product.availableStock ?? 0) > 0 ? "Disponível para entrega digital" : "Disponibilidade sob confirmação"}</span>
           </div>
+
+          {productGroup && productGroup.products.length > 1 && (
+            <div className="product-variant-selector" style={{ marginTop: '16px', marginBottom: '8px' }}>
+              <label style={{display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem'}}>Selecione uma opção:</label>
+              <select 
+                value={product.slug} 
+                onChange={(e) => navigate(`/produto/${e.target.value}`)}
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '1rem', background: '#fff' }}
+              >
+                {productGroup.products.map((p) => {
+                  const variantNameMatch = p.name.match(/\(([^)]+)\)/);
+                  const variantName = variantNameMatch ? variantNameMatch[1] : p.name;
+                  return (
+                    <option key={p.id} value={p.slug}>
+                      {variantName}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+
           <strong className="product-detail-price">{formatCurrency(product.priceCents)}</strong>
 
           <div className="product-detail-actions">
