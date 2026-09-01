@@ -7,6 +7,7 @@ import { useSession } from "../shared/session/SessionContext";
 import { useCart } from "../shared/cart/CartContext";
 import { SafeImage } from "../shared/ui/SafeImage";
 import { ProductCard } from "../shared/ui/ProductCard";
+import { ScrollableRail } from "../shared/ui/ScrollableRail";
 import type { CatalogCategory, Product } from "../shared/types";
 import { groupProducts } from "../shared/lib/productGroup";
 
@@ -30,16 +31,15 @@ export function CategoryPage() {
     setIsLoading(true);
     setLoadError("");
     try {
-      const [productsResponse, categoriesResponse] = await Promise.all([
-        apiClient.getProducts(apiBase),
-        apiClient.getCategories(apiBase).catch(() => FALLBACK_CATEGORIES)
+      const [productsRes, categoriesRes] = await Promise.all([
+        apiClient.get<Product[]>(`${apiBase}/products`),
+        apiClient.get<CatalogCategory[]>(`${apiBase}/categories`)
       ]);
-      setProducts(productsResponse);
-      setCategories(categoriesResponse.length > 0 ? categoriesResponse : FALLBACK_CATEGORIES);
-    } catch {
-      setProducts([]);
-      setCategories(FALLBACK_CATEGORIES);
-      setLoadError("Nao foi possivel carregar esta categoria agora.");
+      setProducts(productsRes);
+      setCategories(categoriesRes);
+    } catch (err) {
+      console.error("Failed to load category data:", err);
+      setLoadError("Nao foi possivel carregar os dados. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -49,44 +49,57 @@ export function CategoryPage() {
     void loadCategory();
   }, [apiBase]);
 
-  const category = (categories.length > 0 ? categories : FALLBACK_CATEGORIES).find((item) => item.slug === slug);
-  const productGroups = useMemo(() => {
-    return groupProducts(products.filter((product) => getProductSectionSlugs(product).includes(slug)));
-  }, [products, slug]);
+  const category = categories.find((c) => c.slug === slug) || FALLBACK_CATEGORIES.find((c) => c.slug === slug);
+  useDocumentTitle(category ? `${category.name} - The Pirate` : "Categoria");
 
-  useDocumentTitle(category?.name || "Categoria");
+  const productGroups = useMemo(() => {
+    if (!category) return [];
+    const categoryProducts = products.filter((p) => {
+      const slugs = getProductSectionSlugs(p);
+      return slugs.includes(category.slug);
+    });
+    return groupProducts(categoryProducts);
+  }, [products, category]);
 
   if (!isLoading && !category) {
     return <Navigate to="/catalogo" replace />;
   }
 
+  const categoryTitle = category?.name || "Carregando...";
+  const categoryDescription = category?.description || "Explore nossa colecao de produtos nesta categoria.";
+
   return (
     <div className="page-section category-page">
-      <section className="category-hero">
-        <div>
-          <span className="eyebrow">categoria</span>
-          <h1>{category?.name || "Categoria"}</h1>
-          <p>{category?.description || "Produtos digitais selecionados."}</p>
+      <div className="category-header">
+        <div className="category-header-info">
+          <span className="category-header-kicker">CATEGORIA</span>
+          <h1>{categoryTitle}</h1>
+          <p>{categoryDescription}</p>
         </div>
-        {category ? (
-          <SafeImage
-            src={getCategoryImageUrl(category)}
-            alt=""
-            fallback={null}
-          />
-        ) : null}
-      </section>
+        {category && (
+          <div className="category-header-media">
+            <SafeImage
+              src={getCategoryImageUrl(category)}
+              alt={categoryTitle}
+              className="category-header-image"
+            />
+          </div>
+        )}
+      </div>
+
+      {loadError ? (
+        <div className="error-panel">
+          <p>{loadError}</p>
+          <button type="button" onClick={() => void loadCategory()} className="secondary-button compact">
+            Tentar novamente
+          </button>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <CategorySkeletonGrid />
       ) : null}
-      {!isLoading && loadError ? (
-        <div className="empty-state-panel">
-          <strong>Categoria indisponivel</strong>
-          <p>{loadError}</p>
-          <button type="button" className="secondary-button compact" onClick={() => void loadCategory()}>Tentar novamente</button>
-        </div>
-      ) : null}
+
       {!isLoading && !loadError && productGroups.length === 0 ? (
         <div className="empty-state-panel">
           <strong>Nenhum produto nesta categoria</strong>
@@ -95,7 +108,7 @@ export function CategoryPage() {
         </div>
       ) : null}
 
-      <section className="catalog-grid">
+      <ScrollableRail className="product-rail" label={`Produtos da categoria ${categoryTitle}`}>
         {productGroups.map((group) => (
           <ProductCard
             key={group.products[0].id}
@@ -104,7 +117,7 @@ export function CategoryPage() {
             recentlyAddedProductId={recentlyAddedProductId}
           />
         ))}
-      </section>
+      </ScrollableRail>
     </div>
   );
 }
