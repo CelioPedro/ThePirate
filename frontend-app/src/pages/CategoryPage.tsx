@@ -32,13 +32,15 @@ export function CategoryPage() {
     setLoadError("");
     try {
       const [productsRes, categoriesRes] = await Promise.all([
-        apiClient.get<Product[]>(`${apiBase}/products`),
-        apiClient.get<CatalogCategory[]>(`${apiBase}/categories`)
+        apiClient.getProducts(apiBase),
+        apiClient.getCategories(apiBase).catch(() => FALLBACK_CATEGORIES)
       ]);
       setProducts(productsRes);
-      setCategories(categoriesRes);
+      setCategories(categoriesRes.length > 0 ? categoriesRes : FALLBACK_CATEGORIES);
     } catch (err) {
       console.error("Failed to load category data:", err);
+      setProducts([]);
+      setCategories(FALLBACK_CATEGORIES);
       setLoadError("Nao foi possivel carregar os dados. Tente novamente.");
     } finally {
       setIsLoading(false);
@@ -82,6 +84,7 @@ export function CategoryPage() {
               src={getCategoryImageUrl(category)}
               alt={categoryTitle}
               className="category-header-image"
+              fallback={null}
             />
           </div>
         )}
