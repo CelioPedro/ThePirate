@@ -72,23 +72,20 @@ export function CategoryPage() {
 
   return (
     <div className="page-section category-page">
-      <div className="category-header">
-        <div className="category-header-info">
-          <span className="category-header-kicker">CATEGORIA</span>
+      <section className="category-hero">
+        <div>
+          <span className="eyebrow">categoria</span>
           <h1>{categoryTitle}</h1>
           <p>{categoryDescription}</p>
         </div>
-        {category && (
-          <div className="category-header-media">
-            <SafeImage
-              src={getCategoryImageUrl(category)}
-              alt={categoryTitle}
-              className="category-header-image"
-              fallback={null}
-            />
-          </div>
-        )}
-      </div>
+        {category ? (
+          <SafeImage
+            src={getCategoryImageUrl(category)}
+            alt=""
+            fallback={null}
+          />
+        ) : null}
+      </section>
 
       {loadError ? (
         <div className="error-panel">
