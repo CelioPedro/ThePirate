@@ -209,8 +209,10 @@ function ProductDetailPageInner() {
               {wasAdded ? "Adicionado" : "Adicionar ao carrinho"}
             </button>
           </div>
+        </div>
 
-          <div style={{ marginTop: "24px", padding: "16px", background: "rgba(255, 165, 0, 0.1)", borderRadius: "12px", border: "1px solid rgba(255, 165, 0, 0.3)", display: "flex", gap: "12px", alignItems: "flex-start" }}>
+        <div style={{ gridColumn: '1 / -1', marginTop: '8px', borderTop: '1px solid rgba(21, 21, 21, 0.06)', paddingTop: '24px' }}>
+          <div style={{ padding: "16px", background: "rgba(255, 165, 0, 0.1)", borderRadius: "12px", border: "1px solid rgba(255, 165, 0, 0.3)", display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "16px" }}>
             <Info size={20} color="#e67e22" style={{ flexShrink: 0, marginTop: "2px" }} />
             <div>
               <strong style={{ display: "block", color: "#d35400", fontSize: "15px", marginBottom: "4px" }}>Entrega Manual: Em até 24 horas</strong>
