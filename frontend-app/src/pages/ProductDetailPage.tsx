@@ -146,26 +146,19 @@ function ProductDetailPageInner() {
       <Link to="/catalogo" className="back-link"><ArrowLeft size={16} /> Catálogo</Link>
 
       <section className="product-detail-hero">
-        <div className="product-detail-media">
-          <SafeImage
-            src={imageUrl}
-            alt={product.name}
-            fallback={<ProductImageFallback name={product.name} />}
-          />
-        </div>
-        <div className="product-detail-info">
-          <span className="product-detail-kicker">{formatCategoryLabel(product)}{" \u2022 "}{formatDuration(product.durationDays)}</span>
-          <h1>{product.name}</h1>
-          <p>{product.description}</p>
-          <div className="product-detail-availability" role="status">
-            <CheckCircle2 size={17} />
-            <span>{(product.availableStock ?? 0) > 0 ? "Disponível para entrega digital" : "Disponibilidade sob confirmação"}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '240px' }}>
+          <div className="product-detail-media">
+            <SafeImage
+              src={imageUrl}
+              alt={product.name}
+              fallback={<ProductImageFallback name={product.name} />}
+            />
           </div>
-
+          
           {productGroup && productGroup.products.length > 1 && (
-            <div className="product-variant-selector" style={{ marginTop: '12px', marginBottom: '8px' }}>
-              <span style={{display: 'block', marginBottom: '10px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--muted)'}}>Selecione uma opção:</span>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div className="product-variant-selector">
+              <span style={{display: 'block', marginBottom: '12px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Escolha um item:</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {productGroup.products.map((p) => {
                   const variantNameMatch = p.name.match(/\(([^)]+)\)/);
                   const variantName = variantNameMatch ? variantNameMatch[1] : p.name;
@@ -176,24 +169,43 @@ function ProductDetailPageInner() {
                       type="button"
                       onClick={() => navigate(`/produto/${p.slug}`)}
                       style={{
-                        padding: '8px 16px',
-                        borderRadius: '100px',
-                        border: `1px solid ${isActive ? 'var(--accent)' : 'rgba(21, 21, 21, 0.15)'}`,
-                        background: isActive ? 'rgba(255, 79, 31, 0.08)' : 'transparent',
-                        color: isActive ? 'var(--accent)' : 'inherit',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        textAlign: 'left',
+                        padding: '12px',
+                        borderRadius: '12px',
+                        border: `1px solid ${isActive ? 'var(--accent)' : 'rgba(21, 21, 21, 0.08)'}`,
+                        background: isActive ? 'rgba(255, 79, 31, 0.03)' : '#fff',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        boxShadow: isActive ? '0 4px 12px rgba(255, 79, 31, 0.1)' : '0 2px 4px rgba(0,0,0,0.02)'
                       }}
                     >
-                      {variantName}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.9rem', color: isActive ? 'var(--accent)' : '#111', lineHeight: '1.2' }}>{variantName}</span>
+                        <strong style={{ fontSize: '0.9rem', color: isActive ? 'var(--accent)' : '#111', whiteSpace: 'nowrap', marginLeft: '8px' }}>
+                          {formatCurrency(p.priceCents)}
+                        </strong>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                        {(p.availableStock ?? 0) > 0 ? `(${p.availableStock} em estoque)` : '(Sem estoque)'}
+                      </span>
                     </button>
                   );
                 })}
               </div>
             </div>
           )}
+        </div>
+
+        <div className="product-detail-info">
+          <span className="product-detail-kicker">{formatCategoryLabel(product)}{" \u2022 "}{formatDuration(product.durationDays)}</span>
+          <h1>{product.name}</h1>
+          <p>{product.description}</p>
+          <div className="product-detail-availability" role="status">
+            <CheckCircle2 size={17} />
+            <span>{(product.availableStock ?? 0) > 0 ? "Disponível para entrega digital" : "Disponibilidade sob confirmação"}</span>
+          </div>
 
           <strong className="product-detail-price">{formatCurrency(product.priceCents)}</strong>
 
