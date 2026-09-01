@@ -163,23 +163,35 @@ function ProductDetailPageInner() {
           </div>
 
           {productGroup && productGroup.products.length > 1 && (
-            <div className="product-variant-selector" style={{ marginTop: '16px', marginBottom: '8px' }}>
-              <label style={{display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem'}}>Selecione uma opção:</label>
-              <select 
-                value={product.slug} 
-                onChange={(e) => navigate(`/produto/${e.target.value}`)}
-                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '1rem', background: '#fff' }}
-              >
+            <div className="product-variant-selector" style={{ marginTop: '12px', marginBottom: '8px' }}>
+              <span style={{display: 'block', marginBottom: '10px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--muted)'}}>Selecione uma opção:</span>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {productGroup.products.map((p) => {
                   const variantNameMatch = p.name.match(/\(([^)]+)\)/);
                   const variantName = variantNameMatch ? variantNameMatch[1] : p.name;
+                  const isActive = p.slug === product.slug;
                   return (
-                    <option key={p.id} value={p.slug}>
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => navigate(`/produto/${p.slug}`)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '100px',
+                        border: `1px solid ${isActive ? 'var(--accent)' : 'rgba(21, 21, 21, 0.15)'}`,
+                        background: isActive ? 'rgba(255, 79, 31, 0.08)' : 'transparent',
+                        color: isActive ? 'var(--accent)' : 'inherit',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
                       {variantName}
-                    </option>
+                    </button>
                   );
                 })}
-              </select>
+              </div>
             </div>
           )}
 
