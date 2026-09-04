@@ -44,7 +44,9 @@ export function ProductCard({
       </div>
       <div className="product-body">
         <h3><Link to={`/produto/${selectedProduct.slug}`}>{group.baseName}</Link></h3>
-        <p>{selectedProduct.description}</p>
+        <p title={selectedProduct.description} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {selectedProduct.description.split('\n')[0]}
+        </p>
         
 
         <div className="product-price">

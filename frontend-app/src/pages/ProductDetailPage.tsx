@@ -202,7 +202,9 @@ function ProductDetailPageInner() {
         <div className="product-detail-info">
           <span className="product-detail-kicker">{formatCategoryLabel(product)}{" \u2022 "}{formatDuration(product.durationDays)}</span>
           <h1>{product.name}</h1>
-          <p>{product.description}</p>
+          <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '0.95rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
+            {product.description}
+          </div>
           <div className="product-detail-availability" role="status">
             <CheckCircle2 size={17} />
             <span>{(product.availableStock ?? 0) > 0 ? "Disponível para entrega digital" : "Disponibilidade sob confirmação"}</span>
