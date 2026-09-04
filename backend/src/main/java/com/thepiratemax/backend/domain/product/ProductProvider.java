@@ -13,5 +13,11 @@ public enum ProductProvider {
     FIGMA,
     CHATGPT_PLUS,
     ANTIGRAVITY,
-    LEAGUE_OF_LEGENDS
+    LEAGUE_OF_LEGENDS,
+    OPENAI,
+    GOOGLE,
+    ANTHROPIC,
+    SUPERGROK,
+    LOVABLE,
+    MANUS
 }
