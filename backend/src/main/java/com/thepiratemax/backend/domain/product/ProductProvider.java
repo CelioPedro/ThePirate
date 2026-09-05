@@ -19,5 +19,9 @@ public enum ProductProvider {
     ANTHROPIC,
     SUPERGROK,
     LOVABLE,
-    MANUS
+    MANUS,
+    V0_DEV,
+    DREAMFACE,
+    ELEVENLABS,
+    VOICEMOD
 }
